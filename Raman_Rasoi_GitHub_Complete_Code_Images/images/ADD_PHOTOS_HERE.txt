@@ -1,0 +1,2 @@
+The photo files in this directory are already linked through photos.json.
+To add new photos, place a JPEG/PNG/WebP named after the dish, and update photos.json using the filename as value and lowercase hyphenated dish name as key.

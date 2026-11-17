@@ -1,0 +1,8 @@
+# Local files and development tools
+.DS_Store
+Thumbs.db
+*.log
+node_modules/
+.env
+.env.*
+!.env.example
