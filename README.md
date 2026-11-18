@@ -1,5 +1,5 @@
 # 🍛 Raman Rasoi — Pantry-first meal planner
-
+https://github.com/kinn-j/hatri
 Static HTML/CSS/JavaScript website with an installable Progressive Web App (PWA) manifest and bundled food photos. Updated using the latest supplied Claude HTML (`Raman Rasoi — Pantry-first meal planner 2.html`).
 
 ## Included
