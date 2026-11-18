@@ -307,7 +307,7 @@ details.dton{outline:3px solid var(--accent);outline-offset:-3px}
   <section data-vs="order"><div class="card cart" id="cartCard"><h2>Shopping list <span class="sub" id="cartCount"></span><button class="sx" data-view="recipes" aria-label="Close">✕</button></h2><p class="sub" style="margin:0 0 8px">Items you’re missing. Tap to add.</p><input type="search" id="shopq" aria-label="Add item"><div class="chips" id="shopres" style="margin:8px 0"></div><div class="chips" id="quick" style="margin-bottom:10px"></div><div id="cart"></div></div><div class="nextbar"><button class="btn primary" data-view="recipes"><span class="en">See recipe suggestions →</span><span class="hi">रेसिपी सुझाव देखें →</span></button></div></section>
   <section data-vs="recipes"><div class="mhead"><div class="mstat" id="mstat"></div></div><div class="topbar"><input type="search" id="rq" placeholder="Search any recipe…" aria-label="Search recipes"><div class="ttabs" id="ttabs"></div><div class="trow"><button class="pkb" data-view="pantry">🧺 <span class="en">Pantry</span><span class="hi">सामान</span> <b id="pkCount"></b></button><button data-view="plan">⚙️ <span class="en">Filters</span><span class="hi">फ़िल्टर</span><b id="fcount"></b></button><button class="bag" data-view="order" aria-label="Shopping list">🛒<b id="cbadge"></b></button></div><div class="achips" id="achips"></div></div><div id="slides"></div><div class="row" style="justify-content:space-between;margin:8px 0 0"><h2 class="sh" style="margin:0">Suggestions</h2><button class="btn sm" data-shuffle="1">🔀 Shuffle</button></div><div id="pick"></div><div id="results" style="margin-top:8px"></div></section>
 </main>
-<section class="band" id="kitchen" data-vs="kitchen"><h2>My Kitchen</h2><div class="card acct" id="acct"></div><p class="sub" style="margin:0 0 10px">Your ratings and photos live here, saved to your account.</p><button class="btn sm" id="bulkBtn" hidden>📷 Bulk upload dish photos</button><input type="file" id="fileBulk" accept="image/*" multiple hidden><div id="mykit"></div></section>
+<section class="band" id="kitchen" data-vs="kitchen"><h2>My Kitchen</h2><div class="card acct" id="acct"></div><p class="sub" style="margin:0 0 10px">Your recipe ratings sync to your account. Personal photo uploads are not yet available outside Claude.</p><button class="btn sm" id="bulkBtn" hidden>📷 Bulk upload dish photos</button><input type="file" id="fileBulk" accept="image/*" multiple hidden><div id="mykit"></div></section>
 <section class="band" id="features"><h2>Made for everyday cooking</h2><div class="cols c3">
 <div class="fc"><b>🥘 Pantry matching</b><p>Dishes ranked by how few required ingredients are missing.</p></div>
 <div class="fc"><b>💧 Soak and timing</b><p>Prep, cook and soaking time shown separately, with early-start alerts.</p></div>
@@ -1827,35 +1827,6 @@ document.addEventListener("click",function(e){var b=e.target.closest&&e.target.c
 try{renderSlides()}catch(e){}
 })();
 </script>
-<script>
-/* ===== Google sign-in (Google Identity Services) =====
-   Needs two things before the button appears:
-   1) set RR_GOOGLE_CLIENT_ID below to your OAuth "Web application" client ID (Google Cloud Console)
-   2) host the page on an origin you added under "Authorised JavaScript origins" (e.g. your GitHub Pages / own domain).
-   It cannot run inside a claude.ai preview, because that page blocks Google's script. */
-(function(){
-var RR_GOOGLE_CLIENT_ID="";
-var KEY="rr-user";
-function decode(t){try{var p=t.split(".")[1].replace(/-/g,"+").replace(/_/g,"/");return JSON.parse(decodeURIComponent(atob(p).split("").map(function(c){return"%"+("00"+c.charCodeAt(0).toString(16)).slice(-2)}).join("")))}catch(e){return null}}
-function get(){try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){return null}}
-function box(){var b=document.getElementById("gsiBox");if(b)return b;var nav=document.querySelector(".nav");if(!nav)return null;
-  b=document.createElement("span");b.id="gsiBox";nav.appendChild(b);return b}
-function paint(){var b=box();if(!b)return;var u=get();b.innerHTML="";
-  if(u){b.className="on";if(u.picture){var im=document.createElement("img");im.alt="";im.referrerPolicy="no-referrer";im.src=u.picture;b.appendChild(im)}
-    var o=document.createElement("button");o.textContent="Sign out";o.onclick=function(){try{localStorage.removeItem(KEY)}catch(e){}
-      try{google.accounts.id.disableAutoSelect()}catch(e){}window.RR_USER=null;paint()};b.appendChild(o)}
-  else{b.className="on";var d=document.createElement("span");d.id="gsiBtn";b.appendChild(d);
-    try{google.accounts.id.renderButton(d,{theme:"outline",size:"medium",shape:"pill",text:"signin_with"})}catch(e){}}}
-function onCred(r){var p=decode(r.credential);if(!p)return;
-  /* the ID token is only decoded here for display; verify it on a server before trusting it for anything private */
-  var u={sub:p.sub,name:p.name,email:p.email,picture:p.picture};try{localStorage.setItem(KEY,JSON.stringify(u))}catch(e){}
-  window.RR_USER=u;paint();try{toast("Signed in as "+(u.name||u.email))}catch(e){}}
-function ready(){window.RR_USER=get();try{google.accounts.id.initialize({client_id:RR_GOOGLE_CLIENT_ID,callback:onCred,auto_select:false});paint()}catch(e){}}
-if(!RR_GOOGLE_CLIENT_ID)return;
-if(/claude\.ai|claudeusercontent/i.test(location.hostname))return;
-var s=document.createElement("script");s.src="https://accounts.google.com/gsi/client";s.async=true;s.defer=true;s.onload=ready;document.head.appendChild(s);
-})();
-</script>
 <style>
 /* ===== Suggestions are tiles everywhere; meals are one big cluster tile ===== */
 main#planner>*,main#planner section,#results{min-width:0;max-width:100%}
@@ -1955,5 +1926,12 @@ body[class*="sh-"] .nextbar{max-width:836px;margin-left:auto!important;margin-ri
 .fpanel{padding-left:16px;padding-right:16px}
 }
 </style>
+<style>
+#rr-auth-panel{border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:14px}
+#rr-auth-panel h3{font-size:16px;letter-spacing:0;text-transform:none;color:var(--text)}
+#rr-auth-panel button{margin:8px 8px 0 0}
+#rr-auth-status{color:var(--accent);min-height:20px}
+</style>
+<script type="module" src="./auth.js"></script>
 </body>
 </html>

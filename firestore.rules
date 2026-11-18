@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // A signed-in user can access only their own Raman Rasoi preferences.
+    match /users/{userId}/preferences/{documentId} {
+      allow read, delete: if request.auth != null
+        && request.auth.uid == userId;
+
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+          'core', 'filters', 'choices', 'ratings', 'updatedAt'
+        ])
+        && request.resource.data.core is map
+        && request.resource.data.filters is map
+        && request.resource.data.choices is map
+        && request.resource.data.ratings is map;
+    }
+    // All other paths are denied unless you explicitly add rules for them.
+  }
+}
