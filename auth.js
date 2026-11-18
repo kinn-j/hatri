@@ -44,6 +44,8 @@ function initials(user) {
 function renderNavAuth() {
   const host = document.getElementById('navAccount');
   if (!host) return;
+  const nav = document.querySelector('.nav');
+  if (nav && host.parentElement !== nav) nav.append(host);
   host.innerHTML = '';
   if (!currentUser) {
     const button = document.createElement('button');

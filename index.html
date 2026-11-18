@@ -166,9 +166,12 @@ html[lang="hi"] .en{display:none}html:not([lang="hi"]) .hi{display:none}
 #slides{display:block;margin:2px 0 4px;min-width:0}
 .topbar .ttabs{display:none!important}
 .slr{margin:0 0 6px}
-.slh{display:flex;align-items:baseline;justify-content:space-between;padding:6px 2px 2px}
+.slh{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 2px 2px}
 .slh h3{margin:0;font-size:17px;font-weight:700;color:var(--text);text-transform:none;letter-spacing:0}
 .slh button{border:0;background:none;color:var(--accent);font:inherit;font-size:12.5px;font-weight:600;padding:4px 2px;cursor:pointer}
+.sl-actions{display:flex;gap:6px;align-items:center;flex:0 0 auto}
+.sl-actions button{border:1px solid #b9dcc9;border-radius:999px;background:#e6f4ee;color:#1b7f4c;font-size:11px;line-height:1.2;padding:5px 9px}
+.sl-actions button:hover,.sl-actions button:focus-visible{background:#c5e2d1;border-color:#78b994;outline:none}
 .sls{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;margin:0;padding:6px 2px 10px;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .sls::-webkit-scrollbar{display:none}
 .sl{flex:none;width:112px;height:108px;display:flex!important;flex-direction:column;align-items:flex-start;justify-content:flex-start;position:relative;overflow:hidden;border:2px solid transparent;border-radius:18px;padding:10px;text-align:left;font:inherit;color:#3a2412;cursor:pointer;scroll-snap-align:start;box-shadow:0 4px 12px rgba(120,60,0,.12)}
@@ -306,7 +309,7 @@ details.dton{outline:3px solid var(--accent);outline-offset:-3px}
   </section>
   <section data-vs="plan"><div class="card" id="cuis"></div><div class="nextbar"><button class="btn primary" data-view="recipes"><span class="en">Show recipes</span><span class="hi">रेसिपी दिखाओ</span></button></div></section>
   <section data-vs="order"><div class="card cart" id="cartCard"><h2>Shopping list <span class="sub" id="cartCount"></span><button class="sx" data-view="recipes" aria-label="Close">✕</button></h2><p class="sub" style="margin:0 0 8px">Items you’re missing. Tap to add.</p><input type="search" id="shopq" aria-label="Add item"><div class="chips" id="shopres" style="margin:8px 0"></div><div class="chips" id="quick" style="margin-bottom:10px"></div><div id="cart"></div></div><div class="nextbar"><button class="btn primary" data-view="recipes"><span class="en">See recipe suggestions →</span><span class="hi">रेसिपी सुझाव देखें →</span></button></div></section>
-  <section data-vs="recipes"><div class="mhead"><div class="mstat" id="mstat"></div></div><div class="topbar"><input type="search" id="rq" placeholder="Search any recipe…" aria-label="Search recipes"><div class="ttabs" id="ttabs"></div><div class="trow"><button class="pkb" data-view="pantry">🧺 <span class="en">Pantry</span><span class="hi">सामान</span> <b id="pkCount"></b></button><button data-view="plan">⚙️ <span class="en">Filters</span><span class="hi">फ़िल्टर</span><b id="fcount"></b></button><button class="bag" data-view="order" aria-label="Shopping list">🛒<b id="cbadge"></b></button></div><div class="achips" id="achips"></div></div><div id="slides"></div><div class="row" style="justify-content:space-between;margin:8px 0 0"><h2 class="sh" style="margin:0">Suggestions</h2><button class="btn sm" data-shuffle="1">🔀 Shuffle</button></div><div id="pick"></div><div id="results" style="margin-top:8px"></div></section>
+  <section data-vs="recipes"><div class="mhead"><div class="mstat" id="mstat"></div></div><div class="topbar"><input type="search" id="rq" placeholder="Search any recipe…" aria-label="Search recipes"><div class="ttabs" id="ttabs"></div><div class="trow"><button class="pkb" data-view="pantry">🧺 <span class="en">Pantry</span><span class="hi">सामान</span> <b id="pkCount"></b></button><button data-view="plan">⚙️ <span class="en">Filters</span><span class="hi">फ़िल्टर</span><b id="fcount"></b></button><button class="bag" data-view="order" aria-label="Shopping list">🛒<b id="cbadge"></b></button></div><div class="achips" id="achips"></div></div><div id="pantrySlides"></div><div id="slides"></div><div class="row" style="justify-content:space-between;margin:8px 0 0"><h2 class="sh" style="margin:0">Suggestions</h2><button class="btn sm" data-shuffle="1">🔀 Shuffle</button></div><div id="pick"></div><div id="results" style="margin-top:8px"></div></section>
 </main>
 <section class="band" id="kitchen" data-vs="kitchen"><h2>My Kitchen</h2><div class="card acct" id="acct"></div><p class="sub" style="margin:0 0 10px">Your recipe ratings sync to your account. Personal photo uploads are not yet available outside Claude.</p><button class="btn sm" id="bulkBtn" hidden>📷 Bulk upload dish photos</button><input type="file" id="fileBulk" accept="image/*" multiple hidden><div id="mykit"></div></section>
 <section class="band" id="features"><h2>Made for everyday cooking</h2><div class="cols c3">
@@ -806,7 +809,7 @@ function card(m){
 }
 function renderSearch(r,q){$("pick").innerHTML="";var tk=q.split(/\s+/).filter(Boolean);
   var L=MEALS.filter(function(m){return nonveg?!m[1]:m[1]}).map(function(m){var hay=(m[0]+" "+m[6]+" "+m[5].map(function(i){return NAME[i.replace("?","")]||""}).join(" ")).toLowerCase(),nm=m[0].toLowerCase();if(!tk.every(function(t){return hay.indexOf(t)>-1}))return null;var h=[],x=[],oh=[],ox=[];m[5].forEach(function(g){var o=g.slice(-1)==="?",i=o?g.slice(0,-1):g;(o?(have[i]?oh:ox):(have[i]?h:x)).push(i)});return {n:m[0],v:m[1],p:effP(m),c:m[3],s:m[4],h:h,x:x,oh:oh,ox:ox,tot:h.length+x.length,cu:m[6],g:m[7],w:wt(m[0],m[6]),ing:m[5],ov:!!(m[4]&&m[4][0]<=30),oc:m[8],f:m[9],e:effP(m)+m[3]>=70||m[5].length>=8,nm:tk.every(function(t){return nm.indexOf(t)>-1})?1:0}}).filter(Boolean);
-  L.sort(function(a,b){return (b.nm-a.nm)||(a.x.length-b.x.length)});var tot=L.length;L=L.slice(0,60);
+  L.sort(function(a,b){return (b.nm-a.nm)||(a.x.length-b.x.length)});var tot=L.length;
   r.innerHTML="<div class='sec'><h2>Search results</h2><small>"+tot+" found"+(tot>60?" · showing 60":"")+"</small></div>"+(L.length?("<div class='tgrid'>"+L.map(tileHTML).join("")+"</div>"):"<div class='card empty'>No recipe found. Try another name.</div>")}
 function renderResults(){
   renderTop();var r=$("results");var rq=($("rq")&&$("rq").value||"").trim().toLowerCase();if(rq){renderSearch(r,rq);return}if(!Object.keys(have).length&&crs!=="meal"){$("pick").innerHTML="";renderBrowse(r);return}
@@ -1651,7 +1654,7 @@ EMO_R={"Punjabi":"🫓","Rajasthani":"🏜️","Gujarati":"🥣","Maharashtrian"
 PAL={cat:["#ffe9d2","#ffc58f"],tm:["#e0f0ff","#a9d2fb"],oc:["#ffe3ee","#ffb3d1"],hv:["#e3f6e3","#b0e0b4"],mo:["#efe6ff","#cdbdf7"],rg:["#fff1c9","#ffd37a"]};
 function slTile(attr,emo,lab,sub,on,pal){return "<button class='sl"+(on?" on":"")+"' "+attr+" style='background:linear-gradient(145deg,"+pal[0]+","+pal[1]+")'><b>"+lab+"</b>"+(sub?"<small>"+sub+"</small>":"")+"<i>"+emo+"</i>"+(on?"<u>✓</u>":"")+"</button>"}
 function slRow(title,tiles,clr){return "<div class='slr'><div class='slh'><h3>"+title+"</h3>"+(clr||"")+"</div><div class='sls'>"+tiles+"</div></div>"}
-function slClr(k,st,L){return restr(st,L)?"<button data-sf='"+k+"|#all'>Clear</button>":""}
+function slClr(k,st,L){return "<span class='sl-actions'><button data-sf='"+k+"|#all'>Select all</button><button data-sf='"+k+"|#none'>Clear all</button></span>"}
 function renderSlides(){
   var el=$("slides");if(!el||!MFREADY)return;
   var keep=Array.prototype.map.call(el.querySelectorAll(".sls"),function(x){return x.scrollLeft});
@@ -1668,7 +1671,7 @@ function renderSlides(){
 }
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-sf]");if(!b)return;
   var p=b.dataset.sf.split("|"),k=p[0],v=p[1],st=k==="t"?TS:k==="o"?OS:k==="h"?HS:RS,L=k==="t"?tIds():k==="o"?oIds():k==="h"?hIds():rIds();
-  if(v==="#all")selAll(k);
+  if(v==="#all"||v==="#none")selAll(k);
   else if(!restr(st,L)){Object.keys(st).forEach(function(x){delete st[x]});st[v]=1}
   else{if(st[v])delete st[v];else st[v]=1;if(!anyOn(st))selAll(k)}
   syncT();saveF();seedStr=String(Math.random());renderCuis();renderResults();e.stopPropagation();e.preventDefault()},true);
@@ -1718,6 +1721,53 @@ function icoOf(id){if(ICO[id])return ICO[id];for(var i=0;i<CATS.length;i++){if(C
 function decoIcons(){var el=document.getElementById("ings");if(!el)return;Array.prototype.forEach.call(el.querySelectorAll("button[data-i]"),function(b){if(b.querySelector(".ic"))return;var id=b.dataset.i,on=!!(typeof have!=="undefined"&&have[id])||b.classList.contains("on"),lab=NAME[id]||b.textContent.replace(/^✓\s*/,"");
   b.textContent="";if(on)b.appendChild(document.createTextNode("✓ "));var s=document.createElement("span");s.className="ic";s.textContent=icoOf(id);b.appendChild(s);b.appendChild(document.createTextNode(lab))})}
 (function(){var q=false;function go(){if(q)return;q=true;requestAnimationFrame(function(){q=false;try{decoIcons()}catch(e){}})}try{new MutationObserver(go).observe(document.body,{childList:true,subtree:true})}catch(e){}try{decoIcons()}catch(e){}})();
+/* ===== Smart pantry groups ===== */
+(function(){
+  var groups={"Vegetables":[],"Fruits / Dry fruits":[],"Milk / Bread / Protein":[],"Pulses":[],"Condiments":[],"Specialty":[]},seen={};
+  var veg={onion:1,tomato:1,potato:1,capsicum:1,brinjal:1,okra:1,cabbage:1,carrot:1,cucumber:1,lauki:1,beans:1,mushroom:1,corn:1,arbi:1,cauliflower:1,peas:1,spinach:1,sarson:1,methi:1,mooli:1,beetroot:1,sweetpotato:1,suran:1,pumpkin:1,drumstick:1,rawbanana:1,karela:1,tinda:1,turai:1,coriander:1,mint:1,currylv:1,gchilli:1,bigchilli:1,ginger:1,garlic:1,basil:1,tulsi:1,parsley:1,rosemary:1,thyme:1,sage:1,kasurimethi:1,italianherbs:1,collardgreens:1,lotusstem:1,gonguraleaves:1,mixedvegetables:1,ashgourd:1,pointedgourd:1,garadu:1};
+  var fruit={lemon:1,coconut:1,rawmango:1,mango:1,banana:1,apple:1,amla:1,orange:1,pineapple:1,watermelon:1,pomegranate:1,mosambi:1,coconutmilk:1,tendercoconut:1,tendercoconutmalai:1,lemonzest:1,orangejuice:1,orangezest:1,blueberries:1,strawberries:1,desiccatedcoconut:1,pineapplerings:1,kiwi:1,lemonlimesoda:1,passionfruitpulp:1,lychee:1,peach:1,dates:1,guavajuice:1,cranberryjuice:1,orangeslices:1,gratedcoconut:1,foodgradeslakedlime:1,baelfruitpulp:1,dryfruit:1,cashews:1,almonds:1,walnuts:1,pistachios:1,raisins:1,berries:1,cherries:1};
+  var protein={paneer:1,curd:1,butter:1,ghee:1,milk:1,cream:1,mawa:1,cheese:1,creamcheese:1,condensedmilk:1,ricottacheese:1,parmesanstylevegetariancheese:1,buttermilk:1,batter:1,bread:1,fermentedricebatter:1,eggs:1,chicken:1,fish:1,mutton:1,prawn:1,soya:1,soyachaap:1,sprouts:1,cookedwhitebeans:1};
+  var grains={rice:1,basmatirice:1,arboriorice:1,atta:1,besan:1,suji:1,poha:1,bread:1,bajra:1,makki:1,batter:1,sev:1,kuttu:1,singhara:1,samak:1,makhana:1,vermicelli:1,daliya:1,jowar:1,sabudana:1,chanadal:1,maida:1,pasta:1,noodles:1,oats:1,ragi:1,riceflour:1,cornflour:1,polenta:1,pizzabaseordough:1,cannellonipastatubes:1,jumbopastashells:1};
+  var cond={ginger:1,garlic:1,gingergarlicpaste:1,tealeaves:1,greentea:1,mustardoil:1,oliveoil:1,coconutoil:1,blackpepper:1,cumin:1,cuminseeds:1,cardamom:1,cinnamon:1,cloves:1,ajwain:1,garammasala:1,asafoetida:1,wholespices:1,turmeric:1,redchilli:1,dryredchilli:1,redchillipowder:1,mustardseeds:1,mustardseedsormustardpaste:1,mustardpaste:1,corianderpowder:1,corianderseeds:1,fennel:1,fennelpowder:1,fenugreekseeds:1,roastedcuminpowder:1,blacksalt:1,chaatmasala:1,jeeravanmasala:1,cholemasala:1,tandoorimasala:1,picklemasala:1,anardana:1,sesame:1,poppy:1,tamarind:1,jaggery:1,redfoodcolour:1,bakingpowder:1,bakingsoda:1,enofruitsaltorbakingsoda:1,vanillaessence:1,vinegar:1,tomatosauce:1,waterorvegetablestock:1,vegetablestock:1,chickenstock:1,kewrawater:1,rosewater:1,saffron:1,sabjaseeds:1,driedhibiscuspetals:1};
+  CATS.forEach(function(c){c[1].forEach(function(item){var id=item[0],k;
+    if(seen[id])return;seen[id]=1;
+    if(protein[id]||NV.indexOf(id)>-1)k="Milk / Bread / Protein";
+    else if(fruit[id]||c[0]==="Fruits & coconut")k="Fruits / Dry fruits";
+    else if(grains[id])k="Pulses";
+    else if(veg[id]||/^Daily vegetables|^Seasonal|^Herbs/.test(c[0]))k="Vegetables";
+    else if(cond[id])k="Condiments";
+    else if(/^Dairy/.test(c[0]))k="Milk / Bread / Protein";
+    else if(/^Grains|^Dals/.test(c[0]))k="Pulses";
+    else k="Specialty";
+    groups[k].push(item);
+  })});
+  CATS=Object.keys(groups).map(function(k){return [k,groups[k]]}).filter(function(c){return c[1].length});
+  CATS.forEach(function(c){c[1].forEach(function(item){NAME[item[0]]=item[1]})});
+})();
+function renderPantrySlides(){
+  var el=$("pantrySlides");if(!el||!MFREADY)return;
+  var cats=CATS.map(function(c){return [c[0],c[1].filter(function(x){return nonveg||NV.indexOf(x[0])<0})]}).filter(function(c){return c[1].length});
+  if(!cats.length){el.innerHTML="<p class='empty'>No pantry categories available.</p>";return}
+  if(typeof pantryTab!=="number")pantryTab=0;
+  if(pantryTab>=cats.length)pantryTab=0;
+  var tr=document.createElement("div");tr.className="ftray pantry-tray";
+  var tb=document.createElement("div");tb.className="ftabs pantry-tabs";
+  var groupIcons={Vegetables:"🥬","Fruits / Dry fruits":"🍎","Milk / Bread / Protein":"🥛",Pulses:"🌾",Condiments:"🧂",Specialty:"🧺"};
+  tb.innerHTML=cats.map(function(c,i){
+    var selected=c[1].some(function(x){return !!have[x[0]]});
+    return "<button class='ft"+(i===pantryTab?" on":"")+"' data-pantry-cat='"+i+"'><span class='fi'>"+(groupIcons[c[0]]||"🧺")+"</span><span class='fl'>"+c[0]+"</span>"+(selected?"<em></em>":"")+"</button>";
+  }).join("");
+  tr.appendChild(tb);
+  var c=cats[pantryTab],pn=document.createElement("div");pn.className="fpanel pantry-panel";
+  pn.innerHTML="<div class='fph'><h3>"+c[0]+"</h3><div class='pantry-head-actions'><div class='pantry-bulk' role='group' aria-label='Select pantry items'><button type='button' data-pantry-bulk='all'>Select all</button><button type='button' data-pantry-bulk='none'>Clear all</button></div><span class='sub'>"+c[1].filter(function(x){return !!have[x[0]]}).length+" selected</span></div></div>";
+  var g=document.createElement("div");g.className="fgrid pantry-grid";
+  c[1].forEach(function(x){g.insertAdjacentHTML("beforeend",slTile("data-i='"+x[0]+"'",icoOf(x[0]),NAME[x[0]]||x[1],"",!!have[x[0]],PAL.cat))});
+  pn.appendChild(g);tr.appendChild(pn);el.replaceChildren(tr);
+}
+var pantryTab=0;
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pantry-bulk]");if(!b)return;var cats=CATS.map(function(c){return [c[0],c[1].filter(function(x){return nonveg||NV.indexOf(x[0])<0})]}).filter(function(c){return c[1].length}),c=cats[pantryTab];if(!c)return;var allItems=b.getAttribute("data-pantry-bulk")==="all";c[1].forEach(function(x){if(allItems){have[x[0]]=1;delete cart[x[0]]}else delete have[x[0]]});save();all();e.preventDefault();e.stopPropagation()},true);
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pantry-cat]");if(!b)return;pantryTab=+b.getAttribute("data-pantry-cat")||0;renderPantrySlides();e.preventDefault();e.stopPropagation()},true);
+var _allWithPantry=all;all=function(){var r=_allWithPantry.apply(this,arguments);try{renderPantrySlides()}catch(e){}return r};
 MFREADY=true;syncT();try{all()}catch(e){try{renderCuis();renderResults()}catch(e2){}}
 </script>
 <style>
@@ -1763,9 +1813,13 @@ body[class*="sh-"] [data-vs] .card>h2:first-child{background:#e6f4ee;color:#0f3d
 .ft.on .fl{font-weight:700}
 .ft em{position:absolute;top:7px;right:14px;width:8px;height:8px;border-radius:50%;background:#1b7f4c}
 .fpanel{background:#fff;padding:12px 12px 6px}
-.fph{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+.fph{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
 .fph h3{margin:0;font-size:17px;font-weight:700;color:#14231b;text-transform:none;letter-spacing:0}
+.pantry-head-actions{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:0 0 auto}
 .fph button{border:0;background:none;color:#1b7f4c;font:inherit;font-size:13px;font-weight:600;padding:4px 2px;cursor:pointer}
+.pantry-bulk{display:flex;gap:6px;margin-top:5px}
+.pantry-bulk button{border:1px solid #b9dcc9;border-radius:999px;background:#e6f4ee;color:#1b7f4c;font-size:11px;font-weight:700;line-height:1.2;padding:5px 9px;cursor:pointer}
+.pantry-bulk button:hover,.pantry-bulk button:focus-visible{background:#c5e2d1;border-color:#78b994;outline:none}
 .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px}
 .fgrid .sl{width:auto;height:58px;padding:6px 3px 3px;align-items:center;justify-content:flex-start;text-align:center;background:#e8f5ee!important;border:1.5px solid #cfe6da;border-radius:12px;box-shadow:none;color:#14231b;scroll-snap-align:none}
 .fgrid .sl b{max-width:none;width:100%;text-align:center;font-size:10px;line-height:1.1;font-weight:700;color:#14231b;overflow-wrap:normal;word-break:normal}
@@ -1813,7 +1867,7 @@ function tray(el,sx){
     var row=rows[FT],pn=document.createElement("div");pn.className="fpanel";
     var h=document.createElement("div");h.className="fph";
     var hh=document.createElement("h3");hh.textContent=(row.querySelector("h3")||{}).textContent||"";h.appendChild(hh);
-    var clr=row.querySelector(".slh button");if(clr)h.appendChild(clr);
+    var actions=row.querySelector(".slh .sl-actions"),clr=actions||row.querySelector(".slh button");if(clr)h.appendChild(clr);
     pn.appendChild(h);
     var g=document.createElement("div");g.className="fgrid";
     Array.prototype.slice.call(row.querySelectorAll(".sl")).forEach(function(b){g.appendChild(b)});
@@ -1872,17 +1926,18 @@ function mkey(c){return encodeURIComponent(c.key)}
 buildMeals=function(){
   var all=score().filter(function(m){return !isLong(m)&&m.x.length<=3}),G={};
   all.forEach(function(m){var c=course(m.n);(G[c]=G[c]||[]).push(m)});
-  var g=function(c,n){return(G[c]||[]).slice(0,n)},
-      sidesAll=(G.Side||[]).filter(function(m){return SIDES.indexOf(m.n)>-1}).slice(0,24),sweetsAll=(G.Sweet||[]).slice(0,24),cands=[],used={},seen={},out=[];
+  var g=function(c){return G[c]||[]},
+      sidesAll=(G.Side||[]).filter(function(m){return SIDES.indexOf(m.n)>-1}),
+      sweetsAll=G.Sweet||[],cands=[],used={},seen={},out=[];
   function extras(it){var o=it.slice(),base=missOf(it).length;
     if(wProt&&sumP(o)<2){var bd=null;(G.Main||[]).forEach(function(d){if(used[d.n]||rtype(d.n)!=="dal"||pscore(d.ing)<2||o.some(function(x){return x.n===d.n})||!pairOK(it[0],d)||(tmax&&mealTime(o.concat(d))>tmax))return;var dm=missOf(o.concat(d)).length-base;if(dm<=1&&(!bd||dm<bd.d))bd={m:d,d:dm}});if(bd)o.push(bd.m)}
     [wSide?sidesAll:[],wSweet?sweetsAll:[]].forEach(function(pool){var best=null;pool.forEach(function(sd){if(used[sd.n]||o.some(function(x){return x.n===sd.n})||!pairOK(it[0],sd)||(tmax&&mealTime(o.concat(sd))>tmax))return;var d=missOf(o.concat(sd)).length-missOf(o).length;if(d<=1&&(!best||d<best.d))best={m:sd,d:d}});if(best)o.push(best.m)});
     return o}
-  g("Main",30).forEach(function(M){g("Bread",16).concat(g("Rice",12)).forEach(function(B){if(pairOK(M,B))cands.push([M,B])})});
-  g("Complete",16).forEach(function(C){cands.push([C])});
+  g("Main",120).forEach(function(M){g("Bread",80).concat(g("Rice",80)).forEach(function(B){if(M.n!==B.n&&pairOK(M,B))cands.push([M,B])})});
+  g("Complete",80).forEach(function(C){cands.push([C])});
   cands.map(function(it){return{it:it,miss:missOf(it).length,key:it.map(function(m){return m.n}).join(" + ")}})
     .sort(function(a,b){return a.miss-b.miss||hsh(a.key)-hsh(b.key)})
-    .forEach(function(b){if(out.length>=9)return;if(b.it.some(function(m){return used[m.n]}))return;
+    .forEach(function(b){if(b.it.some(function(m){return used[m.n]}))return;
       var f=extras(b.it),c={items:f,miss:missOf(f),t:mealTime(f),key:f.map(function(m){return m.n}).join(" + ")};
       if(tmax&&c.t>tmax)return;if(seen[c.key]||f.some(function(m){return used[m.n]}))return;
       seen[c.key]=1;f.forEach(function(m){used[m.n]=1});MEALK[c.key]=c;out.push(c)});
@@ -1900,7 +1955,7 @@ window.mealTileHTML=function(c,force){
 comboHTML=function(c){return "<div class='tgrid mealgrid'>"+mealTileHTML(c)+"</div>"};
 renderMeals=function(){var C=buildMeals(),r=$("results");
   if(!C.length){r.innerHTML="<div class='card empty'>No full meal fits yet — add more ingredients, a longer time, or switch to single dishes.</div>";return}
-  var G=[["Meals you can cook right now","Everything is at home",C.filter(function(c){return !c.miss.length})],["Almost there","Just 1–2 items to order",C.filter(function(c){return c.miss.length&&c.miss.length<=2})],["Needs a bigger shop","3 or more items missing",C.filter(function(c){return c.miss.length>2}).slice(0,3)]],h="";
+  var G=[["Meals you can cook right now","Everything is at home",C.filter(function(c){return !c.miss.length})],["Almost there","Just 1–2 items to order",C.filter(function(c){return c.miss.length&&c.miss.length<=2})],["Needs a bigger shop","3 or more items missing",C.filter(function(c){return c.miss.length>2})]],h="";
   G.forEach(function(s){if(s[2].length)h+="<div class='sec'><h2>"+s[0]+"</h2><small>"+s[1]+" · "+s[2].length+"</small></div><div class='tgrid mealgrid'>"+s[2].map(function(c){return mealTileHTML(c)}).join("")+"</div>"});
   r.innerHTML=h;renderPick()};
 renderPickMeal=function(el){if(!lastMeal){el.innerHTML="";return}
@@ -1909,6 +1964,18 @@ renderPickMeal=function(el){if(!lastMeal){el.innerHTML="";return}
 document.addEventListener("toggle",function(e){var d=e.target;if(d&&d.classList&&d.classList.contains("mtile")){var k=decodeURIComponent(d.getAttribute("data-mk")||"");if(d.open)MOPEN[k]=1;else delete MOPEN[k]}},true);
 // The first render happened before these tile overrides were installed.
 // Refresh it now so a newly opened page displays meal tiles immediately.
+// Category suggestions intentionally render the complete filtered result set.
+renderBrowse=function(r){var L=score();r.innerHTML="<div class='card' style='display:flex;gap:10px;align-items:center;justify-content:space-between'><span class='sub'>Pick ingredients to see what you can cook right now</span><button class='btn sm primary' data-view='pantry'>Pick</button></div><div class='sec'><h2>Browse recipes</h2><small>"+L.length+" dishes</small></div>"+(L.length?"<div class='tgrid'>"+L.map(tileHTML).join("")+"</div>":"<p class='empty'>Nothing here yet.</p>")};
+var renderSearchBeforeFullCategories=renderSearch;
+renderSearch=function(r,q){renderSearchBeforeFullCategories(r,q);var s=r.querySelector('.sec small');if(s)s.textContent='All matching dishes';};
+var renderResultsBeforeFullCategories=renderResults;
+renderResults=function(){
+  if(crs==="meal"||!Object.keys(have).length||($('rq')&&$('rq').value.trim())||hostel)return renderResultsBeforeFullCategories();
+  renderTop();var r=$("results"),all=score().filter(function(m){return m.h.length>0});
+  var groups=[["Cook right now","Everything is at home",all.filter(function(m){return m.x.length===0&&!isLong(m)})],["Almost there","Just 1–2 items to order",all.filter(function(m){return m.x.length>0&&m.x.length<=2&&!isLong(m)})],["Plan ahead","Needs a long soak",all.filter(function(m){return isLong(m)&&m.x.length<=2})],["Needs a bigger shop","3 or more items missing",all.filter(function(m){return m.x.length>2})]],h="";
+  groups.forEach(function(s){h+="<div class='sec'><h2>"+s[0]+"</h2><small>"+s[1]+" · "+s[2].length+" dishes</small></div>"+(s[2].length?"<div class='tgrid'>"+s[2].map(tileHTML).join("")+"</div>":"<p class='empty' style='padding:10px'>Nothing here yet.</p>")});
+  r.innerHTML=h;renderPick();
+};
 if(MFREADY)renderResults();
 })();
 </script>
@@ -1956,6 +2023,62 @@ body[class*="sh-"] .nextbar{max-width:836px;margin-left:auto!important;margin-ri
 .rr-profile-drawer .btn{width:100%;margin-top:10px}
 @media(max-width:700px){.rr-top-account{top:calc(7px + env(safe-area-inset-top,0px));right:58px}.rr-top-account .nav-login{font-size:12px;padding:6px 8px}.nav #acctBtn{display:none}.nav #langBtn{margin-left:auto}.rr-profile-drawer{width:min(370px,calc(100vw - 18px))}}
 @media(min-width:701px){.rr-top-account{position:absolute;top:10px}.nav{position:relative}.nav #acctBtn{display:none}}
+.nav{position:fixed;top:0;left:0;right:0;width:100%;z-index:50;min-height:58px;background:#b8d8c8!important;border-bottom:1px solid rgba(15,61,40,.16)!important;box-shadow:0 3px 14px rgba(15,61,40,.08)}
+.nav .rr-top-account{position:static;top:auto;right:auto;display:flex;align-items:center;order:30;margin:0}
+.nav #langBtn{order:29;margin-left:auto;margin-right:0}
+.nav .btn.primary{order:28}
+.rr-top-account .nav-login{white-space:nowrap}
+body{padding-top:58px}
+#mhead,.mhead,#mstat{display:none!important}
+.topbar{border-bottom:0!important;padding-top:0}
+.topbar .trow button[data-view="plan"]{display:none!important}
+.trow .pkb{flex:1!important}
+.pk{display:block}
+.rail{width:100%;display:flex;flex-direction:row;gap:6px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.rail::-webkit-scrollbar{display:none}
+.rail button{flex:none;white-space:nowrap;padding:8px 12px;border:1px solid var(--line);background:var(--surface)}
+.rail button.on{border-color:var(--accent)}
+.pgrid{display:grid;grid-template-columns:none;grid-auto-flow:column;grid-template-rows:repeat(3,minmax(52px,auto));grid-auto-columns:128px;gap:8px;overflow-x:auto;overflow-y:hidden;padding:4px 2px 8px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.pgrid .chip{min-width:128px;padding:12px 8px}
+@media(min-width:701px){
+  body{padding-top:64px}
+  .nav{min-height:64px;padding-left:max(20px,calc(50% - 490px));padding-right:max(20px,calc(50% - 490px))}
+  .nav .links{margin-left:auto}
+  .nav #langBtn{margin-left:18px}
+  .nav .btn.primary{display:none}
+  .topbar{margin-top:0}
+}
+@media(max-width:700px){
+  .nav{min-height:52px}
+  body{padding-top:52px}
+  .nav .logo{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .nav #langBtn{margin-left:auto}
+  .nav .rr-top-account{flex:none}
+  .nav .nav-login{font-size:12px;padding:6px 8px}
+}
+#pantrySlides{margin:0 -12px 8px}
+#pantrySlides .slr{border-top:1px solid rgba(27,127,76,.12);padding:4px 0 2px}
+#pantrySlides .slh{padding:4px 12px 0}
+#pantrySlides .slh h3{font-size:15px;margin:0;color:#0f3d28}
+#pantrySlides .sls{padding:6px 12px 10px;gap:8px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+#pantrySlides .sl{flex:0 0 112px;min-height:72px;border:1px solid #cfe6da;border-radius:14px;color:#14231b;box-shadow:0 2px 8px rgba(15,61,40,.08);position:relative}
+#pantrySlides .sl b{display:block;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+#pantrySlides .sl i{font-size:26px;margin-top:4px}
+#pantrySlides .sl.on{border-color:#1b7f4c;box-shadow:0 0 0 2px rgba(27,127,76,.18),0 2px 8px rgba(15,61,40,.1)}
+#pantrySlides .sl u{position:absolute;top:5px;right:7px;color:#1b7f4c;text-decoration:none;font-weight:700}
+#pantrySlides .pantry-grid{grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:5px}
+#pantrySlides .pantry-grid .sl{height:64px;min-height:64px;padding:4px 2px 3px;justify-content:flex-start;align-items:center;overflow:hidden}
+#pantrySlides .pantry-grid .sl i{order:1;position:static;margin:0 0 2px;font-size:21px;line-height:1;flex:none}
+#pantrySlides .pantry-grid .sl b{order:2;display:-webkit-box;width:100%;max-width:100%;font-size:9px;line-height:1.12;text-align:center;white-space:normal;word-break:normal;overflow-wrap:normal;overflow:hidden;text-overflow:ellipsis;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+#pantrySlides .pantry-grid .sl u{order:3;top:auto;right:3px;bottom:3px;font-size:9px;line-height:1}
+#pantrySlides .pantry-tabs .ft em{display:none!important}
+#pantrySlides .pantry-grid .sl.on{background:#c5e2d1!important;border:1.5px solid #78b994;box-shadow:0 0 0 1px rgba(27,127,76,.16)}
+#pantrySlides .pantry-grid .sl.on u{display:none!important}
+#slides .sl.on{background:#c5e2d1!important;border-color:#78b994!important;color:#14231b;box-shadow:0 0 0 1px rgba(27,127,76,.16),0 4px 12px rgba(15,61,40,.12)}
+#slides .sl.on u{display:none!important}
+#slides .sl.on b{max-width:92px}
+#slides .slr.sm .sl.on b{max-width:78px}
+.topbar .trow{display:none!important}
 </style>
 <script type="module" src="./auth.js"></script>
 </body>
