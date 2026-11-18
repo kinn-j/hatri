@@ -787,7 +787,7 @@ function soakTxt(m){var s=m.s,t=s[0];return "Soak "+s[1]+" for "+(t>=360?Math.ro
 function card(m){
   var pct=Math.round(m.h.length/m.tot*100),all=m.x.every(function(i){return cart[i]});
   var ready=m.p+m.c+(m.s&&!isLong(m)&&!m.ov?m.s[0]:0),c=CCOL[m.cu]||CCOL.Everyday;
-  var sl=pslug(m.n),im=IMG[sl];var tile=im?"<div class='tile photo' style='background-image:url(/_blob/"+im+")'></div>":"<div class='tile' style='background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.55),transparent 55%),linear-gradient(135deg,"+c[0]+","+c[1]+")'>"+emo(m.n)+"</div>";
+  var sl=pslug(m.n),im=IMG[sl];var tile=im?"<div class='tile photo' style='background-image:url("+photoSrc(im)+")'></div>":"<div class='tile' style='background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.55),transparent 55%),linear-gradient(135deg,"+c[0]+","+c[1]+")'>"+emo(m.n)+"</div>";
   var link="<a href='https://www.google.com/search?tbm=isch&q="+encodeURIComponent(m.n+" recipe")+"' target='_blank' rel='noopener'>📷 photos</a>";
   return "<div class='meal'><div class='mh'><div style='display:flex;gap:10px;min-width:0'>"+tile+"<div><b>"+m.n+"</b>"+(m.g?" <span class='chip miss' style='padding:1px 8px;font-size:11.5px'>★ Local gem</span>":"")+"<div class='meta'><span class='dot "+(m.v?"veg":"nv")+"'></span>"+m.cu+" · "+({Light:"🪶 Light",Medium:"⚖️ Medium",Heavy:"🔥 Heavy"})[m.w]+" · Prep "+m.p+" min · "+(m.c?"Cook "+m.c+" min":"No cooking")+" · Ready in ~"+ready+" min"+(m.s&&!isLong(m)&&!m.ov?" incl. soak":"")+(m.ov?" · soak while you chop":"")+(m.e?" · Elaborate":"")+(m.f?" · 🎉 "+m.f:"")+(ptag(m)?" · "+ptag(m):"")+" · "+link+(UPL?" · <button class='x' data-up='"+sl+"' style='font-size:12px;color:var(--accent)'>📷 "+(im?"change":"add")+" photo</button>":"")+"</div></div></div>"+
    (m.x.length?"<button class='btn sm"+(all?"":" primary")+"' data-add='"+m.n+"'>"+(all?"Added ✓":"Add "+m.x.length+" to order")+"</button>":"<span class='chip have'>Ready to cook</span>")+"</div>"+
@@ -868,6 +868,16 @@ document.addEventListener("click",function(e){
 $("q").addEventListener("input",renderIngs);
 $("basics").addEventListener("change",function(){toast(this.checked?"Assuming oil, salt & masalas are at home":"Basics not assumed (demo)")});
 var IMG={},UPL=false,db=null,assets=null,upSlug=null;
+// Published sites use checked-in photos; Claude artifacts keep their blob URLs.
+function photoSrc(id){return id.indexOf("images/")===0?id:"/_blob/"+id}
+(function loadPublishedPhotos(){
+  if(window.claude&&claude.use)return;
+  fetch("images/photos.json").then(function(r){if(!r.ok)throw Error("Photo index unavailable");return r.json()}).then(function(files){
+    Object.keys(files).forEach(function(slug){var name=files[slug];
+      if(typeof name==="string"&&/^[a-z0-9][a-z0-9._-]*\.(webp|png|jpe?g|avif)$/i.test(name))IMG[slug]="images/"+encodeURIComponent(name)});
+    if(MFREADY){renderResults();renderPick()}
+  }).catch(function(e){console.warn("Recipe photos could not be loaded",e)});
+})();
 function slug(n){return n.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
 function pslug(n){return slug(n).replace(/^air-fryer-/,"")}
 $("nDish").textContent=MEALS.length;
@@ -967,7 +977,7 @@ function gen(m){
 function nmx(i){return LANG==="hi"?(HI[NAME[i]]||NAME[i]):NAME[i]}
 function rateRow(m){var sl=slug(m.n),my=MY[sl]||{},r=my.rating||0,ph=my.photos||[];
  if(!ME)return "<p class='note'>Sign in to rate this recipe and save photos of your creation.</p>";
- return "<div class='rate'><b>Your rating:</b> "+[1,2,3,4,5].map(function(n){return "<button class='star"+(n<=r?" on":"")+"' data-rate='"+sl+"|"+n+"' aria-label='"+n+"'>★</button>"}).join("")+"</div><div class='mine'>"+ph.map(function(id){return "<img src='/_blob/"+id+"' alt=''>"}).join("")+(asx?"<button class='btn sm' data-cp='"+sl+"'>📸 Add your photo</button>":"")+"</div>"}
+ return "<div class='rate'><b>Your rating:</b> "+[1,2,3,4,5].map(function(n){return "<button class='star"+(n<=r?" on":"")+"' data-rate='"+sl+"|"+n+"' aria-label='"+n+"'>★</button>"}).join("")+"</div><div class='mine'>"+ph.map(function(id){return "<img src='"+photoSrc(id)+"' alt=''>"}).join("")+(asx?"<button class='btn sm' data-cp='"+sl+"'>📸 Add your photo</button>":"")+"</div>"}
 function recipePanel(m){
  var sl=slug(m.n),req=m.ing.filter(function(r){return r.slice(-1)!=="?"}).map(nmx),opt=m.ing.filter(function(r){return r.slice(-1)==="?"}).map(function(r){return nmx(r.slice(0,-1))});
  var st=STEPS[m.n]?STEPS[m.n][LANG]:gen(m);var nost=!st.length;
@@ -977,7 +987,7 @@ function renderKitchen(){var k=$("mykit");if(!k)return;
  var ids=Object.keys(MY).filter(function(x){return MY[x].rating||(MY[x].photos||[]).length});
  if(!ids.length){k.innerHTML="<p class='sub'>Nothing saved yet — rate a recipe or add a photo of something you cooked.</p>";return}
  k.innerHTML="<div class='kgrid'>"+ids.map(function(sl){var e=MY[sl],r=MEALS.filter(function(m){return slug(m[0])===sl})[0],nme=r?r[0]:sl,im=(e.photos||[]).slice(-1)[0];
-  return "<div class='kc'>"+(im?"<img src='/_blob/"+im+"' alt=''>":"<div class='tile' style='width:100%;height:110px'>"+emo(nme)+"</div>")+"<b>"+nme+"</b><div>"+"★★★★★".slice(0,e.rating||0)+"</div></div>"}).join("")+"</div>"}
+  return "<div class='kc'>"+(im?"<img src='"+photoSrc(im)+"' alt=''>":"<div class='tile' style='width:100%;height:110px'>"+emo(nme)+"</div>")+"<b>"+nme+"</b><div>"+"★★★★★".slice(0,e.rating||0)+"</div></div>"}).join("")+"</div>"}
 async function saveMy(sl,patch){var o=Object.assign({},MY[sl]||{},patch,{at:Date.now()});await dbx.doc("data/users/"+ME+"/d-"+sl).set(o);MY[sl]=o;renderResults();renderPick();renderKitchen()}
 function unlockCounts(){var c={};if(Object.keys(have).length)score().forEach(function(m){if(!isLong(m)&&m.h.length>0&&m.x.length===1)c[m.x[0]]=(c[m.x[0]]||0)+1});return c}
 function renderQuick(){var q=$("quick");if(!q)return;var c=unlockCounts(),ids=Object.keys(c).sort(function(a,b){return c[b]-c[a]}).slice(0,6),h;
@@ -1488,8 +1498,8 @@ function renderIngsM(){var q=$("q").value.trim().toLowerCase(),vis=CATS.filter(f
   var rail=vis.map(function(c,ci){var n=c[1].filter(function(i){return have[i[0]]}).length;return "<button data-cat='"+ci+"' class='"+(!q&&ci===curCat?"on":"")+"'>"+c[0]+(c[2]&&c[2].indexOf(SEASON)>-1?" 🌱":"")+(n?" <b>"+n+"</b>":"")+"</button>"}).join("");
   $("ings").innerHTML="<div class='pk'><div class='rail'>"+rail+"</div><div class='pgrid'>"+(items.length?items.map(tl).join(""):"<p class='empty'>No match. Try another name.</p>")+"</div></div>";
   $("count").textContent="· "+Object.keys(have).length+" selected"}
-function thumb(m){var im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;return "<span class='th' style='background:"+(im?"url(/_blob/"+im+") center/cover":"linear-gradient(135deg,"+g[0]+","+g[1]+")")+"'>"+(im?"":emo(m.n))+"</span>"}
-function tileHTML(m){var ok=!m.x.length,im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday,bg=im?"url(/_blob/"+im+") center/cover":"linear-gradient(135deg,"+g[0]+","+g[1]+")";
+function thumb(m){var im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;return "<span class='th' style='background:"+(im?"url("+photoSrc(im)+") center/cover":"linear-gradient(135deg,"+g[0]+","+g[1]+")")+"'>"+(im?"":emo(m.n))+"</span>"}
+function tileHTML(m){var ok=!m.x.length,im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday,bg=im?"url("+photoSrc(im)+") center/cover":"linear-gradient(135deg,"+g[0]+","+g[1]+")";
  return "<details class='tile'><summary><div class='ti' style='background:"+bg+"'>"+(im?"":"<span class='em'>"+emo(m.n)+"</span>")+"<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+m.x.length+" to buy")+"</span><span class='vg "+(m.v?"v":"n")+"'></span><span class='tm'>⏱ "+(m.p+m.c)+" min</span></div><div class='tx'><b>"+dn(m.n)+"</b><small>"+(ok?"Everything is at home":"Need "+m.x.map(function(i){return NAME[i]}).join(", "))+"</small></div></summary>"+card(m)+"</details>"}
 document.body.dataset.v="recipes";setView("recipes");
 try{var standalone=(window.navigator&&navigator.standalone)||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
@@ -1782,7 +1792,7 @@ function photos(el){
   var first=el.querySelector(".slr");if(!first)return;first.classList.add("cr");
   Array.prototype.forEach.call(first.querySelectorAll(".sl[data-crs]"),function(b){
     var id=null;try{id=photoFor(b.getAttribute("data-crs"))}catch(e){}
-    if(id){b.classList.add("cp");b.style.setProperty("background","linear-gradient(180deg,rgba(0,0,0,0) 42%,rgba(0,0,0,.72) 100%),url(/_blob/"+id+") center/cover no-repeat","important")}
+    if(id){b.classList.add("cp");b.style.setProperty("background","linear-gradient(180deg,rgba(0,0,0,0) 42%,rgba(0,0,0,.72) 100%),url("+photoSrc(id)+") center/cover no-repeat","important")}
     else{b.classList.remove("cp");b.style.removeProperty("background")}})}
 function tray(el,sx){
   var rows=Array.prototype.slice.call(el.querySelectorAll(".slr")).slice(1);
@@ -1903,7 +1913,7 @@ buildMeals=function(){
 window.mealTileHTML=function(c,force){
   var items=c.items,n=Math.min(items.length,4),open=force||!!MOPEN[c.key];
   var ims=items.slice(0,4).map(function(m,i){var im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;
-    return "<span class='mc' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?"<img alt='' loading='lazy' src='/_blob/"+im+"'>":"<i>"+emo(m.n)+"</i>")+(i===3&&items.length>4?"<em>+"+(items.length-4)+"</em>":"")+"</span>"}).join("");
+    return "<span class='mc' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?"<img alt='' loading='lazy' src='"+photoSrc(im)+"'>":"<i>"+emo(m.n)+"</i>")+(i===3&&items.length>4?"<em>+"+(items.length-4)+"</em>":"")+"</span>"}).join("");
   var ok=!c.miss.length,done=c.miss.length&&c.miss.every(function(i){return cart[i]});
   return "<details class='mtile' data-mk='"+mkey(c)+"'"+(open?" open":"")+"><summary><div class='mos n"+n+"'>"+ims+
     "<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+c.miss.length+" to buy")+"</span><span class='tm'>⏱ ~"+c.t+" min</span></div>"+
@@ -1920,6 +1930,9 @@ renderPickMeal=function(el){if(!lastMeal){el.innerHTML="";return}
   var c=buildMeals().filter(function(x){return x.key===lastMeal})[0];if(!c){el.innerHTML="";return}
   el.innerHTML="<div class='card' style='border-color:var(--accent)'><div class='row' style='margin:0 0 8px;justify-content:space-between'><h2 style='margin:0'>🎲 Tonight’s meal</h2><div class='row' style='margin:0'><button class='btn sm primary' data-decide='1'>🎲 Another</button><button class='btn sm' data-closepick='1'>Close</button></div></div><div class='tgrid mealgrid'>"+mealTileHTML(c,true)+"</div></div>"};
 document.addEventListener("toggle",function(e){var d=e.target;if(d&&d.classList&&d.classList.contains("mtile")){var k=decodeURIComponent(d.getAttribute("data-mk")||"");if(d.open)MOPEN[k]=1;else delete MOPEN[k]}},true);
+// The first render happened before these tile overrides were installed.
+// Refresh it now so a newly opened page displays meal tiles immediately.
+if(MFREADY)renderResults();
 })();
 </script>
 <style>
