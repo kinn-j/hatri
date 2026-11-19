@@ -1660,12 +1660,12 @@ function renderSlides(){
   var keep=Array.prototype.map.call(el.querySelectorAll(".sls"),function(x){return x.scrollLeft});
   var strip=function(s){return s.replace(/^[^A-Za-z0-9]+/,"").trim()};
   var cat=CRS.map(function(o){var p=o[1].split(" "),e=p.length>1&&o[0]!=="all";return slTile("data-crs='"+o[0]+"'",e?p[0]:"📋",e?p.slice(1).join(" "):o[1],catCount(o[0])+" dishes",!!sel[o[0]],PAL.cat)}).join("");
-  var tm=TB.map(function(o){return slTile("data-sf='t|"+o[0]+"'",EMO_T[o[0]]||"⏱️",o[1],"",restr(TS,tIds())&&!!TS[o[0]],PAL.tm)}).join("");
+  var tm=TB.map(function(o){return slTile("data-sf='t|"+o[0]+"'",EMO_T[o[0]]||"⏱️",o[1],"",!!TS[o[0]],PAL.tm)}).join("");
   var oc=OB.map(function(o){return slTile("data-sf='o|"+o[0]+"'",EMO_O[o[0]]||"🍽️",o[1],"",restr(OS,oIds())&&!!OS[o[0]],PAL.oc)}).join("");
-  var hv=HB.map(function(o){var p=o[1].split(" ");return slTile("data-sf='h|"+o[0]+"'",p[0],strip(o[1]),"",restr(HS,hIds())&&!!HS[o[0]],PAL.hv)}).join("");
+  var hv=HB.map(function(o){var p=o[1].split(" ");return slTile("data-sf='h|"+o[0]+"'",p[0],strip(o[1]),"",!!HS[o[0]],PAL.hv)}).join("");
   var rg=rIds().map(function(c){return slTile("data-sf='r|"+c+"'",c===INTL?"🌍":(EMO_R[c]||"🍽️"),c,"",restr(RS,rIds())&&!!RS[c],PAL.rg)}).join("");
   var mo=slTile("data-diet='v'","🥦","Veg","",!nonveg,PAL.hv)+slTile("data-diet='nv'","🍗","Non-veg","",!!nonveg,PAL.oc)+slTile("data-proxy='hostelBtn'","🎒","Hostel mode","",!!hostel,PAL.mo)+slTile("data-gem='1'","★","Local gems","",!!gemOnly,PAL.rg)+slTile("data-elab='1'","👩‍🍳","Elaborate","",!!elab,PAL.cat);
-  el.innerHTML=slRow("What do you want to make?",cat)+slRow("Time I have",tm,slClr("t",TS,tIds()))+slRow("Occasion",oc,slClr("o",OS,oIds()))+slRow("Heaviness",hv,slClr("h",HS,hIds()))+slRow("Regions",rg,slClr("r",RS,rIds()))+slRow("Diet & more",mo);
+  el.innerHTML=slRow("What do you want to make?",cat)+slRow("Regions",rg,slClr("r",RS,rIds()))+slRow("Occasion",oc,slClr("o",OS,oIds()))+slRow("Time I have",tm,slClr("t",TS,tIds()))+slRow("Heaviness",hv,slClr("h",HS,hIds()))+slRow("Diet",mo);
   Array.prototype.forEach.call(el.querySelectorAll(".slr"),function(x,i){if(i>0)x.classList.add("sm")});
   Array.prototype.forEach.call(el.querySelectorAll(".sls"),function(x,i){x.scrollLeft=keep[i]||0});
 }
@@ -1759,7 +1759,7 @@ function renderPantrySlides(){
   }).join("");
   tr.appendChild(tb);
   var c=cats[pantryTab],pn=document.createElement("div");pn.className="fpanel pantry-panel";
-  pn.innerHTML="<div class='fph'><h3>"+c[0]+"</h3><div class='pantry-head-actions'><div class='pantry-bulk' role='group' aria-label='Select pantry items'><button type='button' data-pantry-bulk='all'>Select all</button><button type='button' data-pantry-bulk='none'>Clear all</button></div><span class='sub'>"+c[1].filter(function(x){return !!have[x[0]]}).length+" selected</span></div></div>";
+  pn.innerHTML="<div class='fph'><h3>"+c[0]+" ("+c[1].filter(function(x){return !!have[x[0]]}).length+")</h3><div class='pantry-head-actions'><div class='pantry-bulk' role='group' aria-label='Select pantry items'><button type='button' data-pantry-bulk='all'>Select all</button><button type='button' data-pantry-bulk='none'>Clear all</button></div></div></div>";
   var g=document.createElement("div");g.className="fgrid pantry-grid";
   c[1].forEach(function(x){g.insertAdjacentHTML("beforeend",slTile("data-i='"+x[0]+"'",icoOf(x[0]),NAME[x[0]]||x[1],"",!!have[x[0]],PAL.cat))});
   pn.appendChild(g);tr.appendChild(pn);el.replaceChildren(tr);
@@ -1840,7 +1840,7 @@ body[class*="sh-"] [data-vs] .card>h2:first-child{background:#e6f4ee;color:#0f3d
 (function(){
 var PREF={meal:["chole-bhature","aloo-paratha"],Main:["aloo-gobi","bhindi-masala","chana-masala"],Bread:["aloo-paratha","ajwain-paratha"],Rice:["chana-biryani","bengali-khichuri"],Complete:["bisi-bele-bath","bajre-ki-khichdi"],Sweet:["besan-ladoo","badam-halwa","basundi"],Side:["adrak-chutney","aloo-raita"],Snack:["aloo-tikki","aloo-bonda"],Chaat:["aloo-tikki-chaat","bhel-chaat"],NoCook:["boiled-peanut-chaat","chana-chaat"],Pickle:["amla-pickle","apple-jam"],Baked:["banana-bread","chocolate-cake-eggless"],Drink:["badam-milk","carrot-juice"],all:["chole-bhature","aloo-paratha"]};
 var PREFNV={meal:["butter-chicken","chicken-curry"],Main:["chicken-curry","butter-chicken"],Rice:["chicken-biryani"],all:["butter-chicken"]};
-var TABS=[["⏱️","Time"],["🪔","Occasion"],["⚖️","Heaviness"],["🗺️","Regions"],["🥦","Diet"]];
+var TABS=[["🗺️","Regions"],["🪔","Occasion"],["⏱️","Time"],["⚖️","Heaviness"],["🥦","Diet"]];
 var FT=0,FOPEN=true;
 function photoFor(k){
   var L=((nonveg&&PREFNV[k])||[]).concat(PREF[k]||[]);
@@ -1864,7 +1864,7 @@ function tray(el,sx){
     return "<button class='ft"+(FOPEN&&i===FT?" on":"")+"' data-ft='"+i+"'><span class='fi'>"+t[0]+"</span><span class='fl'>"+t[1]+"</span>"+(dot?"<em></em>":"")+"</button>"}).join("");
   tr.appendChild(tb);
   if(FOPEN){
-    var row=rows[FT],pn=document.createElement("div");pn.className="fpanel";
+    var row=rows[FT],pn=document.createElement("div");pn.className="fpanel fpanel-"+FT;
     var h=document.createElement("div");h.className="fph";
     var hh=document.createElement("h3");hh.textContent=(row.querySelector("h3")||{}).textContent||"";h.appendChild(hh);
     var actions=row.querySelector(".slh .sl-actions"),clr=actions||row.querySelector(".slh button");if(clr)h.appendChild(clr);
@@ -2079,6 +2079,61 @@ body{padding-top:58px}
 #slides .sl.on b{max-width:92px}
 #slides .slr.sm .sl.on b{max-width:78px}
 .topbar .trow{display:none!important}
+</style>
+<style>
+/* Keep the fixed header below the device time/status area and visually connected to search. */
+@media(max-width:700px){
+  .nav{
+    position:static;
+    min-height:calc(72px + env(safe-area-inset-top,0px));
+    padding-top:calc(28px + env(safe-area-inset-top,0px));
+  }
+  body{
+    padding-top:0;
+    background:#b8d8c8!important;
+  }
+  main#planner{padding-top:14px;background:#b8d8c8}
+  #planner [data-vs="recipes"] .topbar{
+    margin-top:14px;
+    margin-bottom:0;
+    padding-top:8px;
+    padding-bottom:0;
+    background:#b8d8c8!important;
+  }
+  #pantrySlides .pantry-grid{
+    grid-template-columns:none;
+    grid-template-rows:repeat(3,64px);
+    grid-auto-flow:column;
+    grid-auto-columns:68px;
+    height:232px;
+    max-height:232px;
+    padding-bottom:10px;
+    overflow-x:auto;
+    overflow-y:hidden;
+  }
+  #slides .fpanel-0 .fgrid{
+    grid-template-columns:none;
+    grid-template-rows:repeat(3,58px);
+    grid-auto-flow:column;
+    grid-auto-columns:76px;
+    height:206px;
+    max-height:206px;
+    padding-bottom:10px;
+    overflow-x:auto;
+    overflow-y:hidden;
+  }
+  .tgrid>.tile .ti{
+    background-size:cover!important;
+    background-position:center 42%!important;
+    background-repeat:no-repeat!important;
+  }
+  .mtile .mos .mc img{
+    object-fit:cover;
+    object-position:center 42%;
+    transform:scale(1.08);
+    transform-origin:center center;
+  }
+}
 </style>
 <script type="module" src="./auth.js"></script>
 </body>
