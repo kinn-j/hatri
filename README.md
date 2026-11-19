@@ -8,8 +8,8 @@ Static HTML/CSS/JavaScript website with an installable Progressive Web App (PWA)
 ## Included
 
 - `index.html` — latest Raman Rasoi app from Claude, adapted for independent website hosting and bundled photo paths.
-- `images/` — **582 unique, web-optimized food photos** in WebP format, built from previously created individual-dish photo archives.
-- `images/photos.json` — automatic dish-slug-to-photo mapping. Includes every image stored under `images/`.
+- `images/` — **793 food images** in WebP format, including archived photos and newer generated images.
+- `images/photos.json` — maps recipe slugs to image files. Recipes with matching dishes can share an image.
 - `images/IMAGE_INVENTORY.csv` — records original image name and source ZIP for auditing.
 - `icons/` — favicon and home-screen icons from original HTML.
 - `manifest.webmanifest` — installable-app configuration.
@@ -32,7 +32,7 @@ Run `python -m http.server 8000` from this folder and visit `http://localhost:80
 ## Known limitations
 
 - Claude cloud storage and account authentication are **not available** on the independent website. Local pantry and list settings persist per browser/device.
-- Only the photos available in the archived ZIP batches are included. Photos uploaded *only inside Claude cloud storage* cannot be exported from an HTML file.
+- Photos stored only in Claude cloud storage require a separate export.
 - Photos have been optimized to WebP (not pixel-identical originals); original JPEGs remain in the existing archive ZIPs in your ChatGPT Library.
 - A PWA is not a signed Android `.apk` or iOS `.ipa` package.
 - GitHub Pages repositories are public. Do not upload credentials, personal data, or confidential records.
@@ -48,7 +48,7 @@ Run `python -m http.server 8000` from this folder and visit `http://localhost:80
 
 ## Matching coverage
 
-- Photo matching was audited for the previous Claude version. The new HTML may have added or renamed recipes, so exact coverage may differ.
-- 60 included photos currently have no matching recipe slug. They are kept for future menu expansion.
-- Check `images/MISSING_RECIPE_PHOTOS.csv` and `images/EXTRA_PHOTOS_NOT_CURRENTLY_USED.csv` for details.
+- All 750 distinct recipe names in `index.html` have an image.
+- `images/MISSING_RECIPE_PHOTOS.csv` contains zero missing recipes.
+- `images/EXTRA_PHOTOS_NOT_CURRENTLY_USED.csv` lists 59 image files that no current recipe uses.
 
