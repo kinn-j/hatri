@@ -239,6 +239,8 @@ html[lang="hi"] .en{display:none}html:not([lang="hi"]) .hi{display:none}
 .tgrid>.tile{border:0;border-radius:20px;box-shadow:0 6px 18px rgba(80,40,0,.12)}
 .tgrid>.tile .ti{height:136px;position:relative;font-size:0;display:block}
 .tile .ti .em{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:58px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.18))}
+.tile .ti>img,.tile.photo>img{display:block;width:100%;height:100%;object-fit:cover}
+.tile .ti>img{position:absolute;inset:0}
 .tile .ti .st,.tile .ti .tm{position:absolute;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.93);color:#2b2b2b}
 .tile .ti .st{left:8px;top:8px}.tile .ti .st.ok{color:#2b8a3e}.tile .ti .st.wn{color:#c2410c}
 .tile .ti .tm{right:8px;bottom:8px;background:rgba(0,0,0,.58);color:#fff}
@@ -335,15 +337,16 @@ details.dton{outline:3px solid var(--accent);outline-offset:-3px}
   <div class="rr-drawer-head"><h2 id="rr-profile-title">Your account</h2><button class="rr-drawer-close" type="button" data-rr-profile-close aria-label="Close account panel">×</button></div>
   <div id="rr-profile-content"></div>
 </aside>
+<script src="./vrat-recipes.js"></script>
 <script>
-var COURSEO={},HVO={},RGO={},NOELAB={};
+var COURSEO={},HVO={},RGO={},NOELAB={},VRAT_RECIPE_SOURCES={};
 var SEASON=(function(m){return m>=10||m<=1?"w":m>=2&&m<=5?"s":"m"})(new Date().getMonth());
 var CATS=[
 ["Daily vegetables",[["onion","Onion"],["tomato","Tomato"],["potato","Potato"],["capsicum","Capsicum"],["brinjal","Brinjal"],["okra","Bhindi"],["cabbage","Cabbage"],["carrot","Carrot"],["cucumber","Cucumber"],["lauki","Lauki (bottle gourd)"],["beans","French beans"],["mushroom","Mushroom"],["corn","Sweet corn"],["arbi","Arbi (colocasia)"]]],
 ["Seasonal — winter",[["cauliflower","Cauliflower"],["peas","Green peas"],["spinach","Spinach (palak)"],["sarson","Sarson (mustard greens)"],["methi","Methi leaves"],["mooli","Mooli (radish)"],["beetroot","Beetroot"],["sweetpotato","Sweet potato (shakarkandi)"],["suran","Suran (elephant yam)"]],"w"],
 ["Seasonal — summer & monsoon",[["pumpkin","Pumpkin"],["drumstick","Drumstick"],["rawbanana","Raw banana"],["karela","Karela (bitter gourd)"],["tinda","Tinda"],["turai","Turai (ridge gourd)"]],"sm"],
 ["Herbs, chillies & aromatics",[["coriander","Coriander leaves"],["mint","Mint (pudina)"],["currylv","Curry leaves"],["gchilli","Green chilli"],["bigchilli","Bade hari mirch (large green chilli)"],["ginger","Ginger"],["garlic","Garlic"]]],
-["Fruits & coconut",[["lemon","Lemon"],["coconut","Coconut"],["rawmango","Raw mango (kairi)"],["mango","Mango (ripe)"],["banana","Banana"],["apple","Apple"],["amla","Amla"]]],
+["Fruits & coconut",[["lemon","Lemon"],["coconut","Coconut"],["rawmango","Raw mango (kairi)"],["mango","Mango (ripe)"],["banana","Banana"],["apple","Apple"],["amla","Amla"],["papaya","Papaya"]]],
 ["Dairy",[["paneer","Paneer"],["curd","Curd"],["butter","Butter"],["ghee","Ghee"],["milk","Milk"]]],
 ["Non-veg — eggs, meat & fish",[["eggs","Eggs"],["chicken","Chicken"],["fish","Fish (rohu / pomfret)"],["mutton","Mutton"],["prawn","Prawns"]],null,1],
 ["Grains & flours",[["rice","Rice"],["atta","Atta"],["besan","Besan"],["suji","Suji"],["poha","Poha"],["bread","Bread"],["bajra","Bajra flour"],["makki","Makki atta"],["batter","Idli/dosa batter"],["sev","Sev / bhujia"],["kuttu","Kuttu flour"],["singhara","Singhara flour"],["samak","Samak rice (vrat chawal)"],["makhana","Makhana"],["vermicelli","Seviyan"],["dryfruit","Dry fruits (kaju/badam/kishmish)"]]],
@@ -484,7 +487,7 @@ var MEALS=[
 ["Badam Milk",1,5,10,0,["milk","dryfruit"],"Everyday",0,["Daily"],""],
 ["Banana Shake",1,3,0,0,["banana","milk"],"Everyday",0,["Daily"],""],
 ["Mango Lassi",1,3,0,0,["mango","curd"],"Punjabi",0,["Daily"],"Summer cooler"],
-["Sattu Sharbat",1,3,0,0,["sattu","lemon?","mint?"],"North Indian",1,["Daily","Vrat"],"Summer cooler"],
+["Sattu Sharbat",1,3,0,0,["sattu","lemon?","mint?"],"North Indian",1,["Daily"],"Summer cooler"],
 ["Sweet Corn Soup",1,5,15,0,["corn","carrot?"],"Indo-Chinese",0,["Daily"],""],
 ["Aloo Matar Malai Curry",1,15,30,0,["potato","peas","onion","tomato","milk?","dryfruit?"],"North Indian",0,["Daily"],""],
 ["Matar Makhani",1,15,25,0,["peas","butter","tomato","onion","dryfruit?","milk?"],"North Indian",0,["Daily"],""],
@@ -764,39 +767,58 @@ function renderCuis(){
   "<h3>Heaviness</h3><div class='chips'>"+[["All","All"],["Light","🪶 Light"],["Medium","⚖️ Medium"],["Heavy","🔥 Heavy"]].map(function(o){return chip(hv===o[0],"data-hv",o[0],o[1])}).join("")+"</div><h3>Regions ("+n+" of "+CUIS.length+" on)</h3><div class='chips'>"+CUIS.map(function(c){return chip(cuis[c],"data-cu",c,c)}).join("")+"</div>"+
   "<div class='chips' style='margin-top:10px'><button class='chip"+(gemOnly?" on":"")+"' data-gem='1'>★ Local gems only</button>"+chip(elab,"data-elab","1","Elaborate dishes")+"<button class='btn sm' data-cuall='1'>All regions</button><button class='btn sm' data-cuall='0'>None</button></div>";
 }
-function renderPick(){
-  var el=$("pick");if(crs==="meal"){renderPickMeal(el);return}if(!lastPick){el.innerHTML="";return}
-  var m=score().filter(function(x){return x.n===lastPick})[0];
+function renderPick(meals){
+  var el=$("pick");if(crs==="meal"&&lastMeal){renderPickMeal(el,meals);return}if(!lastPick){el.innerHTML="";return}
+  var m=suggestionDishes().find(function(x){return x.n===lastPick});
   if(!m){el.innerHTML="";return}
   var any=Object.keys(have).length>0;
-  var why=(any?(m.x.length===0?"Everything is already at home":"Only "+m.x.length+" item"+(m.x.length>1?"s":"")+" to order"):"Picked from your filters — tick your pantry for a better match")+" · "+(m.p+m.c)+" min"+(tmax?" (fits your "+(tmax>=60?tmax/60+" hr":tmax+" min")+")":"");
+  var why=(any?(m.x.length===0?"Everything is already at home":m.x.length+" item"+(m.x.length>1?"s":"")+" to order"):"Picked from your filters — tick your pantry for a better match")+" · "+(m.p+m.c)+" min"+(tmax?" (fits your "+(tmax>=60?tmax/60+" hr":tmax+" min")+")":"");
   el.innerHTML="<div class='card' style='border-color:var(--accent)'><div class='row' style='margin:0 0 8px;justify-content:space-between'><div><h2 style='margin:0'>🎲 Tonight’s pick</h2><div class='sub'>"+why+"</div></div><div class='row' style='margin:0'><button class='btn sm primary' data-decide='1'>🎲 Another</button><button class='btn sm' data-closepick='1'>Close</button></div></div>"+card(m)+"</div>";
 }
 function decide(){
-  if(crs==="meal"){decideMeal();return}
-  var all=score(),any=Object.keys(have).length>0;
-  var L=any?all.filter(function(m){return m.h.length>0&&m.x.length<=2&&!isLong(m)}):all.filter(function(m){return !isLong(m)});
-  if(!L.length&&any)L=all.filter(function(m){return m.h.length>0&&!isLong(m)});
-  if(!L.length){toast("Nothing fits — try a longer time or more regions");return}
-  var top=any?L.slice(0,6):L,pool=top.filter(function(m){return m.n!==lastPick});
-  if(!pool.length)pool=top;
-  lastPick=pool[Math.floor(Math.random()*pool.length)].n;
+  if(crs==="meal"&&decideMeal())return;
+  var options=suggestionDishes().filter(function(m){return !isLong(m)});
+  if(!options.length){toast("Nothing fits — try a longer time or more regions");return}
+  lastMeal=null;
+  lastPick=pickSuggestion(options,lastPick,function(m){return m.n},function(m){return m.x.length}).n;
   renderPick();$("pick").scrollIntoView({behavior:"smooth",block:"start"});
 }
-function score(){
-  var mt=tmax;
-  return MEALS.filter(function(m){return (nonveg?!m[1]:m[1])&&(crs==="meal"||timeOK(m))&&regOK(m)&&occOK(m)&&(!gemOnly||m[7])&&hvOK(m)&&(crs==="all"||crs==="meal"||inSel(m))&&(!hostel||hostOK(m[0]))&&(elab||hostel||HOSTEL[m[0]]||NOELAB[m[0]]||!(effP(m)+m[3]>=70||m[5].length>=8))}).map(function(m){
+// Every result has a chance, with fewer missing ingredients still favored.
+function pickSuggestion(options,previous,key,missing){
+  var alternatives=options.filter(function(item){return key(item)!==previous});
+  var pool=alternatives.length?alternatives:options;
+  var weights=pool.map(function(item){return 1/Math.pow(1+missing(item),2)});
+  var draw=Math.random()*weights.reduce(function(total,weight){return total+weight},0);
+  for(var i=0;i<pool.length-1;i++){
+    draw-=weights[i];
+    if(draw<0)return pool[i];
+  }
+  return pool[pool.length-1];
+}
+function matchesFilters(m,wholeMeal){
+  return (nonveg?!m[1]:m[1])&&(wholeMeal||timeOK(m))&&regOK(m)&&occOK(m)&&
+    (!gemOnly||m[7])&&hvOK(m,wholeMeal)&&(!hostel||hostOK(m[0]))&&
+    (elab||hostel||HOSTEL[m[0]]||NOELAB[m[0]]||!(effP(m)+m[3]>=70||m[5].length>=8));
+}
+function score(singleDishes){
+  var wholeMeal=crs==="meal"&&!singleDishes;
+  return MEALS.filter(function(m){return matchesFilters(m,wholeMeal)&&(crs==="all"||crs==="meal"||inSel(m))}).map(function(m){
     var h=[],x=[],oh=[],ox=[];
     m[5].forEach(function(r){var o=r.slice(-1)==="?",i=o?r.slice(0,-1):r;(o?(have[i]?oh:ox):(have[i]?h:x)).push(i)});
-    return {n:m[0],v:m[1],p:effP(m),c:m[3],s:m[4],h:h,x:x,oh:oh,ox:ox,tot:h.length+x.length,cu:m[6],g:m[7],w:wt(m[0],m[6]),ing:m[5],ov:!!(m[4]&&m[4][0]<=30),oc:m[8],f:m[9],e:effP(m)+m[3]>=70||m[5].length>=8};
+    return {recipe:m,n:m[0],v:m[1],p:effP(m),c:m[3],s:m[4],h:h,x:x,oh:oh,ox:ox,tot:h.length+x.length,cu:m[6],g:m[7],w:wt(m[0],m[6]),ing:m[5],ov:!!(m[4]&&m[4][0]<=30),oc:m[8],f:m[9],e:effP(m)+m[3]>=70||m[5].length>=8};
   }).sort(function(a,b){return a.x.length-b.x.length||(b.h.length/b.tot)-(a.h.length/a.tot)||fit(b)-fit(a)||hsh(a.n)-hsh(b.n)});
+}
+function suggestionDishes(){
+  var dishes=score(true);
+  if(crs!=="meal"||vratOnly())return dishes;
+  return dishes.filter(function(dish){return wholeMealDish(dish.n)});
 }
 function isLong(m){return m.s&&m.s[0]>=240}
 function soakTxt(m){var s=m.s,t=s[0];return "Soak "+s[1]+" for "+(t>=360?Math.round(t/60)+" h (overnight) — start the night before":t>=120?Math.round(t/60)+" h — start early in the day":t<=30?t+" min — start it first, then chop while it soaks":t+" min before cooking")}
 function card(m){
   var pct=Math.round(m.h.length/m.tot*100),all=m.x.every(function(i){return cart[i]});
   var ready=m.p+m.c+(m.s&&!isLong(m)&&!m.ov?m.s[0]:0),c=CCOL[m.cu]||CCOL.Everyday;
-  var sl=pslug(m.n),im=IMG[sl];var tile=im?"<div class='tile photo' style='background-image:url("+photoSrc(im)+")'></div>":"<div class='tile' style='background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.55),transparent 55%),linear-gradient(135deg,"+c[0]+","+c[1]+")'>"+emo(m.n)+"</div>";
+  var sl=pslug(m.n),im=IMG[sl];var tile=im?"<div class='tile photo'>"+recipeImage(im)+"</div>":"<div class='tile' style='background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.55),transparent 55%),linear-gradient(135deg,"+c[0]+","+c[1]+")'>"+emo(m.n)+"</div>";
   var link="<a href='https://www.google.com/search?tbm=isch&q="+encodeURIComponent(m.n+" recipe")+"' target='_blank' rel='noopener'>📷 photos</a>";
   return "<div class='meal'><div class='mh'><div style='display:flex;gap:10px;min-width:0'>"+tile+"<div><b>"+m.n+"</b>"+(m.g?" <span class='chip miss' style='padding:1px 8px;font-size:11.5px'>★ Local gem</span>":"")+"<div class='meta'><span class='dot "+(m.v?"veg":"nv")+"'></span>"+m.cu+" · "+({Light:"🪶 Light",Medium:"⚖️ Medium",Heavy:"🔥 Heavy"})[m.w]+" · Prep "+m.p+" min · "+(m.c?"Cook "+m.c+" min":"No cooking")+" · Ready in ~"+ready+" min"+(m.s&&!isLong(m)&&!m.ov?" incl. soak":"")+(m.ov?" · soak while you chop":"")+(m.e?" · Elaborate":"")+(m.f?" · 🎉 "+m.f:"")+(ptag(m)?" · "+ptag(m):"")+" · "+link+(UPL?" · <button class='x' data-up='"+sl+"' style='font-size:12px;color:var(--accent)'>📷 "+(im?"change":"add")+" photo</button>":"")+"</div></div></div>"+
    (m.x.length?"<button class='btn sm"+(all?"":" primary")+"' data-add='"+m.n+"'>"+(all?"Added ✓":"Add "+m.x.length+" to order")+"</button>":"<span class='chip have'>Ready to cook</span>")+"</div>"+
@@ -808,24 +830,56 @@ function card(m){
    m.ox.map(function(i){return "<button class='chip opt' data-oi='"+i+"'>"+(cart[i]?"✓ ":"+ ")+NAME[i]+" · optional</button>"}).join("")+"</div></div>";
 }
 function renderSearch(r,q){$("pick").innerHTML="";var tk=q.split(/\s+/).filter(Boolean);
-  var L=MEALS.filter(function(m){return nonveg?!m[1]:m[1]}).map(function(m){var hay=(m[0]+" "+m[6]+" "+m[5].map(function(i){return NAME[i.replace("?","")]||""}).join(" ")).toLowerCase(),nm=m[0].toLowerCase();if(!tk.every(function(t){return hay.indexOf(t)>-1}))return null;var h=[],x=[],oh=[],ox=[];m[5].forEach(function(g){var o=g.slice(-1)==="?",i=o?g.slice(0,-1):g;(o?(have[i]?oh:ox):(have[i]?h:x)).push(i)});return {n:m[0],v:m[1],p:effP(m),c:m[3],s:m[4],h:h,x:x,oh:oh,ox:ox,tot:h.length+x.length,cu:m[6],g:m[7],w:wt(m[0],m[6]),ing:m[5],ov:!!(m[4]&&m[4][0]<=30),oc:m[8],f:m[9],e:effP(m)+m[3]>=70||m[5].length>=8,nm:tk.every(function(t){return nm.indexOf(t)>-1})?1:0}}).filter(Boolean);
+  var vratMatches=vratOnly()?new Set(score(true).map(function(m){return m.n})):null;
+  var L=MEALS.filter(function(m){return (nonveg?!m[1]:m[1])&&(!vratMatches||vratMatches.has(m[0]))}).map(function(m){
+    var nm=(m[0]+" "+(HI[m[0]]||"")).toLowerCase();
+    var vrat=m[8].indexOf("Vrat")>-1?" vrat upvas upwas farali falahari fasting व्रत उपवास फलाहार":"";
+    var ingredients=m[5].map(function(i){var n=NAME[i.replace("?","")]||"";return n+" "+(HI[n]||"")}).join(" ");
+    var hay=(nm+" "+m[6]+" "+m[9]+vrat+" "+ingredients).toLowerCase();
+    if(!tk.every(function(t){return hay.indexOf(t)>-1}))return null;
+    var h=[],x=[],oh=[],ox=[];m[5].forEach(function(g){var o=g.slice(-1)==="?",i=o?g.slice(0,-1):g;(o?(have[i]?oh:ox):(have[i]?h:x)).push(i)});
+    return {n:m[0],v:m[1],p:effP(m),c:m[3],s:m[4],h:h,x:x,oh:oh,ox:ox,tot:h.length+x.length,cu:m[6],g:m[7],w:wt(m[0],m[6]),ing:m[5],ov:!!(m[4]&&m[4][0]<=30),oc:m[8],f:m[9],e:effP(m)+m[3]>=70||m[5].length>=8,nm:tk.every(function(t){return nm.indexOf(t)>-1})?1:0}
+  }).filter(Boolean);
   L.sort(function(a,b){return (b.nm-a.nm)||(a.x.length-b.x.length)});var tot=L.length;
-  r.innerHTML="<div class='sec'><h2>Search results</h2><small>"+tot+" found"+(tot>60?" · showing 60":"")+"</small></div>"+(L.length?("<div class='tgrid'>"+L.map(tileHTML).join("")+"</div>"):"<div class='card empty'>No recipe found. Try another name.</div>")}
+  r.innerHTML="<div class='sec'><h2>Search results</h2><small>"+tot+" found</small></div>"+(L.length?("<div class='tgrid'>"+L.map(tileHTML).join("")+"</div>"):"<div class='card empty'>No recipe found. Try another name.</div>")}
 function renderResults(){
-  renderTop();var r=$("results");var rq=($("rq")&&$("rq").value||"").trim().toLowerCase();if(rq){renderSearch(r,rq);return}if(!Object.keys(have).length&&crs!=="meal"){$("pick").innerHTML="";renderBrowse(r);return}
-  if(hostel&&!["K","R","I","T"].some(function(a){return app[a]})){r.innerHTML="<div class='card empty'>Pick at least one appliance above.</div>";return}
-  if(!Object.keys(have).length){r.innerHTML="<div class='card empty'><b>What’s in your kitchen?</b><br>Pick a few ingredients to see what you can cook.<br><button class='btn primary' data-view='pantry' style='margin-top:10px'>Pick ingredients</button></div>";return}
-  if(crs==="meal"){renderMeals();return}
-  var all=score().filter(function(m){return m.h.length>0});
-  var g=[["Cook right now","Everything is at home",all.filter(function(m){return m.x.length===0&&!isLong(m)})],
-         ["Almost there","Just 1–2 items to order",all.filter(function(m){return m.x.length>0&&m.x.length<=2&&!isLong(m)})],
-         ["Plan ahead","Needs a long soak — start early",all.filter(function(m){return isLong(m)&&m.x.length<=2})],
-         ["Needs a bigger shop","3 or more items missing",all.filter(function(m){return m.x.length>2}).slice(0,6)]];
-  var h="";g.forEach(function(s){
-    h+="<div class='sec'><h2>"+s[0]+"</h2><small>"+s[1]+" · "+s[2].length+"</small></div>"+
-    (s[2].length?("<div class='tgrid'>"+s[2].map(tileHTML).join("")+"</div>"):"<p class='empty' style='padding:10px'>Nothing here yet — add more ingredients or relax a filter.</p>");
+  renderTop();
+  var r=$("results"),rq=($("rq")&&$("rq").value||"").trim().toLowerCase();
+  if(rq){renderSearch(r,rq);return}
+  var vrat=vratOnly(),dishes=suggestionDishes(),meals=crs==="meal"?buildMeals():[];
+  var title=vrat?T("Vrat dishes","व्रत के व्यंजन"):T("Browse recipes","रेसिपी देखें");
+  if(crs==="meal"&&!vrat){
+    var paired=new Set();
+    meals.forEach(function(meal){meal.items.forEach(function(dish){paired.add(dish.recipe)})});
+    dishes=dishes.filter(function(dish){return !paired.has(dish.recipe)});
+    title=meals.length?T("More meal dishes","खाने के और व्यंजन"):T("Meal dishes","खाने के व्यंजन");
+  }
+  var html="";
+  if(!Object.keys(have).length)html="<div class='card' style='display:flex;gap:10px;align-items:center;justify-content:space-between'><span class='sub'>Pick ingredients to see what you can cook right now</span><button class='btn sm primary' data-view='pantry'>Pick ingredients</button></div>";
+  html+=suggestionGroups(meals,true);
+  if(dishes.length)html+="<div class='sec'><h2>"+title+"</h2><small>"+dishes.length+" "+T("dishes","व्यंजन")+"</small></div>"+suggestionGroups(dishes,false);
+  else if(!meals.length)html+="<p class='card empty'>"+(vrat?T("No vrat dishes match these filters.","इन फ़िल्टर में कोई व्रत व्यंजन नहीं मिला।"):T("No dishes match these filters.","इन फ़िल्टर में कोई व्यंजन नहीं मिला।"))+"</p>";
+  r.innerHTML=html;renderPick(meals);
+}
+function suggestionGroups(items,meals){
+  var ready=[],nearby=[],soak=[],shopping=[];
+  items.forEach(function(item){
+    var missing=(meals?item.miss:item.x).length;
+    if(!meals&&isLong(item))soak.push(item);
+    else if(missing>2)shopping.push(item);
+    else if(missing)nearby.push(item);
+    else ready.push(item);
   });
-  r.innerHTML=h;renderPick();
+  var groups=[
+    [meals?"Meals you can cook right now":"Cook right now","Everything is at home",ready],
+    ["Almost there","Just 1–2 items to order",nearby],
+    ["Plan ahead","Needs a long soak",soak],
+    ["Needs a bigger shop","3 or more items missing",shopping]
+  ];
+  var tile=meals?mealTileHTML:tileHTML,grid=meals?"tgrid mealgrid":"tgrid";
+  return groups.filter(function(group){return group[2].length}).map(function(group){
+    return "<div class='sec'><h2>"+group[0]+"</h2><small>"+group[1]+" · "+group[2].length+"</small></div><div class='"+grid+"'>"+group[2].map(function(item){return tile(item)}).join("")+"</div>";
+  }).join("");
 }
 function renderCart(){
   var ids=Object.keys(cart);
@@ -879,6 +933,7 @@ $("basics").addEventListener("change",function(){toast(this.checked?"Assuming oi
 var IMG={},UPL=false,db=null,assets=null,upSlug=null;
 // Published sites use checked-in photos; Claude artifacts keep their blob URLs.
 function photoSrc(id){return id.indexOf("images/")===0?id:"/_blob/"+id}
+function recipeImage(id){return "<img alt='' loading='lazy' decoding='async' src='"+photoSrc(id)+"'>"}
 (function loadPublishedPhotos(){
   if(window.claude&&claude.use)return;
   fetch("images/photos.json").then(function(r){if(!r.ok)throw Error("Photo index unavailable");return r.json()}).then(function(files){
@@ -990,7 +1045,10 @@ function rateRow(m){var sl=slug(m.n),my=MY[sl]||{},r=my.rating||0,ph=my.photos||
 function recipePanel(m){
  var sl=slug(m.n),req=m.ing.filter(function(r){return r.slice(-1)!=="?"}).map(nmx),opt=m.ing.filter(function(r){return r.slice(-1)==="?"}).map(function(r){return nmx(r.slice(0,-1))});
  var st=STEPS[m.n]?STEPS[m.n][LANG]:gen(m);var nost=!st.length;
- return "<div class='row' style='margin:8px 0 0'><button class='btn sm primary' data-cook='"+encodeURIComponent(m.n)+"'>▶ Start cooking</button></div><details class='steps' data-sl='"+sl+"'"+(openR[sl]?" open":"")+"><summary>📖 Recipe</summary><p><b>You need:</b> "+req.join(", ")+(opt.length?" · Optional: "+opt.join(", "):"")+"</p><p class='note'>Pantry basics: oil, salt, turmeric, red chilli powder, jeera (assumed at home)</p>"+(nost?"<p class='note'>Step-by-step method coming soon for this dish.</p>":"<ol>"+st.map(function(x){return "<li>"+x+"</li>"}).join("")+"</ol>"+(TIPT[rtype(m.n)]&&!STEPS[m.n]?"<p class='note'>💡 "+TIPT[rtype(m.n)][LANG]+"</p>":""))+rateRow(m)+"</details>"}
+  var source=VRAT_RECIPE_SOURCES[m.n];
+  var credit=source?"<p class='note'>"+T("Recipe inspiration","रेसिपी का स्रोत")+' · <a href="'+source[1]+'" target="_blank" rel="noopener">'+source[0]+"</a></p>":"";
+  var basics=isV(m)?T("Use sendha namak where needed and season according to your household’s fasting practice.","ज़रूरत हो तो सेंधा नमक डालें और अपने घर की व्रत परंपरा के अनुसार मसाले चुनें।"):"Pantry basics: oil, salt, turmeric, red chilli powder, jeera (assumed at home)";
+  return "<div class='row' style='margin:8px 0 0'><button class='btn sm primary' data-cook='"+encodeURIComponent(m.n)+"'>▶ Start cooking</button></div><details class='steps' data-sl='"+sl+"'"+(openR[sl]?" open":"")+"><summary>📖 Recipe</summary><p><b>You need:</b> "+req.join(", ")+(opt.length?" · Optional: "+opt.join(", "):"")+"</p><p class='note'>"+basics+"</p>"+(nost?"<p class='note'>Step-by-step method coming soon for this dish.</p>":"<ol>"+st.map(function(x){return "<li>"+x+"</li>"}).join("")+"</ol>"+(TIPT[rtype(m.n)]&&!STEPS[m.n]?"<p class='note'>💡 "+TIPT[rtype(m.n)][LANG]+"</p>":""))+credit+rateRow(m)+"</details>"}
 function renderKitchen(){var k=$("mykit");if(!k)return;
  if(!ME){k.innerHTML="<p class='sub'>Sign in to keep your ratings and photos.</p>";return}
  var ids=Object.keys(MY).filter(function(x){return MY[x].rating||(MY[x].photos||[]).length});
@@ -1018,15 +1076,17 @@ document.addEventListener("toggle",function(e){var t=e.target;if(t.classList&&t.
 Object.assign(HI,{"More options": "और विकल्प", "📖 Recipe": "📖 रेसिपी", "You need:": "ज़रूरी सामान:", "Pantry basics: oil, salt, turmeric, red chilli powder, jeera (assumed at home)": "घर के बेसिक: तेल, नमक, हल्दी, लाल मिर्च पाउडर, जीरा (घर में मान लिए गए हैं)", "Your rating:": "आपकी रेटिंग:", "📸 Add your photo": "📸 अपनी बनाई डिश की फ़ोटो जोड़ें", "Sign in to rate this recipe and save photos of your creation.": "रेसिपी को रेट करने और अपनी बनाई डिश की फ़ोटो सेव करने के लिए साइन इन करें।", "My Kitchen": "मेरी रसोई", "Your ratings and photos live here, saved to your account.": "आपकी रेटिंग और फ़ोटो आपके खाते में यहाँ सेव रहती हैं।", "Nothing saved yet — rate a recipe or add a photo of something you cooked.": "अभी कुछ सेव नहीं — किसी रेसिपी को रेट करें या अपनी बनाई डिश की फ़ोटो जोड़ें।", "Sign in to keep your ratings and photos.": "अपनी रेटिंग और फ़ोटो रखने के लिए साइन इन करें।", "Smart picks — one item can unlock more dishes": "स्मार्ट सुझाव — एक चीज़ से और व्यंजन बन सकते हैं", "Common items": "आम सामान", "Photo added to My Kitchen": "फ़ोटो मेरी रसोई में जुड़ गई", "Uploading…": "अपलोड हो रहा है…"});
 STEPS["Chole Bhature"]={"en": ["Soak chickpeas overnight, then pressure cook with salt and turmeric until soft (6–7 whistles).", "Fry onion, ginger and garlic; add tomato and chole masala, then the chickpeas, and simmer 15 min.", "Knead maida with curd, salt, a pinch of sugar and a little water into a soft dough; rest 30 min.", "Roll thick ovals and deep-fry in hot oil, pressing lightly so they puff; drain.", "Serve hot bhature with chole, onion rings and pickle."], "hi": ["छोले रात भर भिगोएँ, फिर नमक-हल्दी के साथ प्रेशर कुकर में नरम होने तक पकाएँ (6–7 सीटी)।", "प्याज़, अदरक, लहसुन भूनें; टमाटर और छोले मसाला डालें, फिर छोले डालकर 15 मिनट उबालें।", "मैदा में दही, नमक, चुटकी भर चीनी और थोड़ा पानी मिलाकर नरम आटा गूँथें; 30 मिनट रखें।", "मोटे अंडाकार बेलें और गरम तेल में हल्का दबाते हुए तलें ताकि फूल जाएँ; निकाल लें।", "गरम भटूरे छोले, प्याज़ के छल्लों और अचार के साथ परोसें।"]};
 RX.unshift([/unlocks (\d+) dish(?:es)?/g,"$1 व्यंजन खुलेंगे"]);
-var wSweet=true,wSide=true,crs="meal",lastMeal=null,MEALK={};
+var wSweet=true,wSide=true,crs="meal",lastMeal=null,MEALK={},MOPEN={};
 var sel={meal:1};
 function pickCrs(v){if(v==="meal"||v==="all"){sel={};sel[v]=1}else{if(sel.meal||sel.all)sel={};if(sel[v])delete sel[v];else sel[v]=1;if(!Object.keys(sel).length)sel={meal:1}}var k=Object.keys(sel);crs=k.length===1?k[0]:"multi"}
 function inSel(m){return Object.keys(sel).some(function(k){return k==="NoCook"?isNoCook(m):k==="Chaat"?(m[6]==="Street & chaat"||/chaat/i.test(m[0])):course(m[0])===k})}
 function isNoCook(m){return (m[3]===0&&!/chai|kadha|coffee|cappuccino|hot chocolate|doodh|ambli|affogato|espresso|\btea\b/i.test(m[0]))||!!(window.NCSET&&NCSET[m[0]])||/coffee (float|frappe)|dalgona|cold coffee|iced (latte|mocha)|cold brew/i.test(m[0])&&m[3]===0}
 try{Object.assign(HI,{"🥗 Chaat":"🥗 चाट","Tap more than one to combine, e.g. Snack + Drink":"एक से ज़्यादा चुनकर मिलाएँ, जैसे नाश्ता + पेय"})}catch(e){}
 var CRS=[["meal","🍽️ Whole meal"],["Main","🥘 Curry / sabzi / dal"],["Bread","🫓 Roti / paratha"],["Rice","🍚 Rice"],["Complete","🍲 One-pot meal"],["Sweet","🍮 Sweet"],["Side","🥣 Chutney & sides"],["Snack","🥪 Snack / breakfast"],["Chaat","🥗 Chaat"],["NoCook","🧊 No-cook"],["Pickle","🥫 Pickles & jams"],["Baked","🍰 Baking"],["Drink","🥤 Drinks"],["all","All dishes"]];
-var CL={Main:"🥘 Curry/dal",Bread:"🫓 Bread",Rice:"🍚 Rice",Complete:"🍲 One-pot",Sweet:"🍮 Sweet",Side:"🥣 Side",Pickle:"🥫 Pickle/jam",Baked:"🍰 Baked",Drink:"🥤 Drink"};
-var SIDES=["Cucumber Raita","Pudina Raita","Dhaniya Chutney","Mint Chutney (Pudina)","Tomato Chutney","Coconut Chutney","Lahsun Chutney","Onion Raita","Aloo Raita","Beetroot Raita","Lauki Raita","Kachumber Salad","Onion Chutney","Peanut Chutney"];
+function wholeMealDish(name){
+  var c=course(name);
+  return ["Main","Bread","Rice","Complete"].indexOf(c)>-1||(wSide&&c==="Side")||(wSweet&&c==="Sweet");
+}
 function course(n){if(typeof COURSEO!=="undefined"&&COURSEO[n])return COURSEO[n];var t=rtype(n),l=n.toLowerCase();
  if(typeof DRK!=="undefined"&&DRK[n])return"Drink";
  if(/^air fryer/.test(l))return"Snack";if(/thekua|tilkut|pinni|besan chakki|chhena poda|til pitha|mishti doi/.test(l))return"Sweet";if(/kahwa/.test(l))return"Drink";if(/^luchi/.test(l))return"Bread";if(/kathi roll|wrap|dabeli|beguni|ghugni|kothimbir|handvo|methi na gota|paniyaram|dhuska|pazham pori|egg roll|sandwich|pizza bites|fruit chaat/.test(l))return"Snack";if(/pakhala|mudde/.test(l))return"Complete";if(/tiramisu|panna cotta/.test(l))return"Sweet";if(/marinara|pizza sauce/.test(l))return"Side";if(/malt/.test(l))return"Drink";if(/sundal|poha chivda/.test(l))return"Snack";
@@ -1055,40 +1115,85 @@ function pairOK(a,b){var cb=course(b.n);
 function mealTime(it){var p=0,cs=it.map(function(m){p+=m.p;return m.c}),mx=Math.max.apply(null,cs),rest=cs.reduce(function(a,b){return a+b},0)-mx;return Math.max(5,Math.round((p+mx+rest*0.4)/5)*5)}
 function missOf(it){var u={};it.forEach(function(m){m.x.forEach(function(i){u[i]=1})});return Object.keys(u)}
 function buildMeals(){
- var all=score().filter(function(m){return !isLong(m)&&m.x.length<=3}),G={};
- all.forEach(function(m){var c=course(m.n);(G[c]=G[c]||[]).push(m)});
- var g=function(c,n){return(G[c]||[]).slice(0,n)},sides=(G.Side||[]).filter(function(m){return SIDES.indexOf(m.n)>-1}).slice(0,6),sweets=g("Sweet",6),cands=[];
- function extras(it){var out=it.slice(),base=missOf(it).length;
-  if(wProt&&sumP(out)<2){var bd=null;(G.Main||[]).forEach(function(d){if(rtype(d.n)!=="dal"||pscore(d.ing)<2||out.some(function(x){return x.n===d.n})||!pairOK(it[0],d)||(tmax&&mealTime(out.concat(d))>tmax))return;var dm=missOf(out.concat(d)).length-base;if(dm<=1&&(!bd||dm<bd.d))bd={m:d,d:dm}});if(bd)out.push(bd.m)}
-  [wSide?sides:[],wSweet?sweets:[]].forEach(function(pool){var best=null;pool.forEach(function(s){if(!pairOK(it[0],s)||(tmax&&mealTime(out.concat(s))>tmax))return;var d=missOf(out.concat(s)).length-missOf(out).length;if(d<=1&&(!best||d<best.d))best={m:s,d:d}});if(best)out.push(best.m)});
-  return out}
- g("Main",8).forEach(function(M){g("Bread",5).concat(g("Rice",4)).forEach(function(B){if(pairOK(M,B))cands.push([M,B])})});
- g("Complete",6).forEach(function(C){cands.push([C])});
- var seen={},use={},out=[];
- cands.map(function(it){var f=extras(it);return{items:f,miss:missOf(f),t:mealTime(f),key:f.map(function(m){return m.n}).join(" + ")}})
-  .filter(function(c){return !tmax||c.t<=tmax})
-  .sort(function(a,b){return a.miss.length-b.miss.length||hsh(a.key)-hsh(b.key)})
-  .forEach(function(c){var k=c.items[0].n;if(seen[c.key]||(use[k]||0)>=2||out.length>=9)return;seen[c.key]=1;use[k]=(use[k]||0)+1;MEALK[c.key]=c;out.push(c)});
- return out}
-function comboHTML(c){
- var done=c.miss.length&&c.miss.every(function(i){return cart[i]});
- return "<div class='meal combo'><div class='cth'>"+c.items.map(thumb).join("")+"</div><div class='mh'><div><b>"+c.items.map(function(m){return dn(m.n)}).join(" + ")+"</b><div class='meta'>⏱ ~"+c.t+" min cooking together · "+(c.miss.length?"🛒 "+c.miss.length+" to order":"✅ All at home")+" · "+protBadge(c)+"</div></div>"+
-  (c.miss.length?"<button class='btn sm"+(done?"":" primary")+"' data-addm='"+encodeURIComponent(c.key)+"'>"+(done?"Added ✓":"Add missing")+"</button>":"<span class='chip have'>Ready to cook</span>")+"</div>"+
-  (c.miss.length?"<div class='chips' style='margin:6px 0'>"+c.miss.map(function(i){return "<span class='chip miss'>need "+NAME[i]+"</span>"}).join("")+"</div>":"")+
-  c.items.map(function(m){return "<details class='comp'><summary><span class='chip'>"+CL[course(m.n)]+"</span> <b>"+dn(m.n)+"</b> · "+(m.p+m.c)+" min</summary>"+card(m)+"</details>"}).join("")+"</div>"}
+  var byCourse={},used=new Set(),options=[],meals=[];
+  score().forEach(function(m){
+    if(isLong(m))return;
+    var c=course(m.n);
+    if(!byCourse[c])byCourse[c]=[];
+    byCourse[c].push(m);
+  });
+  var mains=byCourse.Main||[],starches=(byCourse.Bread||[]).concat(byCourse.Rice||[]);
+  var proteins=wProt?mains.filter(function(m){return rtype(m.n)==="dal"&&pscore(m.ing)>=2}):[];
+  var extras=[wSide?byCourse.Side||[]:[],wSweet?byCourse.Sweet||[]:[]];
+  function add(items){
+    if(tmax&&mealTime(items)>tmax)return;
+    var key=items.map(function(m){return m.n}).join(" + ");
+    options.push({items:items,missing:missOf(items).length,rank:hsh(key)});
+  }
+  mains.forEach(function(main){
+    starches.forEach(function(starch){if(main.n!==starch.n&&pairOK(main,starch))add([main,starch])});
+  });
+  (byCourse.Complete||[]).forEach(function(dish){add([dish])});
+  function addExtra(items,pool){
+    var base=missOf(items).length,best=null,bestCost=2;
+    pool.forEach(function(dish){
+      if(used.has(dish.n)||items.some(function(m){return m.n===dish.n})||!pairOK(items[0],dish))return;
+      var expanded=items.concat(dish);
+      if(tmax&&mealTime(expanded)>tmax)return;
+      var cost=missOf(expanded).length-base;
+      if(cost<bestCost){best=dish;bestCost=cost}
+    });
+    if(best)items.push(best);
+  }
+  MEALK={};
+  options.sort(function(a,b){return a.missing-b.missing||a.rank-b.rank}).forEach(function(option){
+    if(option.items.some(function(m){return used.has(m.n)}))return;
+    var items=option.items.slice();
+    if(sumP(items)<2)addExtra(items,proteins);
+    extras.forEach(function(pool){addExtra(items,pool)});
+    var time=mealTime(items);
+    if(!fitsTime(time)){
+      items=option.items;
+      time=mealTime(items);
+      if(!fitsTime(time))return;
+    }
+    var key=items.map(function(m){return m.n}).join(" + ");
+    var meal={items:items,miss:missOf(items),t:time,key:key};
+    items.forEach(function(m){used.add(m.n)});
+    MEALK[key]=meal;meals.push(meal);
+  });
+  return meals;
+}
+function mealTileHTML(c,force){
+  var items=c.items,n=Math.min(items.length,4),open=force||!!MOPEN[c.key];
+  var ims=items.slice(0,4).map(function(m,i){var im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;
+    return "<span class='mc' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im):"<i>"+emo(m.n)+"</i>")+(i===3&&items.length>4?"<em>+"+(items.length-4)+"</em>":"")+"</span>"}).join("");
+  var ok=!c.miss.length,done=c.miss.length&&c.miss.every(function(i){return cart[i]});
+  return "<details class='mtile' data-mk='"+encodeURIComponent(c.key)+"'"+(open?" open":"")+"><summary><div class='mos n"+n+"'>"+ims+
+    "<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+c.miss.length+" to buy")+"</span><span class='tm'>⏱ ~"+c.t+" min</span></div>"+
+    "<div class='mtx'><b>"+items.map(function(m){return dn(m.n)}).join(" + ")+"</b><small>"+items.length+" dishes · "+(ok?"Everything is at home":"Need "+c.miss.map(function(i){return NAME[i]}).join(", "))+"</small><span class='hint'>See the dishes</span></div></summary>"+
+    "<div class='mbody'><div class='mrow'><small>"+protBadge(c)+"</small>"+(c.miss.length?"<button class='btn sm"+(done?"":" primary")+"' data-addm='"+encodeURIComponent(c.key)+"'>"+(done?"Added ✓":"Add missing")+"</button>":"<span class='chip have'>Ready to cook</span>")+"</div>"+
+    "<div class='tgrid'>"+items.map(tileHTML).join("")+"</div></div></details>";
+}
+document.addEventListener("toggle",function(e){
+  var d=e.target;
+  if(!d.classList||!d.classList.contains("mtile"))return;
+  var key=decodeURIComponent(d.dataset.mk);
+  if(d.open)MOPEN[key]=1;else delete MOPEN[key];
+},true);
 function dn(n){return n}
-function renderMeals(){var C=buildMeals(),r=$("results");
- if(!C.length){r.innerHTML="<div class='card empty'>No full meal fits yet — add more ingredients, a longer time, or switch to single dishes.</div>";return}
- var G=[["Meals you can cook right now","Everything is at home",C.filter(function(c){return !c.miss.length})],["Almost there","Just 1–2 items to order",C.filter(function(c){return c.miss.length&&c.miss.length<=2})],["Needs a bigger shop","3 or more items missing",C.filter(function(c){return c.miss.length>2}).slice(0,3)]],h="";
- G.forEach(function(s){if(s[2].length)h+="<div class='sec'><h2>"+s[0]+"</h2><small>"+s[1]+" · "+s[2].length+"</small></div>"+s[2].map(comboHTML).join("")});
- r.innerHTML=h;renderPick()}
-function renderPickMeal(el){if(!lastMeal){el.innerHTML="";return}
- var c=buildMeals().filter(function(x){return x.key===lastMeal})[0];if(!c){el.innerHTML="";return}
- el.innerHTML="<div class='card' style='border-color:var(--accent)'><div class='row' style='margin:0 0 8px;justify-content:space-between'><h2 style='margin:0'>🎲 Tonight’s meal</h2><div class='row' style='margin:0'><button class='btn sm primary' data-decide='1'>🎲 Another</button><button class='btn sm' data-closepick='1'>Close</button></div></div>"+comboHTML(c)+"</div>"}
-function decideMeal(){var C=buildMeals().filter(function(c){return c.miss.length<=2});
- if(!C.length){toast("Nothing fits — try a longer time or more regions");return}
- var top=C.slice(0,5),pool=top.filter(function(c){return c.key!==lastMeal});if(!pool.length)pool=top;
- lastMeal=pool[Math.floor(Math.random()*pool.length)].key;renderPick();$("pick").scrollIntoView({behavior:"smooth",block:"start"})}
+function renderPickMeal(el,meals){
+  var c=(meals||buildMeals()).find(function(m){return m.key===lastMeal});
+  if(!c){el.innerHTML="";return}
+  el.innerHTML="<div class='card' style='border-color:var(--accent)'><div class='row' style='margin:0 0 8px;justify-content:space-between'><h2 style='margin:0'>🎲 Tonight’s meal</h2><div class='row' style='margin:0'><button class='btn sm primary' data-decide='1'>🎲 Another</button><button class='btn sm' data-closepick='1'>Close</button></div></div><div class='tgrid mealgrid'>"+mealTileHTML(c,true)+"</div></div>";
+}
+function decideMeal(){
+  var meals=buildMeals();
+  if(!meals.length)return false;
+  lastPick=null;
+  lastMeal=pickSuggestion(meals,lastMeal,function(c){return c.key},function(c){return c.miss.length}).key;
+  renderPick(meals);$("pick").scrollIntoView({behavior:"smooth",block:"start"});return true;
+}
 HOSTEL["Chapati (Roti)"]=["T"];HOSTEL["Steamed Rice"]=["R","I"];HOSTEL["Jeera Rice"]=["R","I"];
 STEPS["Chapati (Roti)"]={"en":["Knead atta with water and a pinch of salt into a soft dough; rest 15 min.","Divide into lemon-size balls and roll thin rounds, dusting with dry flour.","Heat the tava on medium-high; cook 20–30 sec until bubbles appear, then flip.","Cook the other side, then puff it on the flame or press gently with a cloth.","Brush a little ghee and keep covered."],"hi":["आटे में पानी और चुटकी भर नमक डालकर नरम आटा गूँथें; 15 मिनट रखें।","नींबू जितनी लोइयाँ बनाएँ और सूखे आटे से पतली गोल रोटी बेलें।","तवा मध्यम-तेज़ आँच पर गरम करें; 20–30 सेकंड सेंकें जब तक बुलबुले आएँ, फिर पलटें।","दूसरी तरफ़ सेंकें, फिर सीधी आँच पर फुलाएँ या कपड़े से हल्का दबाएँ।","थोड़ा घी लगाएँ और ढककर रखें।"]};
 STEPS["Steamed Rice"]={"en":["Wash the rice 2–3 times until the water runs clearer.","Add 2 cups water per cup of rice and a pinch of salt.","Bring to a boil, cover and cook on low 12–15 min (or press Cook in a rice cooker).","Rest 5 min and fluff with a fork."],"hi":["चावल को 2–3 बार धोएँ जब तक पानी साफ़ न हो।","1 कप चावल पर 2 कप पानी और चुटकी भर नमक डालें।","उबाल आने पर ढककर धीमी आँच पर 12–15 मिनट पकाएँ (या राइस कुकर में Cook दबाएँ)।","5 मिनट रखें और काँटे से हल्का मिलाएँ।"]};
@@ -1411,8 +1516,8 @@ function hsh(x){x=seedStr+x;var h=0;for(var i=0;i<x.length;i++)h=(h*31+x.charCod
 var PS=["paneer","eggs","chicken","fish","mutton","prawn","toor","moong","chanadal","urad","masoor","lobia","rajma","chickpea","soya","sprouts","matki","sattu"],PM=["curd","milk","besan","peanut","makhana","dryfruit","sesame"];
 function pscore(ing){var s=0;ing.forEach(function(r){if(r.slice(-1)==="?")return;if(PS.indexOf(r)>-1)s+=2;else if(PM.indexOf(r)>-1)s+=1});return s}
 function sumP(it){return it.reduce(function(a,m){return a+pscore(m.ing)},0)}
-function ptag(m){var c=course(m.n),sc=pscore(m.ing);if((c==="Main"||c==="Complete")&&sc>=2)return"💪 Protein-rich";if(["Main","Complete","Bread","Rice"].indexOf(c)>-1&&sc<2)return"🥗 Add dal/curd for protein";return""}
-function protBadge(c){var sc=sumP(c.items);return sc>=4?"💪 Protein-rich meal":sc>=2?"👍 Protein OK":"⚠️ Low protein — add dal, paneer or curd"}
+function ptag(m){var c=course(m.n),sc=pscore(m.ing);if((c==="Main"||c==="Complete")&&sc>=2)return"💪 Protein-rich";if(["Main","Complete","Bread","Rice"].indexOf(c)>-1&&sc<2)return isV(m)?T("🥗 Add paneer or curd for protein","🥗 प्रोटीन के लिए पनीर या दही लें"):"🥗 Add dal/curd for protein";return""}
+function protBadge(c){var sc=sumP(c.items);return sc>=4?"💪 Protein-rich meal":sc>=2?"👍 Protein OK":c.items.every(isV)?T("🥗 Add paneer or curd for protein","🥗 प्रोटीन के लिए पनीर या दही लें"):"⚠️ Low protein — add dal, paneer or curd"}
 function T(a,b){return LANG==="hi"?b:a}
 function listText(){return "🛒 Raman Rasoi — "+T("Shopping list","खरीदारी सूची")+"\n"+Object.keys(cart).map(function(i,k){return (k+1)+". "+nmx(i)}).join("\n")}
 function shopRes(){var q=($("shopq").value||"").trim().toLowerCase(),r=$("shopres");if(!q){r.innerHTML="";return}
@@ -1492,7 +1597,6 @@ function setView(v){var B=document.body,sheet=v==="pantry"||v==="plan"||v==="ord
   B.style.overflow="";B.dataset.v=v;
   Array.prototype.forEach.call(document.querySelectorAll(".tabbar button"),function(b){b.classList.toggle("on",b.dataset.view===v)});
   if(isMob()&&window.scrollTo)window.scrollTo(0,0)}
-function catCount(k){return MEALS.filter(function(m){if(nonveg?m[1]:!m[1])return false;var c=course(m[0]);return k==="all"||(k==="meal"?["Main","Bread","Rice","Complete"].indexOf(c)>-1:(k==="NoCook"?isNoCook(m):k==="Chaat"?(m[6]==="Street & chaat"||/chaat/i.test(m[0])):c===k))}).length}
 function renderTop(){var e=$("ttabs");if(!e)return;
   e.innerHTML=CRS.map(function(o){return "<button data-crs='"+o[0]+"' class='"+(sel[o[0]]?"on":"")+"'>"+o[1]+" <small>"+catCount(o[0])+"</small></button>"}).join("");
   var on=e.querySelector(".on");if(on)e.scrollLeft=Math.max(0,on.offsetLeft-24);
@@ -1507,9 +1611,9 @@ function renderIngsM(){var q=$("q").value.trim().toLowerCase(),vis=CATS.filter(f
   var rail=vis.map(function(c,ci){var n=c[1].filter(function(i){return have[i[0]]}).length;return "<button data-cat='"+ci+"' class='"+(!q&&ci===curCat?"on":"")+"'>"+c[0]+(c[2]&&c[2].indexOf(SEASON)>-1?" 🌱":"")+(n?" <b>"+n+"</b>":"")+"</button>"}).join("");
   $("ings").innerHTML="<div class='pk'><div class='rail'>"+rail+"</div><div class='pgrid'>"+(items.length?items.map(tl).join(""):"<p class='empty'>No match. Try another name.</p>")+"</div></div>";
   $("count").textContent="· "+Object.keys(have).length+" selected"}
-function thumb(m){var im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;return "<span class='th' style='background:"+(im?"url("+photoSrc(im)+") center/cover":"linear-gradient(135deg,"+g[0]+","+g[1]+")")+"'>"+(im?"":emo(m.n))+"</span>"}
-function tileHTML(m){var ok=!m.x.length,im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday,bg=im?"url("+photoSrc(im)+") center/cover":"linear-gradient(135deg,"+g[0]+","+g[1]+")";
- return "<details class='tile'><summary><div class='ti' style='background:"+bg+"'>"+(im?"":"<span class='em'>"+emo(m.n)+"</span>")+"<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+m.x.length+" to buy")+"</span><span class='vg "+(m.v?"v":"n")+"'></span><span class='tm'>⏱ "+(m.p+m.c)+" min</span></div><div class='tx'><b>"+dn(m.n)+"</b><small>"+(ok?"Everything is at home":"Need "+m.x.map(function(i){return NAME[i]}).join(", "))+"</small></div></summary>"+card(m)+"</details>"}
+function tileHTML(m){var ok=!m.x.length,im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;
+ return '<details class="tile" data-recipe="'+encodeURIComponent(m.n)+'">'+
+  "<summary><div class='ti' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im):"<span class='em'>"+emo(m.n)+"</span>")+"<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+m.x.length+" to buy")+"</span><span class='vg "+(m.v?"v":"n")+"'></span><span class='tm'>⏱ "+(m.p+m.c)+" min</span></div><div class='tx'><b>"+dn(m.n)+"</b><small>"+(ok?"Everything is at home":"Need "+m.x.map(function(i){return NAME[i]}).join(", "))+"</small></div></summary>"+card(m)+"</details>"}
 document.body.dataset.v="recipes";setView("recipes");
 try{var standalone=(window.navigator&&navigator.standalone)||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
  if(standalone||localStorage.getItem("rr-inst"))$("install").classList.add("hide");
@@ -1533,7 +1637,6 @@ function renderCuis(){var n=Object.keys(cuis).length,O=[["All","All"],["Daily","
  S("Heaviness",ch(H.map(function(o){return chip(hv===o[0],"data-hv",o[0],o[1])}).join("")))+
  "<div class='fs'><details class='more rg'"+(regOpen?" open":"")+"><summary>Regions ("+regOn()+" of "+(REG.length+WLD.length)+" on)</summary><p class='sub' style='margin:8px 0 4px'>Indian regions</p>"+ch(REG.map(function(c){return chip(cuis[c],"data-cu",c,c)}).join(""))+"<p class='sub' style='margin:8px 0 4px'>Other cuisines</p>"+ch(WLD.map(function(c){return chip(cuis[c],"data-cu",c,c)}).join(""))+ch("<button class='btn sm' data-cuall='1'>All regions</button><button class='btn sm' data-cuall='0'>None</button>")+"</details></div>"+
  S("More",ch("<button class='chip"+(gemOnly?" on":"")+"' data-gem='1'>★ Local gems only</button>"+chip(elab,"data-elab","1","Elaborate dishes")+"<button class='chip"+(hostel?" on":"")+"' data-proxy='hostelBtn'>🎒 Hostel mode</button>"))}
-function renderBrowse(r){var A=score(),L=A.slice(0,60);r.innerHTML="<div class='card' style='display:flex;gap:10px;align-items:center;justify-content:space-between'><span class='sub'>Pick ingredients to see what you can cook right now</span><button class='btn sm primary' data-view='pantry'>🧺 Pick</button></div><div class='sec'><h2>Browse recipes</h2><small>"+A.length+"</small></div>"+(L.length?("<div class='tgrid'>"+L.map(tileHTML).join("")+"</div>"):"<p class='empty'>Nothing here — try a longer time or more regions.</p>")}
 document.addEventListener("toggle",function(e){if(e.target.classList&&e.target.classList.contains("rg"))regOpen=e.target.open},true);
 document.addEventListener("click",function(e){var c=e.target.closest&&e.target.closest("[data-clr],[data-reset],[data-diet]");if(!c)return;var k=c.dataset.clr,d=c.dataset.diet,R=c.dataset.reset;
  if(d!==undefined){if((d==="nv")!==nonveg)$("nvBtn").click();return}
@@ -1588,9 +1691,11 @@ function full(o,l){return !!o&&l.every(function(i){return o[i]})}function restr(
 function selAll(k){var st=k==="t"?TS:k==="o"?OS:k==="h"?HS:RS,l=k==="t"?tIds():k==="o"?oIds():k==="h"?hIds():rIds();l.forEach(function(i){st[i]=1})}
 function defaults(){selAll("t");selAll("o");selAll("h");selAll("r");elab=true}
 function regOK(m){return !restr(RS,rIds())||!!RS[regionOf(m)]}
-function timeOK(m){if(!restr(TS,tIds()))return true;var t=effP(m)+m[3];return TB.some(function(b){return TS[b[0]]&&t>b[2]&&t<=b[3]})}
+function fitsTime(minutes){return !restr(TS,tIds())||TB.some(function(b){return TS[b[0]]&&minutes>b[2]&&minutes<=b[3]})}
+function timeOK(m){return fitsTime(effP(m)+m[3])}
 function occOK(m){return !restr(OS,oIds())||m[8].some(function(o){return OS[o]})}
-function hvOK(m){return !restr(HS,hIds())||(crs==="meal"&&["Sweet","Side"].indexOf(course(m[0]))>-1)||!!HS[wt(m[0],m[6])]}
+function hvOK(m,wholeMeal){return !restr(HS,hIds())||(wholeMeal&&["Sweet","Side"].indexOf(course(m[0]))>-1)||!!HS[wt(m[0],m[6])]}
+function vratOnly(){return !!OS&&!!OS.Vrat&&Object.keys(OS).length===1}
 function fit(o){var s=0;o.oc.forEach(function(x){if(OS&&restr(OS,oIds())&&OS[x])s++});if(sel[course(o.n)])s++;return s}
 function syncT(){tmax=0;if(!restr(TS,tIds()))return;TB.forEach(function(b){if(TS[b[0]]&&b[3]>tmax)tmax=b[3]})}
 function saveF(){try{localStorage.setItem("rr-filters-v2",JSON.stringify({r:RS,o:OS,h:HS,t:TS}))}catch(e){}}
@@ -1626,22 +1731,78 @@ Object.assign(COURSEO,CO);Object.assign(HVO,HV);Object.assign(RGO,RG);Object.key
 var HOTD=/chai|haldi doodh|badam milk|kahwa|hot chocolate|kadha|filter coffee|cappuccino|kesar doodh|ragi malt|green tea/i;
 MEALS.forEach(function(m){var c=course(m[0]);if(c==="Snack"&&m[8].indexOf("Snacks")<0)m[8]=m[8].concat(["Snacks"]);if(c==="Drink"&&!HOTD.test(m[0])&&m[8].indexOf("Summer")<0)m[8]=m[8].concat(["Summer"])});
 OB.push(["Summer","☀️ Summer"],["Snacks","🍿 Snacks"]);})();
+// Register vrat dishes before building category and translation lookups.
+(function(){
+  if(typeof VRAT_RECIPES==="undefined")return;
+  var ingredients=[
+    ["rajgira","Rajgira atta (amaranth flour)","राजगिरा आटा"],
+    ["rajgiraseeds","Whole rajgira (amaranth seeds)","साबुत राजगिरा"],
+    ["puffedrajgira","Puffed rajgira","फूला राजगिरा"],
+    ["buckwheatgroats","Whole kuttu (buckwheat groats)","साबुत कुट्टू"],
+    ["fryingoil","Oil for vrat cooking","व्रत में पकाने का तेल"],
+    ["tulsileaves","Tulsi leaves","तुलसी के पत्ते"]
+  ];
+  CATS.push(["Vrat ingredients",ingredients.map(function(i){return [i[0],i[1]]})]);
+  ingredients.forEach(function(i){NAME[i[0]]=i[1];HI[i[1]]=i[2]});
+  HI.Papaya="पपीता";
+  var pantryUpdates={
+    "Kele ki Sabzi":["rawbanana","fryingoil","gchilli?"],
+    "Aloo Jeera":["potato","cuminseeds","ghee","gchilli?"],
+    "Sabudana Thalipeeth":["sabudana","potato","peanut","ghee","gchilli?"],
+    "Singhare ki Puri":["singhara","potato","fryingoil"],
+    "Kuttu Puri":["kuttu","potato","fryingoil","gchilli?"],
+    "Singhare ke Atte ke Pakode":["singhara","potato","fryingoil","gchilli?","coriander?"],
+    "Samak Rice Khichdi":["samak","potato","peanut","ghee","gchilli?","lemon?"],
+    "Makhana Curry":["makhana","tomato","ghee","curd?","gchilli?"],
+    "Sabudana Khichdi":["sabudana","peanut","potato","ghee","gchilli?","lemon?"],
+    "Sabudana Vada":["sabudana","potato","peanut","fryingoil","gchilli?","coriander?"],
+    "Sweet Potato Chaat":["sweetpotato","lemon?","coriander?"],
+    "Air Fryer Raw Banana Chips":["rawbanana","fryingoil"],
+    "Date & Nut Energy Balls":["dates","dryfruit","desiccatedcoconut?"]
+  };
+  MEALS.forEach(function(m){
+    if(m[8].indexOf("Vrat")<0)return;
+    var name=m[0],method=VRAT_EXISTING_METHODS[name];
+    if(method)STEPS[name]={en:method[0],hi:method[1]};
+    if(pantryUpdates[name])m[5]=pantryUpdates[name];
+  });
+  VRAT_RECIPES.forEach(function(r){
+    var [name,hindi,c,region,prep,cook,soak,ing,source,en,hi]=r;
+    var occasions=["Vrat"];
+    if(c==="Sweet")occasions.push("Sweets");
+    if(c==="Snack")occasions.push("Snacks");
+    MEALS.push([name,1,prep,cook,soak,ing,region,0,occasions,"Navratri"]);
+    COURSEO[name]=c;
+    STEPS[name]={en:en,hi:hi};
+    HI[name]=hindi;
+    var [blogKey,article]=Array.isArray(source)?source:[source];
+    var blog=VRAT_SOURCES[blogKey];
+    VRAT_RECIPE_SOURCES[name]=[blog[0],article||blog[1]];
+    if(ing.indexOf("fryingoil")>-1)HVO[name]="Heavy";
+    else if(c==="Drink"||c==="Side"||!cook)HVO[name]="Light";
+    if(!cook)HOSTEL[name]=["N"];
+    else if(c==="Main"||c==="Complete"||c==="Sweet")HOSTEL[name]=["I"];
+    else if(c==="Bread"&&ing.indexOf("fryingoil")<0)HOSTEL[name]=["T"];
+  });
+})();
 Object.assign(HI,{"International / National":"अंतरराष्ट्रीय / राष्ट्रीय","Indian regions":"भारतीय क्षेत्र","Other cuisines":"अन्य व्यंजन","Clear regions":"क्षेत्र हटाएँ","Pick one or more":"एक या ज़्यादा चुनें","Pick one or more time ranges":"एक या ज़्यादा समय चुनें","Pick one or more regions — nothing picked shows all":"एक या ज़्यादा क्षेत्र चुनें — कुछ न चुनें तो सब दिखेंगे","✓ All":"✓ सभी","Select all regions":"सभी क्षेत्र चुनें","Summer":"गर्मी","Snacks":"नाश्ता","Up to 20 min":"20 मिनट तक","20–30 min":"20–30 मिनट","30–45 min":"30–45 मिनट","45–60 min":"45–60 मिनट","1–1.5 hr":"1–1.5 घंटा","1.5–2 hr":"1.5–2 घंटे"});
 RX.unshift([/Regions \((\d+) selected\)/g,"क्षेत्र ($1 चुने)"],[/Regions \(all\)/g,"क्षेत्र (सभी)"]);
 KEYS=Object.keys(HI).sort(function(a,b){return b.length-a.length});LOW={};KEYS.forEach(function(k){LOW[k.toLowerCase()]=HI[k]});
 WRX=new RegExp("(?<![A-Za-z])(?:"+KEYS.map(function(x){return x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}).join("|")+")(?![A-Za-z])","gi");
 var DTK=null,DT=null;
-function dtKey(d){var s=d.querySelector("summary");return s?s.textContent.replace(/\s+/g," ").trim():""}
-function dtFind(k){var a=document.querySelectorAll("details.tile,details.comp");for(var i=0;i<a.length;i++)if(dtKey(a[i])===k)return a[i];return null}
+function dtFind(k){return document.querySelector('details.tile[data-recipe="'+CSS.escape(k)+'"]')}
 function closeDT(){if(DT){DT.remove();DT=null}DTK=null;document.querySelectorAll(".dton").forEach(function(x){x.classList.remove("dton")})}
 function dtFill(d){if(!DT){DT=document.createElement("div");DT.id="dtray";document.body.appendChild(DT)}
- var s=d.querySelector("summary"),ti=d.classList.contains("tile")&&s.querySelector(".tx b")?s.querySelector(".tx b").textContent:s.textContent.replace(/\s+/g," ").trim();
+ var ti=d.querySelector("summary .tx b").textContent;
  var c=d.cloneNode(true),cs=c.querySelector("summary");if(cs)cs.remove();
- DT.innerHTML="<div class='dt-h'><b></b><button class='dt-x' aria-label='Close'>✕</button></div><div class='dt-b'>"+c.innerHTML+"</div>";DT.querySelector(".dt-h b").textContent=ti}
+ DT.innerHTML="<div class='dt-h'><b></b><button class='dt-x' aria-label='Close'>✕</button></div><div class='dt-b'>"+c.innerHTML+"</div>";
+ DT.querySelector(".dt-h b").textContent=ti;
+ var photo=DT.querySelector(".tile.photo img");if(photo)photo.loading="eager";
+}
 document.addEventListener("click",function(e){if(!isMob())return;var tg=e.target.closest?e.target:e.target.parentNode;
  if(tg.closest(".dt-x")){closeDT();e.preventDefault();return}
- var s=tg.closest("details.tile>summary,details.comp>summary");if(!s)return;
- e.preventDefault();e.stopPropagation();var d=s.parentNode,k=dtKey(d);if(DTK===k){closeDT();return}
+ var s=tg.closest("details.tile[data-recipe]>summary");if(!s)return;
+ e.preventDefault();e.stopPropagation();var d=s.parentNode,k=d.dataset.recipe;if(DTK===k){closeDT();return}
  closeDT();DTK=k;d.classList.add("dton");dtFill(d)},true);
 var _rr2=renderResults;renderResults=function(){var r=_rr2.apply(this,arguments);if(DTK){var d=dtFind(DTK);if(d){d.classList.add("dton");dtFill(d)}else closeDT()}return r};
 var _sv2=setView;setView=function(){closeDT();return _sv2.apply(this,arguments)};
@@ -1706,7 +1867,15 @@ function buildCats(){CATC={};MBY={};MEALS.forEach(function(m){CATC[m[0]]=catsRaw
 function cats(m){if(!MFREADY)return catsRaw(m);if(!CATC)buildCats();return CATC[m[0]]||catsRaw(m)}
 function catsN(n){if(!MFREADY||!CATC)buildCats();return CATC[n]||[]}
 inSel=function(m){var c=cats(m);return Object.keys(sel).some(function(k){return c.indexOf(k)>-1})};
-catCount=function(k){return MEALS.filter(function(m){if(nonveg?m[1]:!m[1])return false;if(k==="all")return true;if(k==="meal")return["Main","Bread","Rice","Complete"].indexOf(course(m[0]))>-1;return cats(m).indexOf(k)>-1}).length};
+function catCount(k){
+  var vrat=vratOnly();
+  return MEALS.filter(function(m){
+    if(!matchesFilters(m,false))return false;
+    if(k==="all")return true;
+    if(k==="meal")return vrat||wholeMealDish(m[0]);
+    return cats(m).indexOf(k)>-1;
+  }).length;
+}
 fit=function(o){var s=0;o.oc.forEach(function(x){if(OS&&restr(OS,oIds())&&OS[x])s++});var c=catsN(o.n);if(c.some(function(k){return sel[k]}))s++;return s};
 var _thC=tileHTML;tileHTML=function(m){var h=_thC(m),c=catsN(m.n);if(c.length<2)return h;var t="<div class='ctg'>"+c.slice(0,3).map(function(k){return CLX[k]||k}).join(" · ")+"</div>";return h.replace("</small></div></summary>","</small>"+t+"</div></summary>")};
 
@@ -1768,6 +1937,7 @@ var pantryTab=0;
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pantry-bulk]");if(!b)return;var cats=CATS.map(function(c){return [c[0],c[1].filter(function(x){return nonveg||NV.indexOf(x[0])<0})]}).filter(function(c){return c[1].length}),c=cats[pantryTab];if(!c)return;var allItems=b.getAttribute("data-pantry-bulk")==="all";c[1].forEach(function(x){if(allItems){have[x[0]]=1;delete cart[x[0]]}else delete have[x[0]]});save();all();e.preventDefault();e.stopPropagation()},true);
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pantry-cat]");if(!b)return;pantryTab=+b.getAttribute("data-pantry-cat")||0;renderPantrySlides();e.preventDefault();e.stopPropagation()},true);
 var _allWithPantry=all;all=function(){var r=_allWithPantry.apply(this,arguments);try{renderPantrySlides()}catch(e){}return r};
+$("nDish").textContent=MEALS.length;
 MFREADY=true;syncT();try{all()}catch(e){try{renderCuis();renderResults()}catch(e2){}}
 </script>
 <style>
@@ -1918,67 +2088,6 @@ main#planner>*,main#planner section,#results{min-width:0;max-width:100%}
 .mbody .mrow{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:10px 0 0}
 .mbody .tgrid{margin-top:12px;margin-bottom:0}
 </style>
-<script>
-(function(){
-var MOPEN={};
-function mkey(c){return encodeURIComponent(c.key)}
-
-buildMeals=function(){
-  var all=score().filter(function(m){return !isLong(m)&&m.x.length<=3}),G={};
-  all.forEach(function(m){var c=course(m.n);(G[c]=G[c]||[]).push(m)});
-  var g=function(c){return G[c]||[]},
-      sidesAll=(G.Side||[]).filter(function(m){return SIDES.indexOf(m.n)>-1}),
-      sweetsAll=G.Sweet||[],cands=[],used={},seen={},out=[];
-  function extras(it){var o=it.slice(),base=missOf(it).length;
-    if(wProt&&sumP(o)<2){var bd=null;(G.Main||[]).forEach(function(d){if(used[d.n]||rtype(d.n)!=="dal"||pscore(d.ing)<2||o.some(function(x){return x.n===d.n})||!pairOK(it[0],d)||(tmax&&mealTime(o.concat(d))>tmax))return;var dm=missOf(o.concat(d)).length-base;if(dm<=1&&(!bd||dm<bd.d))bd={m:d,d:dm}});if(bd)o.push(bd.m)}
-    [wSide?sidesAll:[],wSweet?sweetsAll:[]].forEach(function(pool){var best=null;pool.forEach(function(sd){if(used[sd.n]||o.some(function(x){return x.n===sd.n})||!pairOK(it[0],sd)||(tmax&&mealTime(o.concat(sd))>tmax))return;var d=missOf(o.concat(sd)).length-missOf(o).length;if(d<=1&&(!best||d<best.d))best={m:sd,d:d}});if(best)o.push(best.m)});
-    return o}
-  g("Main",120).forEach(function(M){g("Bread",80).concat(g("Rice",80)).forEach(function(B){if(M.n!==B.n&&pairOK(M,B))cands.push([M,B])})});
-  g("Complete",80).forEach(function(C){cands.push([C])});
-  cands.map(function(it){return{it:it,miss:missOf(it).length,key:it.map(function(m){return m.n}).join(" + ")}})
-    .sort(function(a,b){return a.miss-b.miss||hsh(a.key)-hsh(b.key)})
-    .forEach(function(b){if(b.it.some(function(m){return used[m.n]}))return;
-      var f=extras(b.it),c={items:f,miss:missOf(f),t:mealTime(f),key:f.map(function(m){return m.n}).join(" + ")};
-      if(tmax&&c.t>tmax)return;if(seen[c.key]||f.some(function(m){return used[m.n]}))return;
-      seen[c.key]=1;f.forEach(function(m){used[m.n]=1});MEALK[c.key]=c;out.push(c)});
-  return out};
-window.mealTileHTML=function(c,force){
-  var items=c.items,n=Math.min(items.length,4),open=force||!!MOPEN[c.key];
-  var ims=items.slice(0,4).map(function(m,i){var im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;
-    return "<span class='mc' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?"<img alt='' loading='lazy' src='"+photoSrc(im)+"'>":"<i>"+emo(m.n)+"</i>")+(i===3&&items.length>4?"<em>+"+(items.length-4)+"</em>":"")+"</span>"}).join("");
-  var ok=!c.miss.length,done=c.miss.length&&c.miss.every(function(i){return cart[i]});
-  return "<details class='mtile' data-mk='"+mkey(c)+"'"+(open?" open":"")+"><summary><div class='mos n"+n+"'>"+ims+
-    "<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+c.miss.length+" to buy")+"</span><span class='tm'>⏱ ~"+c.t+" min</span></div>"+
-    "<div class='mtx'><b>"+items.map(function(m){return dn(m.n)}).join(" + ")+"</b><small>"+items.length+" dishes · "+(ok?"Everything is at home":"Need "+c.miss.map(function(i){return NAME[i]}).join(", "))+"</small><span class='hint'>See the dishes</span></div></summary>"+
-    "<div class='mbody'><div class='mrow'><small>"+protBadge(c)+"</small>"+(c.miss.length?"<button class='btn sm"+(done?"":" primary")+"' data-addm='"+mkey(c)+"'>"+(done?"Added ✓":"Add missing")+"</button>":"<span class='chip have'>Ready to cook</span>")+"</div>"+
-    "<div class='tgrid'>"+items.map(tileHTML).join("")+"</div></div></details>"};
-comboHTML=function(c){return "<div class='tgrid mealgrid'>"+mealTileHTML(c)+"</div>"};
-renderMeals=function(){var C=buildMeals(),r=$("results");
-  if(!C.length){r.innerHTML="<div class='card empty'>No full meal fits yet — add more ingredients, a longer time, or switch to single dishes.</div>";return}
-  var G=[["Meals you can cook right now","Everything is at home",C.filter(function(c){return !c.miss.length})],["Almost there","Just 1–2 items to order",C.filter(function(c){return c.miss.length&&c.miss.length<=2})],["Needs a bigger shop","3 or more items missing",C.filter(function(c){return c.miss.length>2})]],h="";
-  G.forEach(function(s){if(s[2].length)h+="<div class='sec'><h2>"+s[0]+"</h2><small>"+s[1]+" · "+s[2].length+"</small></div><div class='tgrid mealgrid'>"+s[2].map(function(c){return mealTileHTML(c)}).join("")+"</div>"});
-  r.innerHTML=h;renderPick()};
-renderPickMeal=function(el){if(!lastMeal){el.innerHTML="";return}
-  var c=buildMeals().filter(function(x){return x.key===lastMeal})[0];if(!c){el.innerHTML="";return}
-  el.innerHTML="<div class='card' style='border-color:var(--accent)'><div class='row' style='margin:0 0 8px;justify-content:space-between'><h2 style='margin:0'>🎲 Tonight’s meal</h2><div class='row' style='margin:0'><button class='btn sm primary' data-decide='1'>🎲 Another</button><button class='btn sm' data-closepick='1'>Close</button></div></div><div class='tgrid mealgrid'>"+mealTileHTML(c,true)+"</div></div>"};
-document.addEventListener("toggle",function(e){var d=e.target;if(d&&d.classList&&d.classList.contains("mtile")){var k=decodeURIComponent(d.getAttribute("data-mk")||"");if(d.open)MOPEN[k]=1;else delete MOPEN[k]}},true);
-// The first render happened before these tile overrides were installed.
-// Refresh it now so a newly opened page displays meal tiles immediately.
-// Category suggestions intentionally render the complete filtered result set.
-renderBrowse=function(r){var L=score();r.innerHTML="<div class='card' style='display:flex;gap:10px;align-items:center;justify-content:space-between'><span class='sub'>Pick ingredients to see what you can cook right now</span><button class='btn sm primary' data-view='pantry'>Pick</button></div><div class='sec'><h2>Browse recipes</h2><small>"+L.length+" dishes</small></div>"+(L.length?"<div class='tgrid'>"+L.map(tileHTML).join("")+"</div>":"<p class='empty'>Nothing here yet.</p>")};
-var renderSearchBeforeFullCategories=renderSearch;
-renderSearch=function(r,q){renderSearchBeforeFullCategories(r,q);var s=r.querySelector('.sec small');if(s)s.textContent='All matching dishes';};
-var renderResultsBeforeFullCategories=renderResults;
-renderResults=function(){
-  if(crs==="meal"||!Object.keys(have).length||($('rq')&&$('rq').value.trim())||hostel)return renderResultsBeforeFullCategories();
-  renderTop();var r=$("results"),all=score().filter(function(m){return m.h.length>0});
-  var groups=[["Cook right now","Everything is at home",all.filter(function(m){return m.x.length===0&&!isLong(m)})],["Almost there","Just 1–2 items to order",all.filter(function(m){return m.x.length>0&&m.x.length<=2&&!isLong(m)})],["Plan ahead","Needs a long soak",all.filter(function(m){return isLong(m)&&m.x.length<=2})],["Needs a bigger shop","3 or more items missing",all.filter(function(m){return m.x.length>2})]],h="";
-  groups.forEach(function(s){h+="<div class='sec'><h2>"+s[0]+"</h2><small>"+s[1]+" · "+s[2].length+" dishes</small></div>"+(s[2].length?"<div class='tgrid'>"+s[2].map(tileHTML).join("")+"</div>":"<p class='empty' style='padding:10px'>Nothing here yet.</p>")});
-  r.innerHTML=h;renderPick();
-};
-if(MFREADY)renderResults();
-})();
-</script>
 <style>
 /* ===== Web = the same app layout as mobile, centred in a comfortable column ===== */
 @media(min-width:701px){
@@ -2122,11 +2231,7 @@ body{padding-top:58px}
     overflow-x:auto;
     overflow-y:hidden;
   }
-  .tgrid>.tile .ti{
-    background-size:cover!important;
-    background-position:center 42%!important;
-    background-repeat:no-repeat!important;
-  }
+  .tgrid>.tile .ti>img{object-position:center 42%}
   .mtile .mos .mc img{
     object-fit:cover;
     object-position:center 42%;
