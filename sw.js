@@ -1,6 +1,6 @@
 /* Hatri website shell. Increase cache version when shipping changes. */
-const CACHE = 'hatri-v8-app-name';
-const SHELL = ['./', './index.html', './vrat-recipes.js', './manifest.webmanifest',
+const CACHE = 'hatri-v10-category-selection';
+const SHELL = ['./', './index.html', './vrat-recipes.js', './instagram-recipes.js', './manifest.webmanifest',
   './icons/icon-192x192.png', './icons/icon-512x512.png',
   './icons/apple-touch-icon.png', './icons/favicon.png', './images/photos.json'];
 self.addEventListener('install', event => {
@@ -22,7 +22,8 @@ self.addEventListener('fetch', event => {
   }
   // Keep image files on-device after first visit, without precaching the entire photo library.
   event.respondWith(fetch(req).then(res => {
-    if(res.ok && (req.url.includes('/icons/') || req.url.includes('/images/') || req.url.endsWith('/manifest.webmanifest') || req.url.endsWith('/vrat-recipes.js'))) {
+    if(res.ok && (req.url.includes('/icons/') || req.url.includes('/images/') ||
+      ['/manifest.webmanifest', '/vrat-recipes.js', '/instagram-recipes.js'].some(path => req.url.endsWith(path)))) {
       const c=res.clone(); caches.open(CACHE).then(cache => cache.put(req,c));
     }
     return res;

@@ -170,6 +170,9 @@ html[lang="hi"] .en{display:none}html:not([lang="hi"]) .hi{display:none}
 .slr{margin:0 0 6px}
 .slh{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 2px 2px}
 .slh h3{margin:0;font-size:17px;font-weight:700;color:var(--text);text-transform:none;letter-spacing:0}
+.category-selection{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin:4px 2px 0;color:#153e2c;font-size:12px;line-height:1.3}
+.category-selection span{padding:3px 7px;border-radius:999px;background:#e6f4ee}
+.cgrid button[data-crs]{position:relative}
 .slh button{border:0;background:none;color:var(--accent);font:inherit;font-size:12.5px;font-weight:600;padding:4px 2px;cursor:pointer}
 .sl-actions{display:flex;gap:6px;align-items:center;flex:0 0 auto}
 .sl-actions button{border:1px solid #b9dcc9;border-radius:999px;background:#e6f4ee;color:#1b7f4c;font-size:11px;line-height:1.2;padding:5px 9px}
@@ -341,8 +344,9 @@ details.dton{outline:3px solid var(--accent);outline-offset:-3px}
   <div id="rr-profile-content"></div>
 </aside>
 <script src="./vrat-recipes.js"></script>
+<script src="./instagram-recipes.js"></script>
 <script>
-var COURSEO={},HVO={},RGO={},NOELAB={},VRAT_RECIPE_SOURCES={};
+var COURSEO={},HVO={},RGO={},NOELAB={},VRAT_RECIPE_SOURCES={},RECIPE_REELS={};
 var SEASON=(function(m){return m>=10||m<=1?"w":m>=2&&m<=5?"s":"m"})(new Date().getMonth());
 var CATS=[
 ["Daily vegetables",[["onion","Onion"],["tomato","Tomato"],["potato","Potato"],["capsicum","Capsicum"],["brinjal","Brinjal"],["okra","Bhindi"],["cabbage","Cabbage"],["carrot","Carrot"],["cucumber","Cucumber"],["lauki","Lauki (bottle gourd)"],["beans","French beans"],["mushroom","Mushroom"],["corn","Sweet corn"],["arbi","Arbi (colocasia)"]]],
@@ -771,20 +775,21 @@ function renderCuis(){
   "<div class='chips' style='margin-top:10px'><button class='chip"+(gemOnly?" on":"")+"' data-gem='1'>★ Local gems only</button>"+chip(elab,"data-elab","1","Elaborate dishes")+"<button class='btn sm' data-cuall='1'>All regions</button><button class='btn sm' data-cuall='0'>None</button></div>";
 }
 function renderPick(meals){
-  var el=$("pick");if(crs==="meal"&&lastMeal){renderPickMeal(el,meals);return}if(!lastPick){el.innerHTML="";return}
-  var m=suggestionDishes().find(function(x){return x.n===lastPick});
+  var el=$("pick");if(sel.meal&&lastMeal){renderPickMeal(el,meals);return}if(!lastPick){el.innerHTML="";return}
+  var m=score(true).find(function(x){return x.n===lastPick});
   if(!m){el.innerHTML="";return}
   var any=Object.keys(have).length>0;
   var why=(any?(m.x.length===0?"Everything is already at home":m.x.length+" item"+(m.x.length>1?"s":"")+" to order"):"Picked from your filters — tick your pantry for a better match")+" · "+(m.p+m.c)+" min"+(tmax?" (fits your "+(tmax>=60?tmax/60+" hr":tmax+" min")+")":"");
   el.innerHTML="<div class='card' style='border-color:var(--accent)'><div class='row' style='margin:0 0 8px;justify-content:space-between'><div><h2 style='margin:0'>🎲 Tonight’s pick</h2><div class='sub'>"+why+"</div></div><div class='row' style='margin:0'><button class='btn sm primary' data-decide='1'>🎲 Another</button><button class='btn sm' data-closepick='1'>Close</button></div></div>"+card(m)+"</div>";
 }
 function decide(){
-  if(crs==="meal"&&decideMeal())return;
-  var options=suggestionDishes().filter(function(m){return !isLong(m)});
+  var meals=sel.meal?buildMeals():[];
+  var options=crs==="meal"&&meals.length?meals:meals.concat(score(true).filter(function(m){return !isLong(m)}));
   if(!options.length){toast("Nothing fits — try a longer time or more regions");return}
-  lastMeal=null;
-  lastPick=pickSuggestion(options,lastPick,function(m){return m.n},function(m){return m.x.length}).n;
-  renderPick();$("pick").scrollIntoView({behavior:"smooth",block:"start"});
+  var pick=pickSuggestion(options,lastMeal||lastPick,function(m){return m.key||m.n},function(m){return (m.miss||m.x).length});
+  lastMeal=pick.key||null;
+  lastPick=pick.n||null;
+  renderPick(meals);$("pick").scrollIntoView({behavior:"smooth",block:"start"});
 }
 // Every result has a chance, with fewer missing ingredients still favored.
 function pickSuggestion(options,previous,key,missing){
@@ -804,17 +809,13 @@ function matchesFilters(m,wholeMeal){
     (elab||hostel||HOSTEL[m[0]]||NOELAB[m[0]]||!(effP(m)+m[3]>=70||m[5].length>=8));
 }
 function score(singleDishes){
-  var wholeMeal=crs==="meal"&&!singleDishes;
-  return MEALS.filter(function(m){return matchesFilters(m,wholeMeal)&&(crs==="all"||crs==="meal"||inSel(m))}).map(function(m){
+  var wholeMeal=!!sel.meal&&!singleDishes;
+  var allDishes=wholeMeal||sel.all||(crs==="meal"&&vratOnly());
+  return MEALS.filter(function(m){return matchesFilters(m,wholeMeal)&&(allDishes||inSel(m))}).map(function(m){
     var h=[],x=[],oh=[],ox=[];
     m[5].forEach(function(r){var o=r.slice(-1)==="?",i=o?r.slice(0,-1):r;(o?(have[i]?oh:ox):(have[i]?h:x)).push(i)});
     return {recipe:m,n:m[0],v:m[1],p:effP(m),c:m[3],s:m[4],h:h,x:x,oh:oh,ox:ox,tot:h.length+x.length,cu:m[6],g:m[7],w:wt(m[0],m[6]),ing:m[5],ov:!!(m[4]&&m[4][0]<=30),oc:m[8],f:m[9],e:effP(m)+m[3]>=70||m[5].length>=8};
   }).sort(function(a,b){return a.x.length-b.x.length||(b.h.length/b.tot)-(a.h.length/a.tot)||fit(b)-fit(a)||hsh(a.n)-hsh(b.n)});
-}
-function suggestionDishes(){
-  var dishes=score(true);
-  if(crs!=="meal"||vratOnly())return dishes;
-  return dishes.filter(function(dish){return wholeMealDish(dish.n)});
 }
 function isLong(m){return m.s&&m.s[0]>=240}
 function soakTxt(m){var s=m.s,t=s[0];return "Soak "+s[1]+" for "+(t>=360?Math.round(t/60)+" h (overnight) — start the night before":t>=120?Math.round(t/60)+" h — start early in the day":t<=30?t+" min — start it first, then chop while it soaks":t+" min before cooking")}
@@ -833,12 +834,16 @@ function card(m){
    m.ox.map(function(i){return "<button class='chip opt' data-oi='"+i+"'>"+(cart[i]?"✓ ":"+ ")+NAME[i]+" · optional</button>"}).join("")+"</div></div>";
 }
 function renderSearch(r,q){$("pick").innerHTML="";var tk=q.split(/\s+/).filter(Boolean);
-  var vratMatches=vratOnly()?new Set(score(true).map(function(m){return m.n})):null;
-  var L=MEALS.filter(function(m){return (nonveg?!m[1]:m[1])&&(!vratMatches||vratMatches.has(m[0]))}).map(function(m){
+  var vratMatches=vratOnly()?new Set(score(true).map(function(m){return m.recipe})):null;
+  var L=MEALS.filter(function(m){
+    if(vratMatches)return vratMatches.has(m);
+    return (nonveg?!m[1]:m[1])&&(crs==="meal"||sel.all||inSel(m));
+  }).map(function(m){
     var nm=(m[0]+" "+(HI[m[0]]||"")).toLowerCase();
     var vrat=m[8].indexOf("Vrat")>-1?" vrat upvas upwas farali falahari fasting व्रत उपवास फलाहार":"";
+    var reel=RECIPE_REELS[m[0]],video=reel?" instagram reel इंस्टाग्राम रील "+reel.creator:"";
     var ingredients=m[5].map(function(i){var n=NAME[i.replace("?","")]||"";return n+" "+(HI[n]||"")}).join(" ");
-    var hay=(nm+" "+m[6]+" "+m[9]+vrat+" "+ingredients).toLowerCase();
+    var hay=(nm+" "+m[6]+" "+m[9]+vrat+video+" "+ingredients).toLowerCase();
     if(!tk.every(function(t){return hay.indexOf(t)>-1}))return null;
     var h=[],x=[],oh=[],ox=[];m[5].forEach(function(g){var o=g.slice(-1)==="?",i=o?g.slice(0,-1):g;(o?(have[i]?oh:ox):(have[i]?h:x)).push(i)});
     return {n:m[0],v:m[1],p:effP(m),c:m[3],s:m[4],h:h,x:x,oh:oh,ox:ox,tot:h.length+x.length,cu:m[6],g:m[7],w:wt(m[0],m[6]),ing:m[5],ov:!!(m[4]&&m[4][0]<=30),oc:m[8],f:m[9],e:effP(m)+m[3]>=70||m[5].length>=8,nm:tk.every(function(t){return nm.indexOf(t)>-1})?1:0}
@@ -849,13 +854,13 @@ function renderResults(){
   renderTop();
   var r=$("results"),rq=($("rq")&&$("rq").value||"").trim().toLowerCase();
   if(rq){renderSearch(r,rq);return}
-  var vrat=vratOnly(),dishes=suggestionDishes(),meals=crs==="meal"?buildMeals():[];
+  var vrat=vratOnly(),dishes=score(true),meals=sel.meal?buildMeals():[];
   var title=vrat?T("Vrat dishes","व्रत के व्यंजन"):T("Browse recipes","रेसिपी देखें");
-  if(crs==="meal"&&!vrat){
+  if(sel.meal&&!(vrat&&crs==="meal")){
     var paired=new Set();
     meals.forEach(function(meal){meal.items.forEach(function(dish){paired.add(dish.recipe)})});
     dishes=dishes.filter(function(dish){return !paired.has(dish.recipe)});
-    title=meals.length?T("More meal dishes","खाने के और व्यंजन"):T("Meal dishes","खाने के व्यंजन");
+    if(!vrat&&crs==="meal")title=meals.length?T("More meal dishes","खाने के और व्यंजन"):T("Meal dishes","खाने के व्यंजन");
   }
   var html="";
   if(!Object.keys(have).length)html="<div class='card' style='display:flex;gap:10px;align-items:center;justify-content:space-between'><span class='sub'>Pick ingredients to see what you can cook right now</span><button class='btn sm primary' data-view='pantry'>Pick ingredients</button></div>";
@@ -914,7 +919,12 @@ document.addEventListener("click",function(e){
   else if(t.dataset.view){setView(t.dataset.view)}
   else if(t.dataset.ws){wSweet=!wSweet;renderCuis();renderResults()}
   else if(t.dataset.wd){wSide=!wSide;renderCuis();renderResults()}
-  else if(t.dataset.crs){pickCrs(t.dataset.crs);seedStr=String(Math.random());lastPick=null;lastMeal=null;renderCuis();renderResults()}
+  else if(t.dataset.crs){
+    var area=t.closest("#slides,#cuis,#ttabs"),focused=document.activeElement===t;
+    pickCrs(t.dataset.crs);seedStr=String(Math.random());lastPick=null;lastMeal=null;renderCuis();renderResults();save();
+    var next=focused&&area&&area.querySelector("[data-crs='"+CSS.escape(t.dataset.crs)+"']");
+    if(next)next.focus({preventScroll:true});
+  }
   else if(t.dataset.addm){var cm=MEALK[decodeURIComponent(t.dataset.addm)];if(cm){var on=cm.miss.every(function(i){return cart[i]});cm.miss.forEach(function(i){on?delete cart[i]:cart[i]=1});all()}}
   else if(t.dataset.hv){hv=t.dataset.hv;renderCuis();renderResults()}
   else if(t.dataset.app){app[t.dataset.app]=app[t.dataset.app]?0:1;renderCuis();renderResults();save()}
@@ -1048,10 +1058,15 @@ function rateRow(m){var sl=slug(m.n),my=MY[sl]||{},r=my.rating||0,ph=my.photos||
 function recipePanel(m){
  var sl=slug(m.n),req=m.ing.filter(function(r){return r.slice(-1)!=="?"}).map(nmx),opt=m.ing.filter(function(r){return r.slice(-1)==="?"}).map(function(r){return nmx(r.slice(0,-1))});
  var st=STEPS[m.n]?STEPS[m.n][LANG]:gen(m);var nost=!st.length;
-  var source=VRAT_RECIPE_SOURCES[m.n];
+  var source=VRAT_RECIPE_SOURCES[m.n],reel=RECIPE_REELS[m.n];
   var credit=source?"<p class='note'>"+T("Recipe inspiration","रेसिपी का स्रोत")+' · <a href="'+source[1]+'" target="_blank" rel="noopener">'+source[0]+"</a></p>":"";
+  var watch="";
+  if(reel){
+    watch=' <a class="btn sm" href="'+reel.reel+'" target="_blank" rel="noopener">'+T("Watch on Instagram","इंस्टाग्राम पर देखें")+"</a>";
+    credit+='<p class="note">'+reel.creator+' · <a href="'+reel.written+'" target="_blank" rel="noopener">'+T("Written recipe","लिखित रेसिपी")+"</a></p>";
+  }
   var basics=isV(m)?T("Use sendha namak where needed and season according to your household’s fasting practice.","ज़रूरत हो तो सेंधा नमक डालें और अपने घर की व्रत परंपरा के अनुसार मसाले चुनें।"):"Pantry basics: oil, salt, turmeric, red chilli powder, jeera (assumed at home)";
-  return "<div class='row' style='margin:8px 0 0'><button class='btn sm primary' data-cook='"+encodeURIComponent(m.n)+"'>▶ Start cooking</button></div><details class='steps' data-sl='"+sl+"'"+(openR[sl]?" open":"")+"><summary>📖 Recipe</summary><p><b>You need:</b> "+req.join(", ")+(opt.length?" · Optional: "+opt.join(", "):"")+"</p><p class='note'>"+basics+"</p>"+(nost?"<p class='note'>Step-by-step method coming soon for this dish.</p>":"<ol>"+st.map(function(x){return "<li>"+x+"</li>"}).join("")+"</ol>"+(TIPT[rtype(m.n)]&&!STEPS[m.n]?"<p class='note'>💡 "+TIPT[rtype(m.n)][LANG]+"</p>":""))+credit+rateRow(m)+"</details>"}
+  return "<div class='row' style='margin:8px 0 0'><button class='btn sm primary' data-cook='"+encodeURIComponent(m.n)+"'>▶ Start cooking</button>"+watch+"</div><details class='steps' data-sl='"+sl+"'"+(openR[sl]?" open":"")+"><summary>📖 Recipe</summary><p><b>You need:</b> "+req.join(", ")+(opt.length?" · Optional: "+opt.join(", "):"")+"</p><p class='note'>"+basics+"</p>"+(nost?"<p class='note'>Step-by-step method coming soon for this dish.</p>":"<ol>"+st.map(function(x){return "<li>"+x+"</li>"}).join("")+"</ol>"+(TIPT[rtype(m.n)]&&!STEPS[m.n]?"<p class='note'>💡 "+TIPT[rtype(m.n)][LANG]+"</p>":""))+credit+rateRow(m)+"</details>"}
 function renderKitchen(){var k=$("mykit");if(!k)return;
  if(!ME){k.innerHTML="<p class='sub'>Sign in to keep your ratings and photos.</p>";return}
  var ids=Object.keys(MY).filter(function(x){return MY[x].rating||(MY[x].photos||[]).length});
@@ -1081,11 +1096,33 @@ STEPS["Chole Bhature"]={"en": ["Soak chickpeas overnight, then pressure cook wit
 RX.unshift([/unlocks (\d+) dish(?:es)?/g,"$1 व्यंजन खुलेंगे"]);
 var wSweet=true,wSide=true,crs="meal",lastMeal=null,MEALK={},MOPEN={};
 var sel={meal:1};
-function pickCrs(v){if(v==="meal"||v==="all"){sel={};sel[v]=1}else{if(sel.meal||sel.all)sel={};if(sel[v])delete sel[v];else sel[v]=1;if(!Object.keys(sel).length)sel={meal:1}}var k=Object.keys(sel);crs=k.length===1?k[0]:"multi"}
+function resetCategories(category){sel={};sel[category]=1;crs=category}
+function pickCrs(v){
+  if(v==="all"){resetCategories("all");return}
+  delete sel.all;
+  if(sel[v])delete sel[v];else sel[v]=1;
+  var selected=Object.keys(sel);
+  if(!selected.length){resetCategories("all");return}
+  crs=selected.length===1?selected[0]:"multi";
+}
 function inSel(m){return Object.keys(sel).some(function(k){return k==="NoCook"?isNoCook(m):k==="Chaat"?(m[6]==="Street & chaat"||/chaat/i.test(m[0])):course(m[0])===k})}
 function isNoCook(m){return (m[3]===0&&!/chai|kadha|coffee|cappuccino|hot chocolate|doodh|ambli|affogato|espresso|\btea\b/i.test(m[0]))||!!(window.NCSET&&NCSET[m[0]])||/coffee (float|frappe)|dalgona|cold coffee|iced (latte|mocha)|cold brew/i.test(m[0])&&m[3]===0}
 try{Object.assign(HI,{"🥗 Chaat":"🥗 चाट","Tap more than one to combine, e.g. Snack + Drink":"एक से ज़्यादा चुनकर मिलाएँ, जैसे नाश्ता + पेय"})}catch(e){}
 var CRS=[["meal","🍽️ Whole meal"],["Main","🥘 Curry / sabzi / dal"],["Bread","🫓 Roti / paratha"],["Rice","🍚 Rice"],["Complete","🍲 One-pot meal"],["Sweet","🍮 Sweet"],["Side","🥣 Chutney & sides"],["Snack","🥪 Snack / breakfast"],["Chaat","🥗 Chaat"],["NoCook","🧊 No-cook"],["Pickle","🥫 Pickles & jams"],["Baked","🍰 Baking"],["Drink","🥤 Drinks"],["all","All dishes"]];
+function categoryLabel(option){
+  var label=T(option[1],HI[option[1]]||option[1]);
+  return option[0]==="all"?label:label.slice(label.indexOf(" ")+1);
+}
+function categorySelection(){
+  var names=CRS.filter(function(option){return !!sel[option[0]]}).map(function(option){return "<span>"+categoryLabel(option)+"</span>"});
+  return "<div class='category-selection'><b>"+T("Selected","चयनित")+"</b>"+names.join("")+"</div>";
+}
+function categoryGrid(){
+  return "<div class='cgrid'>"+CRS.map(function(option){
+    var id=option[0],on=!!sel[id],icon=id==="all"?"📋":option[1].split(" ")[0];
+    return "<button type='button' data-crs='"+id+"' aria-pressed='"+on+"' class='"+(on?"on":"")+"'><i aria-hidden='true'>"+icon+"</i>"+categoryLabel(option)+"<small>"+catCount(id)+"</small>"+(on?"<span class='category-tick' aria-hidden='true'>✓</span>":"")+"</button>";
+  }).join("")+"</div>";
+}
 function wholeMealDish(name){
   var c=course(name);
   return ["Main","Bread","Rice","Complete"].indexOf(c)>-1||(wSide&&c==="Side")||(wSweet&&c==="Sweet");
@@ -1189,13 +1226,6 @@ function renderPickMeal(el,meals){
   var c=(meals||buildMeals()).find(function(m){return m.key===lastMeal});
   if(!c){el.innerHTML="";return}
   el.innerHTML="<div class='card' style='border-color:var(--accent)'><div class='row' style='margin:0 0 8px;justify-content:space-between'><h2 style='margin:0'>🎲 Tonight’s meal</h2><div class='row' style='margin:0'><button class='btn sm primary' data-decide='1'>🎲 Another</button><button class='btn sm' data-closepick='1'>Close</button></div></div><div class='tgrid mealgrid'>"+mealTileHTML(c,true)+"</div></div>";
-}
-function decideMeal(){
-  var meals=buildMeals();
-  if(!meals.length)return false;
-  lastPick=null;
-  lastMeal=pickSuggestion(meals,lastMeal,function(c){return c.key},function(c){return c.miss.length}).key;
-  renderPick(meals);$("pick").scrollIntoView({behavior:"smooth",block:"start"});return true;
 }
 HOSTEL["Chapati (Roti)"]=["T"];HOSTEL["Steamed Rice"]=["R","I"];HOSTEL["Jeera Rice"]=["R","I"];
 STEPS["Chapati (Roti)"]={"en":["Knead atta with water and a pinch of salt into a soft dough; rest 15 min.","Divide into lemon-size balls and roll thin rounds, dusting with dry flour.","Heat the tava on medium-high; cook 20–30 sec until bubbles appear, then flip.","Cook the other side, then puff it on the flame or press gently with a cloth.","Brush a little ghee and keep covered."],"hi":["आटे में पानी और चुटकी भर नमक डालकर नरम आटा गूँथें; 15 मिनट रखें।","नींबू जितनी लोइयाँ बनाएँ और सूखे आटे से पतली गोल रोटी बेलें।","तवा मध्यम-तेज़ आँच पर गरम करें; 20–30 सेकंड सेंकें जब तक बुलबुले आएँ, फिर पलटें।","दूसरी तरफ़ सेंकें, फिर सीधी आँच पर फुलाएँ या कपड़े से हल्का दबाएँ।","थोड़ा घी लगाएँ और ढककर रखें।"]};
@@ -1643,7 +1673,8 @@ function renderCuis(){var n=Object.keys(cuis).length,O=[["All","All"],["Daily","
 document.addEventListener("toggle",function(e){if(e.target.classList&&e.target.classList.contains("rg"))regOpen=e.target.open},true);
 document.addEventListener("click",function(e){var c=e.target.closest&&e.target.closest("[data-clr],[data-reset],[data-diet]");if(!c)return;var k=c.dataset.clr,d=c.dataset.diet,R=c.dataset.reset;
  if(d!==undefined){if((d==="nv")!==nonveg)$("nvBtn").click();return}
- if(R||k==="crs")pickCrs("meal");if(R||k==="tm")tmax=0;if(R||k==="occ")occ="All";if(R||k==="hv")hv="All";if(R||k==="gem")gemOnly=false;
+ if(R)resetCategories("meal");else if(k==="crs")resetCategories("all");
+ if(R||k==="tm")tmax=0;if(R||k==="occ")occ="All";if(R||k==="hv")hv="All";if(R||k==="gem")gemOnly=false;
  if(R||k==="reg"){cuis={};CUIS.forEach(function(x){cuis[x]=1})}
  if((R||k==="nv")&&nonveg)$("nvBtn").click();if((R||k==="host")&&hostel)$("hostelBtn").click();
  renderCuis();renderResults();save()});
@@ -1709,7 +1740,7 @@ document.addEventListener("click",function(e){var tg=e.target.closest?e.target:e
  var c=tg.closest&&tg.closest("[data-reset],[data-clr]");
  if(c){var kk=c.dataset.clr,R=c.dataset.reset;[["tm",TS],["occ",OS],["hv",HS],["reg",RS]].forEach(function(z){if(R||kk===z[0])Object.keys(z[1]).forEach(function(x){delete z[1][x]})});syncT();saveF()}},true);
 function afl(){var a=[];if(!MFREADY)return a;if(nonveg)a.push(["nv","🍗 Non-veg"]);
- if(!sel.meal)Object.keys(sel).forEach(function(k){var o=CRS.filter(function(c){return c[0]===k})[0];if(o)a.push(["crs",o[1]])});
+ if(crs!=="meal"&&crs!=="all")a.push(["crs",T("Categories","श्रेणियाँ")]);
  var g=function(kind,st,list){if(!restr(st,ids(list)))return;var v=list.filter(function(o){return st&&st[o[0]]}).map(function(o){return o[1]});if(v.length)a.push([kind,v.join(" + ")])};
  g("tm",TS,TB);g("occ",OS,OB);g("hv",HS,HB);
  var rg=restr(RS,rIds())?Object.keys(RS):[];if(rg.length)a.push(["reg",rg.length>2?rg.length+" regions":rg.join(" + ")]);
@@ -1718,7 +1749,7 @@ function renderCuis(){if(!MFREADY)return;var n=Object.keys(cuis).length,O=[["All
  mc=function(k,st,list){return chip(full(st,ids(list)),"data-ff",k+"|#all","✓ All")+chip(false,"data-ff",k+"|*","Clear")+list.map(function(o){return chip(!!st[o[0]],"data-ff",k+"|"+o[0],o[1])}).join("")},hint=function(x){return "<small style='display:block;opacity:.7;margin-top:6px'>"+x+"</small>"},regs=function(a){return a.map(function(c){return chip(!!RS[c],"data-ff","r|"+c,c===INTL?"🌍 "+INTL:c)}).join("")},ch=function(a){return "<div class='chips'>"+a+"</div>"},S=function(t,b){return "<div class='fs'><h3>"+t+"</h3>"+b+"</div>"};
  $("cuis").innerHTML=hostelPanel()+"<div class='fh'><h2>Filters</h2><button class='btn sm' data-reset='1'>Reset all</button><button class='sx' data-view='recipes' aria-label='Close'>✕</button></div>"+
  S("Diet","<div class='seg'><button data-diet='v' class='"+(nonveg?"":"on")+"'>🥦 Veg</button><button data-diet='nv' class='"+(nonveg?"on":"")+"'>🍗 Non-veg</button></div>")+
- S("What do you want to make?","<div class='cgrid'>"+CRS.map(function(o){var p=o[1].split(" "),e=p.length>1&&o[0]!=="all";return "<button data-crs='"+o[0]+"' class='"+(sel[o[0]]?"on":"")+"'><i>"+(e?p[0]:"📋")+"</i>"+(e?p.slice(1).join(" "):o[1])+"<small>"+catCount(o[0])+"</small></button>"}).join("")+"</div><small style='display:block;opacity:.7;margin-top:6px'>Tap more than one to combine, e.g. Snack + Drink</small>"+(crs==="meal"?ch(chip(wSweet,"data-ws","1","🍮 Include a sweet")+chip(wSide,"data-wd","1","🥣 Include a side")+chip(wProt,"data-wp","1","💪 Add protein")):""))+
+ S("What do you want to make?",categorySelection()+categoryGrid()+(sel.meal?ch(chip(wSweet,"data-ws","1","🍮 Include a sweet")+chip(wSide,"data-wd","1","🥣 Include a side")+chip(wProt,"data-wp","1","💪 Add protein")):""))+
  S("Time I have (prep + cook)",ch(mc("t",TS,TB))+hint("Pick one or more time ranges"))+
  S("Occasion",ch(mc("o",OS,OB))+hint("Pick one or more"))+
  S("Heaviness",ch(mc("h",HS,HB))+hint("Pick one or more"))+
@@ -1788,6 +1819,24 @@ OB.push(["Summer","☀️ Summer"],["Snacks","🍿 Snacks"]);})();
     else if(c==="Bread"&&ing.indexOf("fryingoil")<0)HOSTEL[name]=["T"];
   });
 })();
+if(typeof INSTAGRAM_RECIPES!=="undefined"){
+  CATS.push(["Specialty & other",[["vanillaextract","Vanilla extract"]]]);
+  NAME.vanillaextract="Vanilla extract";
+  HI["Vanilla extract"]="वनीला अर्क";
+  INSTAGRAM_RECIPES.forEach(function(entry){
+    var name=entry.name,r=entry.recipe;
+    RECIPE_REELS[name]=entry;
+    if(!r)return;
+    var occasions=["Daily"];
+    if(r.course==="Sweet")occasions.push("Sweets");
+    if(r.course==="Snack")occasions.push("Snacks");
+    MEALS.push([name,1,r.prep,r.cook,r.soak||0,r.ingredients,r.region,0,occasions,""]);
+    COURSEO[name]=r.course;
+    STEPS[name]=r.steps;
+    HI[name]=r.hindi;
+    if(r.appliances)HOSTEL[name]=r.appliances;
+  });
+}
 Object.assign(HI,{"International / National":"अंतरराष्ट्रीय / राष्ट्रीय","Indian regions":"भारतीय क्षेत्र","Other cuisines":"अन्य व्यंजन","Clear regions":"क्षेत्र हटाएँ","Pick one or more":"एक या ज़्यादा चुनें","Pick one or more time ranges":"एक या ज़्यादा समय चुनें","Pick one or more regions — nothing picked shows all":"एक या ज़्यादा क्षेत्र चुनें — कुछ न चुनें तो सब दिखेंगे","✓ All":"✓ सभी","Select all regions":"सभी क्षेत्र चुनें","Summer":"गर्मी","Snacks":"नाश्ता","Up to 20 min":"20 मिनट तक","20–30 min":"20–30 मिनट","30–45 min":"30–45 मिनट","45–60 min":"45–60 मिनट","1–1.5 hr":"1–1.5 घंटा","1.5–2 hr":"1.5–2 घंटे"});
 RX.unshift([/Regions \((\d+) selected\)/g,"क्षेत्र ($1 चुने)"],[/Regions \(all\)/g,"क्षेत्र (सभी)"]);
 KEYS=Object.keys(HI).sort(function(a,b){return b.length-a.length});LOW={};KEYS.forEach(function(k){LOW[k.toLowerCase()]=HI[k]});
@@ -1816,20 +1865,23 @@ document.addEventListener("click",function(e){var tg=e.target.closest?e.target:e
 var EMO_T={t1:"⚡",t2:"⏱️",t3:"🕒",t4:"🕓",t5:"⏳",t6:"🫕"},EMO_O={Daily:"🏠",Festive:"🪔",Vrat:"🙏",Sweets:"🍮"},
 EMO_R={"Punjabi":"🫓","Rajasthani":"🏜️","Gujarati":"🥣","Maharashtrian":"🌶️","Bengali":"🌾","South Indian":"🥥","North Indian":"🍛","Bihari":"🥟","Odia":"🍚","Pahadi":"⛰️","Kashmiri":"🌸","Goan & Konkan":"🌴","Assam & NE":"🍵","Indo-Chinese":"🥡","Italian":"🍝"},
 PAL={cat:["#ffe9d2","#ffc58f"],tm:["#e0f0ff","#a9d2fb"],oc:["#ffe3ee","#ffb3d1"],hv:["#e3f6e3","#b0e0b4"],mo:["#efe6ff","#cdbdf7"],rg:["#fff1c9","#ffd37a"]};
-function slTile(attr,emo,lab,sub,on,pal){return "<button class='sl"+(on?" on":"")+"' "+attr+" style='background:linear-gradient(145deg,"+pal[0]+","+pal[1]+")'><b>"+lab+"</b>"+(sub?"<small>"+sub+"</small>":"")+"<i>"+emo+"</i>"+(on?"<u>✓</u>":"")+"</button>"}
-function slRow(title,tiles,clr){return "<div class='slr'><div class='slh'><h3>"+title+"</h3>"+(clr||"")+"</div><div class='sls'>"+tiles+"</div></div>"}
+function slTile(attr,emo,lab,sub,on,pal){return "<button class='sl"+(on?" on":"")+"' "+attr+" style='background:linear-gradient(145deg,"+pal[0]+","+pal[1]+")'><b>"+lab+"</b>"+(sub?"<small>"+sub+"</small>":"")+"<i aria-hidden='true'>"+emo+"</i>"+(on?"<u aria-hidden='true'>✓</u>":"")+"</button>"}
+function slRow(title,tiles,clr,summary){return "<div class='slr'><div class='slh'><h3>"+title+"</h3>"+(clr||"")+"</div>"+(summary||"")+"<div class='sls'>"+tiles+"</div></div>"}
 function slClr(k,st,L){return "<span class='sl-actions'><button data-sf='"+k+"|#all'>Select all</button><button data-sf='"+k+"|#none'>Clear all</button></span>"}
 function renderSlides(){
   var el=$("slides");if(!el||!MFREADY)return;
   var keep=Array.prototype.map.call(el.querySelectorAll(".sls"),function(x){return x.scrollLeft});
   var strip=function(s){return s.replace(/^[^A-Za-z0-9]+/,"").trim()};
-  var cat=CRS.map(function(o){var p=o[1].split(" "),e=p.length>1&&o[0]!=="all";return slTile("data-crs='"+o[0]+"'",e?p[0]:"📋",e?p.slice(1).join(" "):o[1],catCount(o[0])+" dishes",!!sel[o[0]],PAL.cat)}).join("");
+  var cat=CRS.map(function(o){
+    var id=o[0],on=!!sel[id],icon=id==="all"?"📋":o[1].split(" ")[0];
+    return slTile("data-crs='"+id+"' aria-pressed='"+on+"'",icon,categoryLabel(o),catCount(id)+" "+T("dishes","व्यंजन"),on,PAL.cat);
+  }).join("");
   var tm=TB.map(function(o){return slTile("data-sf='t|"+o[0]+"'",EMO_T[o[0]]||"⏱️",o[1],"",!!TS[o[0]],PAL.tm)}).join("");
   var oc=OB.map(function(o){return slTile("data-sf='o|"+o[0]+"'",EMO_O[o[0]]||"🍽️",o[1],"",restr(OS,oIds())&&!!OS[o[0]],PAL.oc)}).join("");
   var hv=HB.map(function(o){var p=o[1].split(" ");return slTile("data-sf='h|"+o[0]+"'",p[0],strip(o[1]),"",!!HS[o[0]],PAL.hv)}).join("");
   var rg=rIds().map(function(c){return slTile("data-sf='r|"+c+"'",c===INTL?"🌍":(EMO_R[c]||"🍽️"),c,"",restr(RS,rIds())&&!!RS[c],PAL.rg)}).join("");
   var mo=slTile("data-diet='v'","🥦","Veg","",!nonveg,PAL.hv)+slTile("data-diet='nv'","🍗","Non-veg","",!!nonveg,PAL.oc)+slTile("data-proxy='hostelBtn'","🎒","Hostel mode","",!!hostel,PAL.mo)+slTile("data-gem='1'","★","Local gems","",!!gemOnly,PAL.rg)+slTile("data-elab='1'","👩‍🍳","Elaborate","",!!elab,PAL.cat);
-  el.innerHTML=slRow("What do you want to make?",cat)+slRow("Regions",rg,slClr("r",RS,rIds()))+slRow("Occasion",oc,slClr("o",OS,oIds()))+slRow("Time I have",tm,slClr("t",TS,tIds()))+slRow("Heaviness",hv,slClr("h",HS,hIds()))+slRow("Diet",mo);
+  el.innerHTML=slRow("What do you want to make?",cat,"",categorySelection())+slRow("Regions",rg,slClr("r",RS,rIds()))+slRow("Occasion",oc,slClr("o",OS,oIds()))+slRow("Time I have",tm,slClr("t",TS,tIds()))+slRow("Heaviness",hv,slClr("h",HS,hIds()))+slRow("Diet",mo);
   Array.prototype.forEach.call(el.querySelectorAll(".slr"),function(x,i){if(i>0)x.classList.add("sm")});
   Array.prototype.forEach.call(el.querySelectorAll(".sls"),function(x,i){x.scrollLeft=keep[i]||0});
 }
@@ -1869,7 +1921,7 @@ function catsRaw(m){var n=m[0],l=n.toLowerCase(),a=[course(n)],c=a[0];
 function buildCats(){CATC={};MBY={};MEALS.forEach(function(m){CATC[m[0]]=catsRaw(m);MBY[m[0]]=m})}
 function cats(m){if(!MFREADY)return catsRaw(m);if(!CATC)buildCats();return CATC[m[0]]||catsRaw(m)}
 function catsN(n){if(!MFREADY||!CATC)buildCats();return CATC[n]||[]}
-inSel=function(m){var c=cats(m);return Object.keys(sel).some(function(k){return c.indexOf(k)>-1})};
+inSel=function(m){return (!!sel.meal&&wholeMealDish(m[0]))||cats(m).some(function(k){return !!sel[k]})};
 function catCount(k){
   var vrat=vratOnly();
   return MEALS.filter(function(m){
@@ -1968,10 +2020,12 @@ body[class*="sh-"] [data-vs] .card>h2:first-child{background:#e6f4ee;color:#0f3d
 .slr.cr .sl{width:128px;height:156px;padding:0;border-radius:18px;border:2px solid transparent;box-shadow:0 4px 14px rgba(15,61,40,.2);color:#fff}
 .slr.cr .sl:not(.cp){background:#e6f4ee!important;color:#14231b;padding:10px}
 .slr.cr .sl.cp i{display:none}
-.slr.cr .sl.cp b{position:absolute;left:10px;right:10px;bottom:26px;max-width:none;font-size:14px;line-height:1.15;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.55)}
+.slr.cr .sl.cp b{position:absolute;left:10px;right:10px;bottom:31px;max-width:none;font-size:14px;line-height:1.15;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.55)}
 .slr.cr .sl.cp small{position:absolute;left:10px;bottom:9px;margin:0;font-size:11px;color:rgba(255,255,255,.9);text-shadow:0 1px 4px rgba(0,0,0,.55)}
 .slr.cr .sl.on{border-color:#1b7f4c;box-shadow:0 0 0 3px rgba(27,127,76,.25),0 6px 16px rgba(15,61,40,.3)}
-.slr.cr .sl u{background:#1b7f4c}
+.slr.cr .sl.on:not(.cp) i{right:34px}
+#slides .slr.cr .sl.on > u,.cgrid .category-tick{position:absolute;top:auto;right:6px;bottom:6px;display:grid!important;place-items:center;width:22px;height:22px;border:1px solid #fff;border-radius:50%;background:#0f3d28;color:#fff;font-size:14px;line-height:1;font-weight:700}
+.category-selection+.cgrid{margin-top:6px}
 .slr.cr .slh h3{font-size:18px}
 .slh button{color:#1b7f4c}
 
