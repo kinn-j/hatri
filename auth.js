@@ -1,4 +1,4 @@
-/* Raman Rasoi authentication for the GitHub Pages / static-hosted app.
+/* Hatri authentication for the GitHub Pages / static-hosted app.
    Complete FIREBASE_CONFIG from your own Firebase Console web-app settings.
    These client identifiers are public; never paste a service-account key here. */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.3.0/firebase-app.js';
@@ -110,7 +110,7 @@ function renderProfileDrawer() {
   }
   const identity = document.createElement('div');
   const name = document.createElement('strong');
-  name.textContent = safeText(currentUser.displayName) || 'Raman Rasoi cook';
+  name.textContent = safeText(currentUser.displayName) || 'Hatri cook';
   const email = document.createElement('span');
   email.textContent = safeText(currentUser.email);
   identity.append(name, email);
@@ -249,7 +249,7 @@ function queueSave() {
     } catch (error) {
       lastSynced = '';
       status('Cloud save failed. Your selections are still on this device.');
-      console.warn('Raman Rasoi sync error', error.code || error.message);
+      console.warn('Hatri sync error', error.code || error.message);
     }
   }, 900);
 }
@@ -314,7 +314,7 @@ function humanError(error) {
   const code = error && error.code;
   const known = {
     'auth/account-exists-with-different-credential': 'This Google account is already registered with another sign-in method.',
-    'auth/popup-blocked': 'Allow pop-ups for Raman Rasoi, then try again.',
+    'auth/popup-blocked': 'Allow pop-ups for Hatri, then try again.',
     'auth/popup-closed-by-user': 'Sign-in was cancelled. Please try again.',
     'auth/unauthorized-domain': 'This website must be added to Firebase Authorized domains.',
     'permission-denied': 'Cloud database permission denied. Ask the site owner to publish the Firestore rules.'
@@ -390,11 +390,11 @@ if (!isClaude && configured) {
       } catch (error) {
         syncReady = false; // Never overwrite remote data if the initial read failed.
         status('Could not load your cloud data. Please refresh and check the database rules.');
-        console.warn('Raman Rasoi account load failed', error.code || error.message);
+        console.warn('Hatri account load failed', error.code || error.message);
       }
     });
   } catch (error) {
     status('Account setup error. Please check your Firebase configuration.');
-    console.warn('Raman Rasoi Firebase setup failed', error.code || error.message);
+    console.warn('Hatri Firebase setup failed', error.code || error.message);
   }
 }

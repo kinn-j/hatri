@@ -1,4 +1,4 @@
-# 🍛 Raman Rasoi — Pantry-first meal planner
+# 🍛 Hatri — Pantry-first meal planner
 
 https://kinn-j.github.io/hatri/
 
@@ -7,7 +7,7 @@ Static HTML/CSS/JavaScript website with an installable Progressive Web App (PWA)
 
 ## Included
 
-- `index.html` — latest Raman Rasoi app from Claude, adapted for independent website hosting and bundled photo paths.
+- `index.html` — Hatri meal planner, adapted for independent website hosting and bundled photo paths.
 - `images/` — **793 food images** in WebP format, including archived photos and newer generated images.
 - `images/photos.json` — maps recipe slugs to image files. Recipes with matching dishes can share an image.
 - `images/IMAGE_INVENTORY.csv` — records original image name and source ZIP for auditing.

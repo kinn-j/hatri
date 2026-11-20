@@ -1,4 +1,4 @@
-# Raman Rasoi — Google login and cloud saving
+# Hatri — Google login and cloud saving
 
 The app runs on GitHub Pages. Its Firebase web configuration for project
 `hatri-5b44d` has already been entered in `auth.js`. **Login will not work

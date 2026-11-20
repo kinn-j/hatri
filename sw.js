@@ -1,5 +1,5 @@
-/* Raman Rasoi website shell. Increase cache version when shipping changes. */
-const CACHE = 'raman-rasoi-v6-recipe-detail-language';
+/* Hatri website shell. Increase cache version when shipping changes. */
+const CACHE = 'hatri-v8-app-name';
 const SHELL = ['./', './index.html', './vrat-recipes.js', './manifest.webmanifest',
   './icons/icon-192x192.png', './icons/icon-512x512.png',
   './icons/apple-touch-icon.png', './icons/favicon.png', './images/photos.json'];

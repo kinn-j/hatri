@@ -1,4 +1,4 @@
-# Raman Rasoi — Website + Installable App (PWA)
+# Hatri — Website + Installable App (PWA)
 
 READY FOR STATIC HOSTING. No build step, npm, subscription, or domain required.
 
@@ -6,14 +6,14 @@ READY FOR STATIC HOSTING. No build step, npm, subscription, or domain required.
 
 OPTION A — Netlify Drop
 1. Go to https://app.netlify.com/drop and sign in.
-2. Unzip Raman_Rasoi_website_READY.zip.
-3. Drag the **Raman_Rasoi_website** folder onto the Netlify Drop page.
+2. Unzip the website package.
+3. Drag the folder containing `index.html` onto the Netlify Drop page.
 4. Your site gets a temporary HTTPS `*.netlify.app` URL.
 
 OPTION B — Cloudflare Pages
 1. Go to https://dash.cloudflare.com and sign in.
 2. Workers & Pages > Create > Pages > Direct Upload (wording may change).
-3. Upload the contents of the Raman_Rasoi_website folder or the prepared ZIP.
+3. Upload the website folder or its ZIP package.
 4. Publish to a free HTTPS `*.pages.dev` URL.
 
 IMPORTANT: The upload root must contain **index.html** directly.
