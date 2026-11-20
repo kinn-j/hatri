@@ -1,5 +1,5 @@
 /* Hatri website shell. Increase cache version when shipping changes. */
-const CACHE = 'hatri-v10-category-selection';
+const CACHE = 'hatri-v11-category-removal';
 const SHELL = ['./', './index.html', './vrat-recipes.js', './instagram-recipes.js', './manifest.webmanifest',
   './icons/icon-192x192.png', './icons/icon-512x512.png',
   './icons/apple-touch-icon.png', './icons/favicon.png', './images/photos.json'];
