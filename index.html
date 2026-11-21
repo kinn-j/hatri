@@ -366,8 +366,9 @@ details.dton{outline:3px solid var(--accent);outline-offset:-3px}
 </aside>
 <script src="./vrat-recipes.js"></script>
 <script src="./instagram-recipes.js"></script>
+<script src="./quick-north-recipes.js"></script>
 <script>
-var COURSEO={},HVO={},RGO={},VRAT_RECIPE_SOURCES={},RECIPE_REELS={};
+var COURSEO={},HVO={},RGO={},RECIPE_SOURCES={},RECIPE_REELS={},MEASURED_RECIPES={};
 var SEASON=(function(m){return m>=10||m<=1?"w":m>=2&&m<=5?"s":"m"})(new Date().getMonth());
 var CATS=[
 ["Daily vegetables",[["onion","Onion"],["tomato","Tomato"],["potato","Potato"],["capsicum","Capsicum"],["brinjal","Brinjal"],["okra","Bhindi"],["cabbage","Cabbage"],["carrot","Carrot"],["cucumber","Cucumber"],["lauki","Lauki (bottle gourd)"],["beans","French beans"],["mushroom","Mushroom"],["corn","Sweet corn"],["arbi","Arbi (colocasia)"]]],
@@ -1098,18 +1099,23 @@ function nmx(i){return LANG==="hi"?(HI[NAME[i]]||NAME[i]):NAME[i]}
 function rateRow(m){var sl=slug(m.n),my=MY[sl]||{},r=my.rating||0,ph=my.photos||[];
  if(!ME)return "<p class='note'>Sign in to rate this recipe and save photos of your creation.</p>";
  return "<div class='rate'><b>Your rating:</b> "+[1,2,3,4,5].map(function(n){return "<button class='star"+(n<=r?" on":"")+"' data-rate='"+sl+"|"+n+"' aria-label='"+n+"'>★</button>"}).join("")+"</div><div class='mine'>"+ph.map(function(id){return "<img src='"+photoSrc(id)+"' alt=''>"}).join("")+(asx?"<button class='btn sm' data-cp='"+sl+"'>📸 Add your photo</button>":"")+"</div>"}
+function measuredIngredients(recipe){
+  return "<p><b>"+T("Serves","परोसें")+" "+recipe.serves+"</b></p><ul>"+recipe.amounts[LANG].map(function(amount){return "<li>"+amount+"</li>"}).join("")+"</ul>";
+}
 function recipePanel(m){
  var sl=slug(m.n),req=m.ing.filter(function(r){return r.slice(-1)!=="?"}).map(nmx),opt=m.ing.filter(function(r){return r.slice(-1)==="?"}).map(function(r){return nmx(r.slice(0,-1))});
  var st=STEPS[m.n]?STEPS[m.n][LANG]:gen(m);var nost=!st.length;
-  var source=VRAT_RECIPE_SOURCES[m.n],reel=RECIPE_REELS[m.n];
+  var source=RECIPE_SOURCES[m.n],reel=RECIPE_REELS[m.n],measured=MEASURED_RECIPES[m.n];
   var credit=source?"<p class='note'>"+T("Recipe inspiration","रेसिपी का स्रोत")+' · <a href="'+source[1]+'" target="_blank" rel="noopener">'+source[0]+"</a></p>":"";
+  if(measured)credit+="<p class='note'>"+T("AI-generated dish image","एआई से बनाई गई व्यंजन की तस्वीर")+"</p>";
   var watch="";
   if(reel){
     watch=' <a class="btn sm" href="'+reel.reel+'" target="_blank" rel="noopener">'+T("Watch on Instagram","इंस्टाग्राम पर देखें")+"</a>";
     credit+='<p class="note">'+reel.creator+' · <a href="'+reel.written+'" target="_blank" rel="noopener">'+T("Written recipe","लिखित रेसिपी")+"</a></p>";
   }
   var basics=isV(m)?T("Use sendha namak where needed and season according to your household’s fasting practice.","ज़रूरत हो तो सेंधा नमक डालें और अपने घर की व्रत परंपरा के अनुसार मसाले चुनें।"):"Pantry basics: oil, salt, turmeric, red chilli powder, jeera (assumed at home)";
-  return "<div class='row' style='margin:8px 0 0'><button class='btn sm primary' data-cook='"+encodeURIComponent(m.n)+"'>▶ Start cooking</button>"+watch+"</div><details class='steps' data-sl='"+sl+"'"+(openR[sl]?" open":"")+"><summary>📖 Recipe</summary><p><b>You need:</b> "+req.join(", ")+(opt.length?" · Optional: "+opt.join(", "):"")+"</p><p class='note'>"+basics+"</p>"+(nost?"<p class='note'>Step-by-step method coming soon for this dish.</p>":"<ol>"+st.map(function(x){return "<li>"+x+"</li>"}).join("")+"</ol>"+(TIPT[rtype(m.n)]&&!STEPS[m.n]?"<p class='note'>💡 "+TIPT[rtype(m.n)][LANG]+"</p>":""))+credit+rateRow(m)+"</details>"}
+  var ingredients=measured?measuredIngredients(measured):"<p><b>You need:</b> "+req.join(", ")+(opt.length?" · Optional: "+opt.join(", "):"")+"</p><p class='note'>"+basics+"</p>";
+  return "<div class='row' style='margin:8px 0 0'><button class='btn sm primary' data-cook='"+encodeURIComponent(m.n)+"'>▶ Start cooking</button>"+watch+"</div><details class='steps' data-sl='"+sl+"'"+(openR[sl]?" open":"")+"><summary>📖 Recipe</summary>"+ingredients+(nost?"<p class='note'>Step-by-step method coming soon for this dish.</p>":"<ol>"+st.map(function(x){return "<li>"+x+"</li>"}).join("")+"</ol>"+(TIPT[rtype(m.n)]&&!STEPS[m.n]?"<p class='note'>💡 "+TIPT[rtype(m.n)][LANG]+"</p>":""))+credit+rateRow(m)+"</details>"}
 function renderKitchen(){var k=$("mykit");if(!k)return;
  if(!ME){k.innerHTML="<p class='sub'>Sign in to keep your ratings and photos.</p>";return}
  var ids=Object.keys(MY).filter(function(x){return MY[x].rating||(MY[x].photos||[]).length});
@@ -1619,7 +1625,9 @@ function openCook(name){var r=MEALS.filter(function(x){return x[0]===name})[0];i
  renderCook()}
 function closeCook(){stopTimer();$("cook").hidden=true;document.body.style.overflow="";try{if(CK.w){CK.w.release();CK.w=null}}catch(e){}}
 function renderCook(){var n=CK.st.length,t=CK.st[CK.i],mn=stepMins(t),last=CK.i===n-1;
- $("cook").innerHTML="<div class='ck-top'><b>"+dn(CK.n)+"</b><button class='x' data-ck='close' aria-label='Close'>×</button></div><div class='ck-bar'><i style='width:"+Math.round((CK.i+1)/n*100)+"%'></i></div><div class='ck-n'>"+T("Step","चरण")+" "+(CK.i+1)+" / "+n+"</div><div class='ck-step'>"+t+"</div>"+
+ var measured=MEASURED_RECIPES[CK.n];
+ var ingredients=measured?"<details class='steps'><summary>"+T("Ingredients","सामग्री")+"</summary>"+measuredIngredients(measured)+"</details>":"";
+ $("cook").innerHTML="<div class='ck-top'><b>"+dn(CK.n)+"</b><button class='x' data-ck='close' aria-label='Close'>×</button></div><div class='ck-bar'><i style='width:"+Math.round((CK.i+1)/n*100)+"%'></i></div><div class='ck-n'>"+T("Step","चरण")+" "+(CK.i+1)+" / "+n+"</div>"+ingredients+"<div class='ck-step'>"+t+"</div>"+
  (mn?"<div class='ck-timer'>"+(CK.left?"<b id='ckleft'>"+fmt(CK.left)+"</b><button class='btn' data-ck='stopt'>"+T("Stop","रोकें")+"</button>":"<button class='btn' data-ck='timer' data-m='"+mn+"'>⏱ "+T("Start "+mn+" min timer",mn+" मिनट का टाइमर शुरू करें")+"</button>")+"</div>":"")+
  "<div class='ck-nav'><button class='btn' data-ck='prev'"+(CK.i?"":" disabled")+">← "+T("Back","पीछे")+"</button><button class='btn primary' data-ck='"+(last?"done":"next")+"'>"+(last?"🎉 "+T("Done","हो गया"):T("Next","आगे")+" →")+"</button></div>"}
 function startTimer(m){stopTimer();CK.left=m*60;CK.tm=setInterval(function(){CK.left--;var el=$("ckleft");if(el)el.textContent=fmt(CK.left);if(CK.left<=0){stopTimer();try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}toast(T("Timer done!","टाइमर पूरा!"));renderCook()}},1000);renderCook()}
@@ -1850,7 +1858,7 @@ OB.push(["Summer","☀️ Summer"],["Snacks","🍿 Snacks"]);})();
     HI[name]=hindi;
     var [blogKey,article]=Array.isArray(source)?source:[source];
     var blog=VRAT_SOURCES[blogKey];
-    VRAT_RECIPE_SOURCES[name]=[blog[0],article||blog[1]];
+    RECIPE_SOURCES[name]=[blog[0],article||blog[1]];
     if(ing.indexOf("fryingoil")>-1)HVO[name]="Heavy";
     else if(c==="Drink"||c==="Side"||!cook)HVO[name]="Light";
     if(!cook)HOSTEL[name]=["N"];
@@ -1876,6 +1884,46 @@ if(typeof INSTAGRAM_RECIPES!=="undefined"){
     if(r.appliances)HOSTEL[name]=r.appliances;
   });
 }
+// Register the quick collection before the category and pantry lookups are built.
+(function(){
+  if(typeof QUICK_NORTH_RECIPES==="undefined")return;
+  var groups={
+    "Daily vegetables":[
+      ["springonion","Spring onions","हरा प्याज़"],
+      ["radishgreens","Radish leaves","मूली की पत्तियाँ"],
+      ["freshredchilli","Fresh red chillies","ताज़ी लाल मिर्च"]
+    ],
+    "Dairy":[["malai","Malai (clotted cream)","मलाई"]],
+    "Dals, pulses & more":[
+      ["cookedchickpeas","Cooked chickpeas","उबले काबुली चने"],
+      ["cookedmothbeans","Cooked moth beans","उबली मोठ दाल"],
+      ["greenchickpeas","Fresh green chickpeas (cholia)","हरे चने (छोलिया)"]
+    ],
+    "Specialty & other":[
+      ["rabodi","Thin rabodi (dried maize wafers)","पतली राबोड़ी"],
+      ["amchur","Amchur (dried mango powder)","अमचूर"]
+    ]
+  };
+  Object.keys(groups).forEach(function(group){
+    var items=groups[group];
+    CATS.push([group,items.map(function(i){return [i[0],i[1]]})]);
+    items.forEach(function(i){NAME[i[0]]=i[1];HI[i[1]]=i[2]});
+  });
+  QUICK_NORTH_RECIPES.forEach(function(recipe){
+    var name=recipe.name,c=recipe.course;
+    var occasions=["Daily"];
+    if(c==="Sweet")occasions.push("Sweets");
+    if(c==="Snack")occasions.push("Snacks");
+    MEALS.push([name,1,recipe.prep,recipe.cook,0,recipe.pantry,recipe.region,0,occasions,""]);
+    COURSEO[name]=c;
+    HI[name]=recipe.hindi;
+    STEPS[name]=recipe.steps;
+    RECIPE_SOURCES[name]=recipe.source;
+    MEASURED_RECIPES[name]=recipe;
+    if(recipe.appliances)HOSTEL[name]=recipe.appliances;
+    if(c==="Side"||!recipe.cook)HVO[name]="Light";
+  });
+})();
 Object.assign(HI,{"International / National":"अंतरराष्ट्रीय / राष्ट्रीय","Indian regions":"भारतीय क्षेत्र","Other cuisines":"अन्य व्यंजन","Clear regions":"क्षेत्र हटाएँ","Pick one or more":"एक या ज़्यादा चुनें","Pick one or more time ranges":"एक या ज़्यादा समय चुनें","Pick one or more regions — nothing picked shows all":"एक या ज़्यादा क्षेत्र चुनें — कुछ न चुनें तो सब दिखेंगे","✓ All":"✓ सभी","Select all regions":"सभी क्षेत्र चुनें","Summer":"गर्मी","Snacks":"नाश्ता","Up to 20 min":"20 मिनट तक","20–30 min":"20–30 मिनट","30–45 min":"30–45 मिनट","45–60 min":"45–60 मिनट","1–1.5 hr":"1–1.5 घंटा","1.5–2 hr":"1.5–2 घंटे"});
 RX.unshift([/Regions \((\d+) selected\)/g,"क्षेत्र ($1 चुने)"],[/Regions \(all\)/g,"क्षेत्र (सभी)"]);
 KEYS=Object.keys(HI).sort(function(a,b){return b.length-a.length});LOW={};KEYS.forEach(function(k){LOW[k.toLowerCase()]=HI[k]});
