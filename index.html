@@ -368,6 +368,7 @@ details.dton{outline:3px solid var(--accent);outline-offset:-3px}
 <script src="./instagram-recipes.js"></script>
 <script src="./quick-north-recipes.js"></script>
 <script src="./street-food-recipes.js"></script>
+<script src="./rajasthani-recipes.js"></script>
 <script>
 var COURSEO={},HVO={},RGO={},RECIPE_SOURCES={},RECIPE_REELS={},MEASURED_RECIPES={};
 var SEASON=(function(m){return m>=10||m<=1?"w":m>=2&&m<=5?"s":"m"})(new Date().getMonth());
@@ -1890,6 +1891,7 @@ if(typeof INSTAGRAM_RECIPES!=="undefined"){
 (function(){
   var quick=typeof QUICK_NORTH_RECIPES==="undefined"?[]:QUICK_NORTH_RECIPES;
   var street=typeof STREET_FOOD_RECIPES==="undefined"?[]:STREET_FOOD_RECIPES;
+  var rajasthani=typeof RAJASTHANI_RECIPES==="undefined"?[]:RAJASTHANI_RECIPES;
   var groups={
     "Daily vegetables":[
       ["springonion","Spring onions","हरा प्याज़"],
@@ -1928,12 +1930,17 @@ if(typeof INSTAGRAM_RECIPES!=="undefined"){
       ["tofu","Firm tofu","सख़्त टोफू"]
     ]
   };
+  if(typeof RAJASTHANI_PANTRY!=="undefined"){
+    Object.keys(RAJASTHANI_PANTRY).forEach(function(group){
+      groups[group]=(groups[group]||[]).concat(RAJASTHANI_PANTRY[group]);
+    });
+  }
   Object.keys(groups).forEach(function(group){
     var items=groups[group];
     CATS.push([group,items.map(function(i){return [i[0],i[1]]})]);
     items.forEach(function(i){NAME[i[0]]=i[1];HI[i[1]]=i[2]});
   });
-  quick.concat(street).forEach(function(recipe){
+  quick.concat(street,rajasthani).forEach(function(recipe){
     var name=recipe.name,c=recipe.course;
     var occasions=["Daily"];
     if(c==="Sweet")occasions.push("Sweets");
