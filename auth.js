@@ -200,7 +200,7 @@ function localSnapshot() {
     choices: {
       sel: window.sel, crs: window.crs,
       sweet: window.wSweet, side: window.wSide, protein: window.wProt,
-      gems: window.gemOnly, occasion: window.occ, heaviness: window.hv
+      occasion: window.occ, heaviness: window.hv
     },
     ratings: window.MY || {}
   };
@@ -222,7 +222,6 @@ function applyCloud(data) {
   if (typeof c.sweet === 'boolean') window.wSweet = c.sweet;
   if (typeof c.side === 'boolean') window.wSide = c.side;
   if (typeof c.protein === 'boolean') window.wProt = c.protein;
-  if (typeof c.gems === 'boolean') window.gemOnly = c.gems;
   if (typeof c.occasion === 'string') window.occ = c.occasion;
   if (typeof c.heaviness === 'string') window.hv = c.heaviness;
   window.MY = data.ratings && typeof data.ratings === 'object' ? data.ratings : {};
@@ -291,7 +290,6 @@ function clearPreviousAccount() {
   window.wSweet = true;
   window.wSide = true;
   window.wProt = false;
-  window.gemOnly = false;
   window.occ = 'All';
   window.hv = 'All';
   window.tmax = 0;
