@@ -41,71 +41,43 @@ function initials(user) {
     .map(part => part[0]).join('').toUpperCase();
 }
 
-function renderNavAuth() {
-  const host = document.getElementById('navAccount');
-  if (!host) return;
-  const nav = document.querySelector('.nav');
-  if (nav && host.parentElement !== nav) nav.append(host);
-  host.innerHTML = '';
-  if (!currentUser) {
-    const button = document.createElement('button');
-    button.className = 'btn sm nav-login';
-    button.type = 'button';
-    button.dataset.rrAuth = 'google';
-    button.setAttribute('aria-label', 'Sign in with Google');
-    button.textContent = 'Sign in with Google';
-    host.append(button);
-    return;
-  }
-  const button = document.createElement('button');
-  button.className = 'rr-profile-trigger';
-  button.type = 'button';
-  button.dataset.rrProfileOpen = '1';
-  button.setAttribute('aria-label', `Open profile for ${safeText(currentUser.displayName) || 'your account'}`);
-  if (currentUser.photoURL) {
-    const image = document.createElement('img');
-    image.src = currentUser.photoURL;
-    image.alt = '';
-    button.append(image);
-  } else {
-    const label = document.createElement('span');
-    label.textContent = initials(currentUser);
-    button.append(label);
-  }
-  host.append(button);
-}
-
-function setDrawer(open) {
-  const drawer = document.getElementById('rr-profile-drawer');
-  const backdrop = document.getElementById('rr-drawer-backdrop');
-  if (!drawer || !backdrop) return;
-  if (open && currentUser) {
-    drawer.hidden = false;
-    backdrop.hidden = false;
-    drawer.setAttribute('aria-hidden', 'false');
-    requestAnimationFrame(() => drawer.classList.add('is-open'));
-    return;
-  }
-  drawer.classList.remove('is-open');
-  drawer.setAttribute('aria-hidden', 'true');
-  setTimeout(() => { drawer.hidden = true; backdrop.hidden = true; }, 240);
-}
-
 function renderProfileDrawer() {
+  const trigger = document.querySelector('[data-rr-profile-open]');
   const content = document.getElementById('rr-profile-content');
-  if (!content || !currentUser) return;
-  content.innerHTML = '';
+  const signin = document.getElementById('rr-drawer-signin');
+  const logout = document.getElementById('rr-drawer-logout');
+  trigger.replaceChildren();
+  content.replaceChildren();
+  content.hidden = !currentUser;
+  signin.hidden = !!currentUser;
+  signin.disabled = !auth;
+  logout.hidden = !currentUser;
+
+  if (!currentUser) {
+    const icon = document.createElement('span');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = '👤';
+    trigger.append(icon);
+    return;
+  }
+
   const card = document.createElement('div');
   card.className = 'rr-profile-card';
   if (currentUser.photoURL) {
     const image = document.createElement('img');
     image.src = currentUser.photoURL;
     image.alt = '';
-    card.append(image);
+    trigger.append(image);
+    card.append(image.cloneNode());
   } else {
+    const monogram = initials(currentUser);
+    const label = document.createElement('span');
+    label.setAttribute('aria-hidden', 'true');
+    label.textContent = monogram;
+    trigger.append(label);
     const fallback = document.createElement('div');
     fallback.className = 'rr-profile-fallback';
-    fallback.textContent = initials(currentUser);
+    fallback.textContent = monogram;
     card.append(fallback);
   }
   const identity = document.createElement('div');
@@ -116,35 +88,18 @@ function renderProfileDrawer() {
   identity.append(name, email);
   card.append(identity);
   content.append(card);
-  const section = document.createElement('div');
-  section.className = 'rr-drawer-section';
-  section.innerHTML = '<h3>Account information</h3><p class="sub">Your pantry, shopping list, filters and recipe ratings are synced privately to this Google account.</p><p id="rr-drawer-status" class="note" aria-live="polite"></p>';
-  const logout = document.createElement('button');
-  logout.type = 'button';
-  logout.className = 'btn';
-  logout.dataset.rrAuth = 'logout';
-  logout.textContent = 'Log out';
-  section.append(logout);
-  content.append(section);
-  const drawerStatus = section.querySelector('#rr-drawer-status');
-  if (drawerStatus) drawerStatus.textContent = syncMessage;
 }
-
-document.addEventListener('click', event => {
-  if (event.target.closest && event.target.closest('[data-rr-profile-open]')) setDrawer(true);
-  if (event.target.closest && event.target.closest('[data-rr-profile-close], #rr-drawer-backdrop')) setDrawer(false);
-});
-document.addEventListener('keydown', event => { if (event.key === 'Escape') setDrawer(false); });
 
 function status(message) {
   syncMessage = message;
   const element = document.getElementById('rr-auth-status');
   if (element) element.textContent = message;
+  const drawerStatus = document.getElementById('rr-drawer-status');
+  if (drawerStatus) drawerStatus.textContent = message;
 }
 
 function renderAccount() {
-  renderNavAuth();
-  if (currentUser) renderProfileDrawer();
+  renderProfileDrawer();
   const account = document.getElementById('acct');
   if (!account) return;
   const oldDescription = account.querySelector('p.sub');
@@ -353,7 +308,7 @@ if (!isClaude && configured) {
       const previous = loadedUid;
       syncReady = false;
       currentUser = newUser;
-      if (!newUser) setDrawer(false);
+      if (!newUser && previous) document.getElementById('rr-profile-drawer').close();
       loadedUid = newUser ? newUser.uid : null;
       lastSynced = '';
       if (!newUser) {
