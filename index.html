@@ -1742,7 +1742,14 @@ function renderIngsM(){var q=$("q").value.trim().toLowerCase(),vis=CATS.filter(f
   var tl=function(i){return "<button class='chip"+(have[i[0]]?" on":"")+"' data-i='"+i[0]+"'>"+(have[i[0]]?"✓ ":"")+i[1]+"</button>"};
   var items=q?[].concat.apply([],vis.map(function(c){return c[1].filter(function(i){return i[1].toLowerCase().indexOf(q)>-1})})):vis[curCat][1];
   var rail=vis.map(function(c,ci){var n=c[1].filter(function(i){return have[i[0]]}).length;return "<button data-cat='"+ci+"' class='"+(!q&&ci===curCat?"on":"")+"'>"+c[0]+(c[2]&&c[2].indexOf(SEASON)>-1?" 🌱":"")+(n?" <b>"+n+"</b>":"")+"</button>"}).join("");
-  $("ings").innerHTML="<div class='pk'><div class='rail'>"+rail+"</div><div class='pgrid'>"+(items.length?items.map(tl).join(""):"<p class='empty'>No match. Try another name.</p>")+"</div></div>";
+  var el=$("ings"),key=q?"search:"+q:"category:"+vis[curCat][0];
+  var oldGrid=el.querySelector(".pgrid"),oldRail=el.querySelector(".rail");
+  var gridLeft=oldGrid&&el.dataset.pantryList===key?oldGrid.scrollLeft:0;
+  var railLeft=oldRail?oldRail.scrollLeft:0;
+  el.innerHTML="<div class='pk'><div class='rail'>"+rail+"</div><div class='pgrid'>"+(items.length?items.map(tl).join(""):"<p class='empty'>No match. Try another name.</p>")+"</div></div>";
+  el.dataset.pantryList=key;
+  el.querySelector(".pgrid").scrollLeft=gridLeft;
+  el.querySelector(".rail").scrollLeft=railLeft;
   $("count").textContent="· "+Object.keys(have).length+" selected"}
 function tileHTML(m){var ok=!m.x.length,im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;
  return '<details class="tile" data-recipe="'+encodeURIComponent(m.n)+'">'+
@@ -2139,10 +2146,19 @@ function renderPantrySlides(){
   }).join("");
   tr.appendChild(tb);
   var c=cats[pantryTab],pn=document.createElement("div");pn.className="fpanel pantry-panel";
+  var oldGrid=el.querySelector(".pantry-grid"),oldTabs=el.querySelector(".pantry-tabs");
+  var gridLeft=oldGrid&&el.dataset.pantryGroup===c[0]?oldGrid.scrollLeft:0;
+  var tabsLeft=oldTabs?oldTabs.scrollLeft:0;
+  var focused=oldGrid&&oldGrid.contains(document.activeElement)?document.activeElement.dataset.i:null;
   pn.innerHTML="<div class='fph'><h3>"+c[0]+" ("+c[1].filter(function(x){return !!have[x[0]]}).length+")</h3><div class='pantry-head-actions'><div class='pantry-bulk' role='group' aria-label='Select pantry items'><button type='button' data-pantry-bulk='all'>Select all</button><button type='button' data-pantry-bulk='none'>Clear all</button></div></div></div>";
   var g=document.createElement("div");g.className="fgrid pantry-grid";
   c[1].forEach(function(x){g.insertAdjacentHTML("beforeend",slTile("data-i='"+x[0]+"'",icoOf(x[0]),NAME[x[0]]||x[1],"",!!have[x[0]],PAL.cat))});
   pn.appendChild(g);tr.appendChild(pn);el.replaceChildren(tr);
+  el.dataset.pantryGroup=c[0];
+  g.scrollLeft=gridLeft;
+  tb.scrollLeft=tabsLeft;
+  var item=focused&&g.querySelector("[data-i='"+CSS.escape(focused)+"']");
+  if(item)item.focus({preventScroll:true});
 }
 var pantryTab=0;
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pantry-bulk]");if(!b)return;var cats=CATS.map(function(c){return [c[0],c[1].filter(function(x){return nonveg||NV.indexOf(x[0])<0})]}).filter(function(c){return c[1].length}),c=cats[pantryTab];if(!c)return;var allItems=b.getAttribute("data-pantry-bulk")==="all";c[1].forEach(function(x){if(allItems){have[x[0]]=1;delete cart[x[0]]}else delete have[x[0]]});save();all();e.preventDefault();e.stopPropagation()},true);
