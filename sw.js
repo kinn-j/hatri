@@ -1,5 +1,5 @@
 /* Hatri website shell. Increase cache version when shipping changes. */
-const CACHE = 'hatri-v15-rajasthani-recipes';
+const CACHE = 'hatri-v16-ingredient-shopping';
 const SHELL = ['./', './index.html', './vrat-recipes.js', './instagram-recipes.js', './quick-north-recipes.js', './street-food-recipes.js', './rajasthani-recipes.js', './manifest.webmanifest',
   './icons/icon-192x192.png', './icons/icon-512x512.png',
   './icons/apple-touch-icon.png', './icons/favicon.png', './images/photos.json'];
