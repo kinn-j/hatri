@@ -2481,7 +2481,7 @@ body{padding-top:var(--nav-bottom)}
 html{scroll-padding-top:var(--nav-height)}
 html,body{background:var(--page-mint)!important;background-image:none!important}
 body{padding-top:0!important}
-.nav{position:sticky!important;top:0!important;min-height:0;padding:calc(9px + var(--safe-top)) max(12px,var(--safe-left)) 8px max(12px,var(--safe-right));background:var(--page-mint)!important;border-color:var(--search-pill-border)!important;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.nav{position:sticky!important;top:0!important;min-height:0;padding:calc(9px + var(--safe-top)) max(12px,var(--safe-left)) 8px max(12px,var(--safe-right));background:var(--page-mint)!important;border:0!important;box-shadow:none!important;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .nav .logo{order:1;white-space:nowrap}
 .nav .logo,.nav .logo span{color:var(--text)!important}
 .nav .links,.nav #acctBtn,.nav .btn.primary{display:none!important}
@@ -2507,6 +2507,8 @@ body{padding-top:0!important}
 .nav .mode-switch:focus-visible,.nav .voice-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 main#planner,main#planner [data-vs="recipes"],.topbar{background:var(--page-mint)!important}
 main#planner{box-shadow:none!important}
+#pantrySlides,#slides,#pantrySlides .slr,.ftabs,.fpanel{background:var(--page-mint)!important}
+#pantrySlides .slr{border-top:0!important}
 :root[data-theme="dark"] .nav #langBtn{background:#2a4c3d;color:#eff8f0;border-color:#547967}
 @media(max-width:480px){
   .nav{gap:6px 8px}
