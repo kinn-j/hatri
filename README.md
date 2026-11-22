@@ -2,6 +2,17 @@
 
 https://kinn-j.github.io/hatri/
 
+## Testing
+
+Run source-level regression checks with `node --test tests/static-regression.cjs`.
+For real Chromium desktop/mobile viewport interaction checks, run
+`node --test tests/regression.cjs` on a machine where Chromium is installed
+and permitted to launch (`/usr/bin/chromium`). The browser suite covers
+responsive layout, search/filtering, Hindi, vegetarian-only mode, pagination,
+pantry selection, image fallback and PWA installation. The static-hosted app
+does **not** contain separate Android or iOS native projects; verify the
+installed PWA on actual Android Chrome and iOS Safari devices before release.
+
 
 Static HTML/CSS/JavaScript website with an installable Progressive Web App (PWA) manifest and bundled food photos. Updated using the latest supplied Claude HTML (`Raman Rasoi — Pantry-first meal planner 2.html`).
 

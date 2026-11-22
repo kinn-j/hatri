@@ -685,7 +685,7 @@ var MEALS=[
 ["Vrat Kadhi",1,10,20,0,["curd","singhara","gchilli?"],"Everyday",1,["Vrat"],"Navratri"],
 ["Makhana Curry",1,10,15,0,["makhana","tomato","curd?","gchilli?"],"Everyday",1,["Vrat"],"Ekadashi"],
 ["Suji Halwa",1,5,15,0,["suji","ghee","milk?","dryfruit?"],"Everyday",0,["Sweets","Festive"],"Satyanarayan puja"],
-["Gajar Halwa",1,20,45,0,["carrot","milk","ghee","dryfruit?"],"Punjabi",0,["Sweets","Festive"],"Winter / Diwali"],
+["Gajar Halwa",1,20,45,0,["carrot","milk","ghee","sugar","cardamom?","dryfruit?"],"Punjabi",0,["Sweets","Festive"],"Winter / Diwali"],
 ["Moong Dal Halwa",1,20,50,[120,"moong dal"],["moong","ghee","milk","dryfruit?"],"Rajasthani",0,["Sweets","Festive"],"Weddings / Diwali"],
 ["Besan Ladoo",1,10,20,0,["besan","ghee","dryfruit?"],"Punjabi",0,["Sweets","Festive"],"Diwali"],
 ["Rava Ladoo",1,10,15,0,["suji","coconut","ghee","dryfruit?","milk?"],"South Indian",0,["Sweets","Festive"],"Diwali / Ganesh Chaturthi"],
@@ -903,11 +903,12 @@ function card(m){
    m.oh.map(function(i){return "<span class='chip have' style='background:transparent;border:1px solid var(--ok)'>"+NAME[i]+" · optional</span>"}).join("")+
    m.ox.map(function(i){return "<button class='chip opt' data-oi='"+i+"'>"+(cart[i]?"✓ ":"+ ")+NAME[i]+" · optional</button>"}).join("")+"</div></div>";
 }
+var SHOW_COUNTS={},SHOW_BATCH=24;
 function renderSearch(r,q){$("pick").innerHTML="";var tk=q.split(/\s+/).filter(Boolean);
   var vratMatches=vratOnly()?new Set(score(true).map(function(m){return m.recipe})):null;
   var L=MEALS.filter(function(m){
     if(vratMatches)return vratMatches.has(m);
-    return matchesModes(m)&&(crs==="meal"||sel.all||inSel(m));
+    return matchesFilters(m,false);
   }).map(function(m){
     var nm=(m[0]+" "+(HI[m[0]]||"")).toLowerCase();
     var vrat=m[8].indexOf("Vrat")>-1?" vrat upvas upwas farali falahari fasting व्रत उपवास फलाहार":"";
@@ -920,10 +921,12 @@ function renderSearch(r,q){$("pick").innerHTML="";var tk=q.split(/\s+/).filter(B
     return {n:m[0],v:m[1],p:effP(m),c:m[3],s:m[4],h:h,x:x,oh:oh,ox:ox,tot:h.length+x.length,cu:m[6],w:wt(m[0],m[6]),ing:m[5],ov:!!(m[4]&&m[4][0]<=30),oc:m[8],f:m[9],nm:tk.every(function(t){return nm.indexOf(t)>-1})?1:0}
   }).filter(Boolean);
   L.sort(function(a,b){return (b.nm-a.nm)||(a.x.length-b.x.length)});var tot=L.length;
-  r.innerHTML="<div class='sec'><h2>Search results</h2><small>"+tot+" found</small></div>"+(L.length?("<div class='tgrid'>"+L.map(tileHTML).join("")+"</div>"):"<div class='card empty'>No recipe found. Try another name.</div>")}
+  var visible=Math.min(tot,SHOW_COUNTS.search||SHOW_BATCH);
+  r.innerHTML="<div class='sec'><h2>"+T("Search results","खोज परिणाम")+"</h2><small>"+tot+" "+T("found","मिले")+" · "+T("Your active filters apply","चुने हुए फ़िल्टर लागू हैं")+"</small></div>"+(L.length?("<div class='tgrid'>"+L.slice(0,visible).map(tileHTML).join("")+"</div>"+(visible<tot?"<button class='btn more-results' data-show-more='search' aria-label='Show more recipes'>"+T("Show more recipes","और रेसिपी दिखाएँ")+" ("+(tot-visible)+" "+T("remaining","बाक़ी")+")</button>":"")):"<div class='card empty'>"+T("No recipes match your search and filters. Try another name or reset filters.","आपकी खोज और फ़िल्टर से कोई रेसिपी नहीं मिली। नाम बदलें या फ़िल्टर रीसेट करें।")+"</div>")}
 function renderResults(){
   renderTop();
   var r=$("results"),rq=($("rq")&&$("rq").value||"").trim().toLowerCase();
+  document.body.classList.toggle("searching",!!rq);
   if(rq){renderSearch(r,rq);return}
   var vrat=vratOnly(),dishes=score(true),meals=sel.meal?buildMeals():[];
   var title=vrat?T("Vrat dishes","व्रत के व्यंजन"):T("Browse recipes","रेसिपी देखें");
@@ -956,10 +959,12 @@ function suggestionGroups(items,meals){
     ["Needs a bigger shop","3 or more items missing",shopping]
   ];
   var tile=meals?mealTileHTML:tileHTML,grid=meals?"tgrid mealgrid":"tgrid";
-  return groups.filter(function(group){return group[2].length}).map(function(group){
-    return "<div class='sec'><h2>"+group[0]+"</h2><small>"+group[1]+" · "+group[2].length+"</small></div><div class='"+grid+"'>"+group[2].map(function(item){return tile(item)}).join("")+"</div>";
+  return groups.filter(function(group){return group[2].length}).map(function(group,i){
+    var key=(meals?"meal-":"dish-")+group[0].toLowerCase().replace(/[^a-z0-9]+/g,"-"),limit=Math.min(group[2].length,SHOW_COUNTS[key]||SHOW_BATCH);
+    return "<div class='suggestion-block' id='group-"+key+"'><div class='sec'><h2>"+T(group[0],HI[group[0]]||group[0])+"</h2><small>"+group[1]+" · "+group[2].length+"</small></div><div class='"+grid+"'>"+group[2].slice(0,limit).map(function(item){return tile(item)}).join("")+"</div>"+(limit<group[2].length?"<button class='btn more-results' data-show-more='"+key+"'>"+T("Show more recipes","और रेसिपी दिखाएँ")+" ("+(group[2].length-limit)+" "+T("remaining","बाक़ी")+")</button>":"")+"</div>";
   }).join("");
 }
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-show-more]");if(!b)return;var key=b.dataset.showMore;SHOW_COUNTS[key]=(SHOW_COUNTS[key]||SHOW_BATCH)+SHOW_BATCH;renderResults();var target=document.getElementById("group-"+key);if(target&&key!=="search")target.scrollIntoView({block:"nearest"})});
 function renderCart(){
   var ids=Object.keys(cart);
   $("cartCount").textContent=ids.length?"· "+ids.length+" items":"";
@@ -1088,7 +1093,7 @@ var HI={"How it works":"कैसे काम करता है","Planner":"�
 var RX=[[/Add (\d+) to order/g,"ऑर्डर में $1 जोड़ें"],[/· (\d+) selected/g,"· $1 चुने गए"],[/· (\d+) items/g,"· $1 चीज़ें"],[/Regions \((\d+) of (\d+) on\)/g,"क्षेत्र ($1 / $2 चालू)"],[/Prep (\d+) min/g,"तैयारी $1 मिनट"],[/Cook (\d+) min/g,"पकाना $1 मिनट"],[/Ready in ~(\d+) min/g,"~$1 मिनट में तैयार"],[/Only (\d+) items? to order/g,"सिर्फ़ $1 चीज़ मँगवानी है"],[/\(fits your ([\d.]+) (min|hr)\)/g,"(आपके $1 $2 में फिट)"],[/Soak (.+?) for (\d+) h \(overnight\) — start the night before/g,"$1 को $2 घंटे (रात भर) भिगोएँ — एक रात पहले शुरू करें"],[/Soak (.+?) for (\d+) h — start early in the day/g,"$1 को $2 घंटे भिगोएँ — दिन में जल्दी शुरू करें"],[/Soak (.+?) for (\d+) min before cooking/g,"पकाने से पहले $1 को $2 मिनट भिगोएँ"]];
 var HOSTEL={"Aloo Paratha": ["T"], "Methi Thepla": ["T"], "Besan Chilla": ["T"], "Moong Dal Chilla": ["T"], "Bread Omelette": ["T"], "Egg Bhurji": ["I", "T"], "Dal Tadka": ["I", "R"], "Moong Dal Khichdi": ["R", "I"], "Veg Pulao": ["R", "I"], "Poha": ["K", "I"], "Upma": ["I"], "Aloo Jeera": ["I"], "Cabbage Sabzi": ["I"], "Bhindi Masala": ["I"], "Paneer Bhurji": ["I", "T"], "Curd Rice": ["R", "I"], "Lemon Rice": ["R", "I"], "Egg Curry": ["I"], "Sev Tamatar": ["I"], "Aloo Chaat": ["R", "I"], "Dhaniya Chutney": ["N"], "Mint Chutney (Pudina)": ["N"], "Cucumber Raita": ["N"], "Pudina Raita": ["N"], "Suji Halwa": ["I"], "Seviyan Kheer": ["I", "R"], "Rice Kheer": ["R"], "Bengali Khichuri": ["R"], "Samak Rice Khichdi": ["R", "I"], "Sabudana Khichdi": ["I"], "Makhana Kheer": ["I"], "Tomato Rasam": ["I", "R"], "Veg Maggi (Noodles)": ["K", "I", "R"], "Masala Oats": ["K", "I", "R"], "Rice Cooker Rice + Tadka Dal": ["R"]},STEPS={"Aloo Paratha": {"en": ["Boil 2 potatoes in your pot or rice cooker (15–20 min), then peel and mash. (One vessel? Do this first, then switch to the tava.)", "Mix the mash with chopped green chilli, coriander, salt, red chilli and a pinch of garam masala.", "Knead atta with water and a pinch of salt into a soft dough. Rest 10 min.", "Roll a small ball, put a spoon of filling inside, seal like a pouch, flatten and roll gently.", "Heat the tava on medium. Cook the paratha about 1 min per side.", "Add a little oil or butter on each side and press until golden. Serve with curd or pickle."], "hi": ["2 आलू को पतीले या राइस कुकर में उबालें (15–20 मिनट), फिर छीलकर मसल लें। (एक ही बर्तन है? पहले यह करें, फिर तवा लगाएँ।)", "मसले आलू में कटी हरी मिर्च, धनिया, नमक, लाल मिर्च और चुटकी भर गरम मसाला मिलाएँ।", "आटे में थोड़ा नमक और पानी डालकर नरम आटा गूँथें। 10 मिनट रखें।", "छोटी लोई लें, बीच में एक चम्मच मसाला भरें, किनारे बंद करें और हल्के हाथ से बेलें।", "इंडक्शन पर तवा मध्यम आँच पर गरम करें। पराठा हर तरफ़ लगभग 1 मिनट सेंकें।", "हर तरफ़ थोड़ा तेल या मक्खन लगाकर दबाते हुए सुनहरा सेंकें। दही या अचार के साथ परोसें।"]}, "Dal Tadka": {"en": ["Wash 1/2 cup toor dal. Soak 30 min if you can.", "In the pot add dal, 2 cups water, turmeric and salt. Cook covered on medium until soft (20–25 min). Mash lightly.", "Pour the dal into a bowl and wipe the pot.", "Heat 1 tbsp oil in the same pot. Add jeera, chopped garlic and green chilli.", "Add chopped onion and tomato with red chilli powder. Fry 3–4 min (just a little frying).", "Pour the dal back, simmer 3 min, add coriander. Serve with rice or roti."], "hi": ["आधा कप अरहर दाल धोएँ। हो सके तो 30 मिनट भिगोएँ।", "पतीले में दाल, 2 कप पानी, हल्दी और नमक डालें। ढककर मध्यम आँच पर नरम होने तक पकाएँ (20–25 मिनट)। हल्का मसल लें।", "दाल को कटोरे में निकालें और पतीला पोंछ लें।", "उसी पतीले में 1 चम्मच तेल गरम करें। जीरा, कटा लहसुन और हरी मिर्च डालें।", "कटा प्याज़ और टमाटर लाल मिर्च के साथ डालकर 3–4 मिनट भूनें (बस थोड़ा तड़का)।", "दाल वापस डालें, 3 मिनट उबालें, धनिया डालें। चावल या रोटी के साथ परोसें।"]}, "Rice Cooker Rice + Tadka Dal": {"en": ["Wash 1 cup rice, add 2 cups water and salt, press Cook. When it clicks to Warm, take the rice out into a bowl.", "Wash 1/2 cup toor dal (soak 30 min if possible). Boil water in the kettle.", "Wipe the cooker pot, press Cook and add 1 tbsp oil. When hot, add jeera, garlic and green chilli, then onion and tomato. Fry 3–4 min.", "Add the dal, turmeric, salt and 2.5 cups hot kettle water. Close the lid.", "Cook until soft (about 25–35 min; if it switches to Warm, press Cook again). Mash lightly.", "Add coriander and serve over the rice you kept aside."], "hi": ["1 कप चावल धोएँ, 2 कप पानी और नमक डालकर Cook दबाएँ। Warm पर आते ही चावल एक कटोरे में निकाल लें।", "आधा कप अरहर दाल धोएँ (हो सके तो 30 मिनट भिगोएँ)। केतली में पानी उबालें।", "कुकर का बर्तन पोंछें, Cook दबाएँ और 1 चम्मच तेल डालें। गरम होने पर जीरा, लहसुन, हरी मिर्च, फिर प्याज़-टमाटर डालकर 3–4 मिनट भूनें।", "दाल, हल्दी, नमक और केतली का 2.5 कप गरम पानी डालें। ढक्कन बंद करें।", "दाल नरम होने तक पकाएँ (लगभग 25–35 मिनट; Warm पर चला जाए तो फिर Cook दबाएँ)। हल्का मसल लें।", "धनिया डालें और अलग रखे चावल पर परोसें।"]}},TIP={"Poha": {"en": "Kettle trick: rinse poha, cover with hot kettle water for 5 min, drain, then toss with salt, haldi and lemon.", "hi": "केतली ट्रिक: पोहा धोकर केतली का गरम पानी डालें, 5 मिनट ढकें, पानी निकालकर नमक, हल्दी और नींबू मिलाएँ।"}, "Dal Tadka": {"en": "Rice cooker trick: cook rice first and take it out, then use the same pot for dal and tadka.", "hi": "राइस कुकर ट्रिक: पहले चावल पकाकर निकाल लें, फिर उसी बर्तन में दाल और तड़का बनाएँ।"}, "Moong Dal Khichdi": {"en": "Rice cooker: rice + moong + 4 parts water, salt, haldi. Press Cook and stir once.", "hi": "राइस कुकर: चावल + मूंग दाल + 4 गुना पानी, नमक, हल्दी। Cook दबाएँ, एक बार चलाएँ।"}, "Veg Pulao": {"en": "Rice cooker: fry onion 2 min on Cook, add rice, peas, 1:2 water and salt, close the lid.", "hi": "राइस कुकर: Cook पर प्याज़ 2 मिनट भूनें, फिर चावल, मटर, 1:2 पानी और नमक डालकर ढक्कन बंद करें।"}, "Masala Oats": {"en": "Kettle: pour hot water over oats and veggies, cover 4 min, add salt and masala.", "hi": "केतली: ओट्स और सब्ज़ी पर गरम पानी डालें, 4 मिनट ढकें, नमक-मसाला मिलाएँ।"}, "Veg Maggi (Noodles)": {"en": "Kettle: pour hot water over noodles, cover 4 min, drain, then mix the masala.", "hi": "केतली: नूडल्स पर गरम पानी डालें, 4 मिनट ढकें, पानी निकालकर मसाला मिलाएँ।"}};
 Object.assign(HI,{"Hostel mode":"हॉस्टल मोड","Non-veg":"नॉन-वेज","Hostel mode — what do you have?": "हॉस्टल मोड — आपके पास क्या है?", "☕ Electric kettle": "☕ इलेक्ट्रिक केतली", "🍚 Rice cooker": "🍚 राइस कुकर", "🔥 Induction + kadhai / pot": "🔥 इंडक्शन + कड़ाही / पतीला", "🫓 Induction + tava": "🫓 इंडक्शन + तवा", "One burner? Cook one thing at a time. We only show dishes you can make with just these. Little frying is OK; deep-frying dishes are hidden.": "एक ही बर्नर? एक बार में एक चीज़ पकाएँ। सिर्फ़ वही व्यंजन दिखेंगे जो इन्हीं से बन जाएँ। थोड़ा तलना ठीक है; डीप-फ्राई वाले छिपे हैं।", "Pick at least one appliance above.": "ऊपर से कम से कम एक उपकरण चुनें।", "🎒 Make it in:": "🎒 इसमें बनाएँ:", "☕ Kettle": "☕ केतली", "🔥 Induction pot": "🔥 इंडक्शन पतीला", "🫓 Induction tava": "🫓 इंडक्शन तवा", "🙌 No cooking": "🙌 बिना पकाए", "📋 Steps": "📋 बनाने की विधि", "Noodles (Maggi)": "नूडल्स (मैगी)", "Oats": "ओट्स", "Veg Maggi (Noodles)": "वेज मैगी (नूडल्स)", "Masala Oats": "मसाला ओट्स", "Rice Cooker Rice + Tadka Dal": "राइस कुकर में चावल + तड़का दाल"});
-var nonveg=!!(s&&s.nonveg),NV=["eggs","chicken","fish","mutton","prawn","fishballs"],hostel=!!(s&&s.hostel),app=(s&&s.app)||{R:1};
+var nonveg=!!(s&&s.nonveg),NV=["eggs","chicken","fish","mutton","prawn","fishballs","chickenstock"],hostel=!!(s&&s.hostel),app=(s&&s.app)||{R:1};
 var APN={K:"☕ Kettle",R:"🍚 Rice cooker",I:"🔥 Induction pot",T:"🫓 Induction tava",N:"🙌 No cooking"};
 function hostOK(n){var h=HOSTEL[n];return !!h&&h.some(function(a){return a==="N"||app[a]})}
 function matchesModes(m){
@@ -1173,6 +1178,7 @@ function recipePanel(m){
   }
   var basics=isV(m)?T("Use sendha namak where needed and season according to your household’s fasting practice.","ज़रूरत हो तो सेंधा नमक डालें और अपने घर की व्रत परंपरा के अनुसार मसाले चुनें।"):"Pantry basics: oil, salt, turmeric, red chilli powder, jeera (assumed at home)";
   var ingredients=measured?measuredIngredients(measured):"<p><b>You need:</b> "+req.join(", ")+(opt.length?" · Optional: "+opt.join(", "):"")+"</p><p class='note'>"+basics+"</p>";
+  if(!measured&&!STEPS[m.n])ingredients+="<p class='note'>"+T("General cooking guide; quantities and timings are estimates. Adjust to your ingredients and check doneness before serving.","यह सामान्य विधि है; मात्रा और समय अनुमानित हैं। अपनी सामग्री के अनुसार बदलें और परोसने से पहले जाँचें।")+"</p>";
   return watch+"<details class='steps' data-sl='"+sl+"'"+(openR[sl]?" open":"")+"><summary>📖 Recipe</summary>"+ingredients+(nost?"<p class='note'>Step-by-step method coming soon for this dish.</p>":"<ol>"+st.map(function(x){return "<li>"+x+"</li>"}).join("")+"</ol>"+(TIPT[rtype(m.n)]&&!STEPS[m.n]?"<p class='note'>💡 "+TIPT[rtype(m.n)][LANG]+"</p>":""))+credit+rateRow(m)+"</details>"}
 function renderKitchen(){var k=$("mykit");if(!k)return;
  if(!ME){k.innerHTML="<p class='sub'>Sign in to keep your ratings and photos.</p>";return}
@@ -1200,6 +1206,7 @@ document.addEventListener("toggle",function(e){var t=e.target;if(t.classList&&t.
 
 Object.assign(HI,{"More options": "और विकल्प", "📖 Recipe": "📖 रेसिपी", "You need:": "ज़रूरी सामान:", "Pantry basics: oil, salt, turmeric, red chilli powder, jeera (assumed at home)": "घर के बेसिक: तेल, नमक, हल्दी, लाल मिर्च पाउडर, जीरा (घर में मान लिए गए हैं)", "Your rating:": "आपकी रेटिंग:", "📸 Add your photo": "📸 अपनी बनाई डिश की फ़ोटो जोड़ें", "Sign in to rate this recipe and save photos of your creation.": "रेसिपी को रेट करने और अपनी बनाई डिश की फ़ोटो सेव करने के लिए साइन इन करें।", "My Kitchen": "मेरी रसोई", "Your ratings and photos live here, saved to your account.": "आपकी रेटिंग और फ़ोटो आपके खाते में यहाँ सेव रहती हैं।", "Nothing saved yet — rate a recipe or add a photo of something you cooked.": "अभी कुछ सेव नहीं — किसी रेसिपी को रेट करें या अपनी बनाई डिश की फ़ोटो जोड़ें।", "Sign in to keep your ratings and photos.": "अपनी रेटिंग और फ़ोटो रखने के लिए साइन इन करें।", "Smart picks — one item can unlock more dishes": "स्मार्ट सुझाव — एक चीज़ से और व्यंजन बन सकते हैं", "Common items": "आम सामान", "Photo added to My Kitchen": "फ़ोटो मेरी रसोई में जुड़ गई", "Uploading…": "अपलोड हो रहा है…"});
 STEPS["Chole Bhature"]={"en": ["Soak chickpeas overnight, then pressure cook with salt and turmeric until soft (6–7 whistles).", "Fry onion, ginger and garlic; add tomato and chole masala, then the chickpeas, and simmer 15 min.", "Knead maida with curd, salt, a pinch of sugar and a little water into a soft dough; rest 30 min.", "Roll thick ovals and deep-fry in hot oil, pressing lightly so they puff; drain.", "Serve hot bhature with chole, onion rings and pickle."], "hi": ["छोले रात भर भिगोएँ, फिर नमक-हल्दी के साथ प्रेशर कुकर में नरम होने तक पकाएँ (6–7 सीटी)।", "प्याज़, अदरक, लहसुन भूनें; टमाटर और छोले मसाला डालें, फिर छोले डालकर 15 मिनट उबालें।", "मैदा में दही, नमक, चुटकी भर चीनी और थोड़ा पानी मिलाकर नरम आटा गूँथें; 30 मिनट रखें।", "मोटे अंडाकार बेलें और गरम तेल में हल्का दबाते हुए तलें ताकि फूल जाएँ; निकाल लें।", "गरम भटूरे छोले, प्याज़ के छल्लों और अचार के साथ परोसें।"]};
+STEPS["Gajar Halwa"]={"en":["Wash, peel and grate 500 g carrots. Measure 500 ml full-fat milk, 2 tbsp ghee and 3–4 tbsp sugar (adjust to taste).","Simmer the grated carrots in milk in a heavy pan, stirring often, until the carrots soften and most of the milk evaporates (25–35 minutes).","Add the ghee and stir over medium-low heat for 8–10 minutes until glossy and fragrant; do not let it burn.","Add sugar and stir until the released moisture cooks off. Finish with optional cardamom and toasted dry fruits; serve warm."],"hi":["500 ग्राम गाजर धोकर छीलें और कद्दूकस करें। 500 मि.ली. फुल-फैट दूध, 2 बड़े चम्मच घी और 3–4 बड़े चम्मच चीनी लें।","भारी कड़ाही में गाजर और दूध को लगातार चलाते हुए 25–35 मिनट पकाएँ, जब तक गाजर नरम और दूध लगभग सूख न जाए।","घी डालकर धीमी-मध्यम आँच पर 8–10 मिनट भूनें, ताकि चमक और खुशबू आ जाए; जलने न दें।","चीनी डालकर फिर चलाएँ जब तक नमी सूख जाए। चाहें तो इलायची और भुने मेवे डालकर गरम परोसें।"]};
 RX.unshift([/unlocks (\d+) dish(?:es)?/g,"$1 व्यंजन खुलेंगे"]);
 var wSweet=true,wSide=true,crs="meal",lastMeal=null,MEALK={},MOPEN={};
 var sel={meal:1};
@@ -1254,6 +1261,8 @@ function isV(m){return m.oc.indexOf("Vrat")>-1}
 function onlyV(m){return isV(m)&&m.oc.indexOf("Daily")<0}
 function pairOK(a,b){var cb=course(b.n);
  if((onlyV(a)&&!isV(b))||(onlyV(b)&&!isV(a)))return false;
+ if(cb==="Side"&&/sauce|soup|pesto|marinara|dressing|dip|spread/i.test(b.n))return false;
+ if(cb==="Sweet")return a.cu===b.cu;
  if(b.n==="Makki di Roti")return a.n==="Sarson da Saag";
  if(a.n==="Sarson da Saag"&&cb==="Bread")return b.n==="Makki di Roti"||b.n==="Chapati (Roti)";
  if(b.n==="Bajra Roti with Lahsun Chutney")return["Rajasthani","Gujarati","Maharashtrian"].indexOf(a.cu)>-1;
@@ -1262,6 +1271,10 @@ function pairOK(a,b){var cb=course(b.n);
  if(b.n==="Lahsun Chutney")return a.cu==="Rajasthani";
  if(cb==="Bread"&&a.cu==="South Indian")return false;
  if(cb==="Bread"&&a.cu==="Bengali")return b.n==="Chapati (Roti)";
+ if(["Bread","Rice","Side"].indexOf(cb)>-1&&a.cu!==b.cu){
+   var north=["Everyday","North Indian","Punjabi","Rajasthani","Gujarati","Maharashtrian","Bihari","Pahadi"];
+   if(north.indexOf(a.cu)<0||north.indexOf(b.cu)<0)return false;
+ }
  return true}
 function mealTime(it){var p=0,cs=it.map(function(m){p+=m.p;return m.c}),mx=Math.max.apply(null,cs),rest=cs.reduce(function(a,b){return a+b},0)-mx;return Math.max(5,Math.round((p+mx+rest*0.4)/5)*5)}
 function missOf(it){var u={};it.forEach(function(m){m.x.forEach(function(i){u[i]=1})});return Object.keys(u)}
@@ -1289,6 +1302,7 @@ function buildMeals(){
     var base=missOf(items).length,best=null,bestCost=2;
     pool.forEach(function(dish){
       if(used.has(dish.n)||items.some(function(m){return m.n===dish.n})||!pairOK(items[0],dish))return;
+      if(pool===proteins&&items.some(function(m){return m.cu!==dish.cu}))return;
       var expanded=items.concat(dish);
       if(tmax&&mealTime(expanded)>tmax)return;
       var cost=missOf(expanded).length-base;
@@ -1379,7 +1393,7 @@ var IT=[
 ["Herbed Baby Potatoes",1,10,25,["potato","butter","garlic","cheese?"],["Daily"],["Boil small potatoes until just tender and halve them.","Pan-roast in butter with garlic, oregano, chilli flakes and salt until crisp.","Finish with cheese if you like."]],
 ["Cheesy Stuffed Mushrooms",1,15,15,["mushroom","cheese","capsicum?","corn?","onion?"],["Festive"],["Remove mushroom stems and chop them with the veg.","Sauté briefly with salt and pepper, mix with cheese.","Stuff the caps and bake or cook covered on a pan until cheese bubbles."]],
 ["Italian Pasta Salad",1,15,10,["pasta","cucumber","tomato","capsicum?","corn?","lemon?"],["Daily"],["Boil pasta, drain and cool under water.","Mix with chopped veg, oil, lemon, salt, pepper and oregano.","Chill 15 min before serving."]],
-["Eggless Panna Cotta",1,10,10,["milk","cream?"],["Sweets"],["Bloom agar-agar or gelatin in a little water.","Warm milk (and cream) with sugar and vanilla; stir in the agar until dissolved.","Pour into cups and chill 3–4 hr until set; top with fruit or jaggery syrup."]],
+["Eggless Panna Cotta",1,10,10,["milk","cream?"],["Sweets"],["Dissolve vegetarian agar-agar in a little water according to the packet instructions (never use animal gelatin).","Warm milk (and cream) with sugar and vanilla; stir in the agar until dissolved.","Pour into cups and chill 3–4 hr until set; top with fruit or jaggery syrup."]],
 ["Chicken Alfredo Pasta",0,15,25,["chicken","pasta","milk","butter","maida","garlic","cheese?"],["Daily"],["Sauté small chicken pieces with salt and pepper until cooked; set aside.","Make a garlic white sauce with butter, maida and milk; add cheese.","Mix in boiled pasta and chicken; serve hot."]],
 ["Chicken Tikka Pizza",0,45,15,["maida","chicken","cheese","onion","capsicum","curd"],["Festive"],["Make pizza dough and rest 1 hr.","Marinate chicken in curd and tikka masala; sear until cooked.","Top the sauced base with chicken, veg and cheese; bake or cook covered on a tawa."]],
 ["Prawn Garlic Pasta",0,10,15,["prawn","pasta","garlic","gchilli?","lemon?"],["Daily"],["Boil pasta al dente.","Sear prawns with lots of garlic and chilli in oil for 3 min.","Toss in pasta, pasta water and lemon; finish with coriander."]],
@@ -1451,7 +1465,7 @@ var IT3=[
 ["Garlic Butter Pasta",1,5,12,["pasta","butter","garlic","cheese?"],"Italian",["Daily"],["Boil pasta al dente.","Melt butter, fry plenty of garlic until fragrant.","Toss pasta with pepper, oregano and cheese."]],
 ["Marinara Sauce",1,5,20,["tomato","garlic","onion?","basil?"],"Italian",["Daily"],["Blanch and puree tomatoes.","Sauté garlic in oil, add puree, salt, sugar pinch and oregano.","Simmer 15 min until thick. Keeps 4–5 days chilled."]],
 ["Pizza Sauce",1,5,12,["tomato","garlic"],"Italian",["Daily"],["Puree tomatoes with garlic.","Cook with oil, salt, oregano, chilli flakes and a pinch of sugar until thick."]],
-["Mango Panna Cotta",1,15,10,["mango","milk","cream?"],"Italian",["Sweets"],["Warm milk with sugar and dissolved agar-agar or gelatin.","Pour in cups; chill until set.","Top with mango puree and cubes."]],
+["Mango Panna Cotta",1,15,10,["mango","milk","cream?"],"Italian",["Sweets"],["Warm milk with sugar and dissolved vegetarian agar-agar, using the packet for quantities (never animal gelatin).","Pour in cups; chill until set.","Top with mango puree and cubes."]],
 ["Eggless Tiramisu",1,25,0,["bread","cream","cocoa","milk"],"Italian",["Sweets","Festive"],["Whisk cream with sugar; dip bread slices in strong sweet coffee-milk.","Layer bread and cream in a dish.","Dust cocoa on top; chill 4 hr."]],
 ["Pumpkin Paneer Pasta",1,15,25,["pasta","pumpkin","paneer","garlic","milk?"],"Italian",["Daily"],["Steam pumpkin and blend into a smooth sauce with garlic and a little milk.","Season with salt, pepper and chilli flakes.","Toss with pasta and pan-fried paneer cubes."]],
 ["Brinjal Pasta (Alla Norma)",1,15,25,["pasta","brinjal","tomato","garlic","cheese?"],"Italian",["Daily"],["Pan-fry brinjal cubes until golden.","Make a quick garlic tomato sauce; add brinjal.","Toss with pasta and top with cheese."]],
@@ -1665,7 +1679,7 @@ function protBadge(c){var sc=sumP(c.items);return sc>=4?"💪 Protein-rich meal"
 function T(a,b){return LANG==="hi"?b:a}
 function listText(){return "🛒 Hatri — "+T("Shopping list","खरीदारी सूची")+"\n"+Object.keys(cart).map(function(i,k){return (k+1)+". "+nmx(i)}).join("\n")}
 function shopRes(){var q=($("shopq").value||"").trim().toLowerCase(),r=$("shopres");if(!q){r.innerHTML="";return}
- var ids=Object.keys(NAME).filter(function(i){return (nonveg||NV.indexOf(i)<0)&&NAME[i].toLowerCase().indexOf(q)>-1||(HI[NAME[i]]||"").indexOf(q)>-1}).slice(0,8);
+ var ids=Object.keys(NAME).filter(function(i){return (nonveg||NV.indexOf(i)<0)&&(NAME[i].toLowerCase().indexOf(q)>-1||(HI[NAME[i]]||"").indexOf(q)>-1)}).slice(0,8);
  r.innerHTML=ids.map(function(i){return "<button class='chip opt' data-oi='"+i+"'>"+(cart[i]?"✓ ":"+ ")+nmx(i)+"</button>"}).join("")||"<span class='sub'>No match</span>"}
 function renderCart(){var ids=Object.keys(cart);$("cartCount").textContent=ids.length?"· "+ids.length+" items":"";renderQuick();$("cbadge").textContent=ids.length||"";
  $("shopq").placeholder=T("Add any item you’ll need for future meals…","आगे के खाने के लिए कोई भी सामान जोड़ें…");shopRes();
@@ -1679,11 +1693,13 @@ var WRX=new RegExp("(?<![A-Za-z])(?:"+KEYS.map(function(x){return x.replace(/[.*
 function trText(str){var o=str;RX.forEach(function(r){o=o.replace(r[0],r[1])});return o.replace(WRX,function(m){return LOW[m.toLowerCase()]||m})}
 function trNode(n){
   if(n.nodeType===3){
+    // Text nodes inserted into styles after load must never be translated.
+    if(n.parentElement&&n.parentElement.closest("style,script,noscript,svg,template"))return;
     var v=n.nodeValue;if(!v.trim())return;
     if(LANG==="hi"){if(n.__en===undefined)n.__en=v;var o=trText(n.__en);if(o!==v)n.nodeValue=o}
     else if(n.__en!==undefined&&n.nodeValue!==n.__en)n.nodeValue=n.__en;
   }else if(n.nodeType===1){
-    if(n.tagName==="SCRIPT"||n.tagName==="STYLE")return;
+    if(["SCRIPT","STYLE","NOSCRIPT","SVG","TEMPLATE"].indexOf(n.tagName)>-1)return;
     if(n.tagName==="INPUT"&&n.placeholder){if(n.__ph===undefined)n.__ph=n.placeholder;n.placeholder=LANG==="hi"?trText(n.__ph):n.__ph}
     for(var c=n.firstChild;c;c=c.nextSibling)trNode(c);
   }
@@ -1740,13 +1756,35 @@ $("fileIn2").addEventListener("change",async function(){
     toast("Photo added to My Kitchen");
   }catch(e){toast("Couldn’t upload — "+((e&&e.code)||"please try again"))}
 });
+// All screen sizes use the same responsive recipe shell; these are overlay views.
 function isMob(){return !!(window.matchMedia&&matchMedia("(min-width:0px)").matches)}
-function setView(v){var B=document.body,sheet=v==="pantry"||v==="plan"||v==="order";
+var sheetReturnFocus=null;
+function setView(v){var B=document.body,sheet=v==="pantry"||v==="plan"||v==="order",wasSheet=/\bsh-(pantry|plan|order)\b/.test(B.className);
   B.classList.remove("sh-pantry","sh-plan","sh-order");
-  if(isMob()&&sheet){if(B.dataset.v==="kitchen")B.dataset.v="recipes";B.classList.add("sh-"+v);B.style.overflow="hidden";var e=document.querySelector('[data-vs="'+v+'"]');if(e)e.scrollTop=0;return}
+  Array.prototype.forEach.call(document.querySelectorAll('[data-vs="pantry"],[data-vs="plan"],[data-vs="order"]'),function(el){el.removeAttribute("role");el.removeAttribute("aria-modal");el.removeAttribute("tabindex")});
+  if(isMob()&&sheet){
+    if(!wasSheet)sheetReturnFocus=document.activeElement;
+    if(B.dataset.v==="kitchen")B.dataset.v="recipes";
+    B.classList.add("sh-"+v);B.style.overflow="hidden";
+    var e=document.querySelector('[data-vs="'+v+'"]');
+    if(e){e.scrollTop=0;e.setAttribute("role","dialog");e.setAttribute("aria-modal","true");e.setAttribute("tabindex","-1");e.focus({preventScroll:true})}
+    return;
+  }
   B.style.overflow="";B.dataset.v=v;
+  if(wasSheet&&sheetReturnFocus&&sheetReturnFocus.isConnected){sheetReturnFocus.focus({preventScroll:true});sheetReturnFocus=null}
   Array.prototype.forEach.call(document.querySelectorAll(".tabbar button"),function(b){b.classList.toggle("on",b.dataset.view===v)});
   if(isMob()&&window.scrollTo)window.scrollTo(0,0)}
+document.addEventListener("keydown",function(e){
+  var match=document.body.className.match(/\bsh-(pantry|plan|order)\b/);
+  if(!match||document.querySelector("dialog[open]"))return;
+  if(e.key==="Escape"){e.preventDefault();setView("recipes");return}
+  if(e.key!=="Tab")return;
+  var active=document.querySelector('[data-vs="'+match[1]+'"]'),items=active&&Array.from(active.querySelectorAll("button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled])")).filter(function(x){return x.getClientRects().length>0});
+  if(!items||!items.length)return;
+  var first=items[0],last=items[items.length-1];
+  if(e.shiftKey&&(document.activeElement===first||document.activeElement===active)){e.preventDefault();last.focus()}
+  else if(!e.shiftKey&&(document.activeElement===last||document.activeElement===active)){e.preventDefault();first.focus()}
+});
 function renderTop(){var e=$("ttabs");if(!e)return;
   e.innerHTML=CRS.map(function(o){return "<button data-crs='"+o[0]+"' class='"+(sel[o[0]]?"on":"")+"'>"+o[1]+" <small>"+catCount(o[0])+"</small></button>"}).join("");
   var on=e.querySelector(".on");if(on)e.scrollLeft=Math.max(0,on.offsetLeft-24);
@@ -1769,7 +1807,7 @@ function renderIngsM(){var q=$("q").value.trim().toLowerCase(),vis=CATS.filter(f
   $("count").textContent="· "+Object.keys(have).length+" selected"}
 function tileHTML(m){var ok=!m.x.length,im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;
  return '<details class="tile" data-recipe="'+encodeURIComponent(m.n)+'">'+
-  "<summary><div class='ti' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im):"<span class='em'>"+emo(m.n)+"</span>")+"<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+m.x.length+" to buy")+"</span><span class='vg "+(m.v?"v":"n")+"'></span><span class='tm'>⏱ "+(m.p+m.c)+" min</span></div><div class='tx'><b>"+dn(m.n)+"</b><small>"+(ok?"Everything is at home":"Need "+m.x.map(function(i){return NAME[i]}).join(", "))+"</small></div></summary>"+card(m)+"</details>"}
+  "<summary><div class='ti' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im):"<span class='em'>"+emo(m.n)+"</span>")+"<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+m.x.length+" to buy")+"</span><span class='vg "+(m.v?"v":"n")+"'></span><span class='tm'>⏱ "+(m.p+m.c)+" min"+(isLong(m)?" + "+Math.round(m.s[0]/60)+" h soak":"")+"</span></div><div class='tx'><b>"+dn(m.n)+"</b><small>"+(ok?"Everything is at home":"Need "+m.x.map(function(i){return NAME[i]}).join(", "))+"</small></div></summary>"+card(m)+"</details>"}
 document.body.dataset.v="recipes";setView("recipes");
 try{var standalone=(window.navigator&&navigator.standalone)||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
  if(standalone||localStorage.getItem("rr-inst"))$("install").classList.add("hide");
@@ -1779,7 +1817,7 @@ RX.unshift([/(\d+) recipes/g,"$1 रेसिपी"],[/(\d+) regions/g,"$1 क�
 var REG=["Punjabi","Rajasthani","Gujarati","Maharashtrian","Bengali","South Indian","North Indian","Bihari","Odia","Pahadi","Kashmiri","Goan & Konkan","Assam & NE"],WLD=["Indo-Chinese","Italian"];function isReg(c){return REG.indexOf(c)>-1||WLD.indexOf(c)>-1}function regOn(){return REG.concat(WLD).filter(function(c){return cuis[c]}).length}
 $("nReg").textContent=REG.length;
 Object.assign(HI,{"Search any recipe…":"कोई भी रेसिपी खोजें…"});
-$("rq").addEventListener("input",function(){if(this.value.trim()&&(document.body.dataset.v!=="recipes"||/(^| )sh-/.test(document.body.className)))setView("recipes");renderResults()});
+$("rq").addEventListener("input",function(){SHOW_COUNTS.search=SHOW_BATCH;if(this.value.trim()&&(document.body.dataset.v!=="recipes"||/(^| )sh-/.test(document.body.className)))setView("recipes");renderResults()});
 var regOpen=false;
 function afl(){var a=[];if(!sel.meal)Object.keys(sel).forEach(function(k){var o=CRS.filter(function(c){return c[0]===k})[0];if(o)a.push(["crs",o[1]])});if(tmax)a.push(["tm",tmax>=60?tmax/60+" hr":tmax+" min"]);if(occ!=="All")a.push(["occ",occ]);if(hv!=="All")a.push(["hv",hv]);if(regOn()<REG.length+WLD.length)a.push(["reg",regOn()+" regions"]);return a}
 function renderCuis(){var n=Object.keys(cuis).length,O=[["All","All"],["Daily","Daily"],["Festive","Festive"],["Vrat","Vrat / Upvas"],["Sweets","Sweets"]],T=[[0,"Any"],[20,"20 min"],[30,"30 min"],[45,"45 min"],[60,"1 hr"],[90,"1.5 hr"],[120,"2 hr"]],H=[["All","All"],["Light","🪶 Light"],["Medium","⚖️ Medium"],["Heavy","🔥 Heavy"]],
@@ -2038,7 +2076,7 @@ document.addEventListener("click",function(e){if(!isMob())return;var tg=e.target
  closeDT();DTK=k;d.classList.add("dton");dtFill(d)},true);
 var _rr2=renderResults;renderResults=function(){var r=_rr2.apply(this,arguments);if(DTK){var d=dtFind(DTK);if(d){d.classList.add("dton");dtFill(d)}else closeDT()}return r};
 var _sv2=setView;setView=function(){closeDT();return _sv2.apply(this,arguments)};
-try{if(!localStorage.getItem("rr-allon-v1")){defaults();localStorage.setItem("rr-allon-v1","1");saveF()}else{["t","o","h","r"].forEach(function(k){var st=k==="t"?TS:k==="o"?OS:k==="h"?HS:RS;if(!anyOn(st))selAll(k)})}}catch(e){defaults()}
+try{if(!localStorage.getItem("rr-allon-v1")){defaults();localStorage.setItem("rr-allon-v1","1");saveF()}}catch(e){defaults()}
 document.addEventListener("click",function(e){var tg=e.target.closest?e.target:e.target.parentNode,c=tg.closest&&tg.closest("[data-reset]");if(c){defaults();syncT();saveF();renderCuis();renderResults()}});
 
 /* ===== Mobile sliders (categories + filters), Nykaa-style ===== */
@@ -2110,7 +2148,8 @@ document.addEventListener("input",function(e){if(e.target.id!=="mf-region-search
 $("moreFiltersDialog").addEventListener("close",function(){mfDraft=null;var b=mfReturnFocus&&mfReturnFocus.isConnected?mfReturnFocus:document.querySelector("[data-mf-open]");mfReturnFocus=null;if(b)b.focus({preventScroll:true})});
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-sf]");if(!b)return;
   var p=b.dataset.sf.split("|"),k=p[0],v=p[1],st=k==="t"?TS:k==="o"?OS:k==="h"?HS:RS,L=k==="t"?tIds():k==="o"?oIds():k==="h"?hIds():rIds();
-  if(v==="#all"||v==="#none")selAll(k);
+  if(v==="#all")selAll(k);
+  else if(v==="#none")Object.keys(st).forEach(function(x){delete st[x]});
   else if(!restr(st,L)){Object.keys(st).forEach(function(x){delete st[x]});st[v]=1}
   else{if(st[v])delete st[v];else st[v]=1;if(!anyOn(st))selAll(k)}
   syncT();saveF();seedStr=String(Math.random());renderCuis();renderResults();e.stopPropagation();e.preventDefault()},true);
@@ -2174,15 +2213,17 @@ function ingredientTileHTML(id,label,on){
   var esc=function(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})};
   var url=ingredientPhotoUrl(id);
   return "<button type='button' class='sl pantry-photo"+(on?" on":"")+"' data-i='"+esc(id)+"' aria-label='"+esc(label)+"' aria-pressed='"+!!on+"'>"+
+    "<span class='pantry-fallback' aria-hidden='true'>"+(ICO[id]||"🥣")+"</span>"+
     (url?"<img class='pantry-photo-image' src='"+esc(url)+"' alt='' loading='lazy' decoding='async'>":"")+
     "<b>"+esc(label)+"</b></button>";
 }
+document.addEventListener("error",function(e){if(e.target.matches&&e.target.matches(".pantry-photo-image,.ic-photo"))e.target.hidden=true},true);
 function decoIcons(){var el=document.getElementById("ings");if(!el)return;Array.prototype.forEach.call(el.querySelectorAll("button[data-i]"),function(b){if(b.querySelector(".ic"))return;var id=b.dataset.i,on=!!(typeof have!=="undefined"&&have[id])||b.classList.contains("on"),lab=NAME[id]||b.textContent.replace(/^✓\s*/,"");
   b.textContent="";if(on)b.appendChild(document.createTextNode("✓ "));var s=document.createElement("span");s.className="ic";var url=ingredientPhotoUrl(id);if(url){var im=document.createElement("img");im.className="ic-photo";im.src=url;im.alt="";im.loading="lazy";im.decoding="async";s.appendChild(im)}b.appendChild(s);b.appendChild(document.createTextNode(lab))})}
 (function(){var q=false;function go(){if(q)return;q=true;requestAnimationFrame(function(){q=false;try{decoIcons()}catch(e){}})}try{new MutationObserver(go).observe(document.body,{childList:true,subtree:true})}catch(e){}try{decoIcons()}catch(e){}})();
 /* ===== Smart pantry groups ===== */
 (function(){
-  var groups={"Vegetables":[],"Fruits / Dry fruits":[],"Milk / Bread / Protein":[],"Pulses":[],"Condiments":[],"Specialty":[]},seen={};
+  var groups={"Vegetables":[],"Fruits / Dry fruits":[],"Milk / Bread / Protein":[],"Grains / Pulses":[],"Condiments":[],"Specialty":[]},seen={};
   var veg={onion:1,tomato:1,potato:1,capsicum:1,brinjal:1,okra:1,cabbage:1,carrot:1,cucumber:1,lauki:1,beans:1,mushroom:1,corn:1,arbi:1,cauliflower:1,peas:1,spinach:1,sarson:1,methi:1,mooli:1,beetroot:1,sweetpotato:1,suran:1,pumpkin:1,drumstick:1,rawbanana:1,karela:1,tinda:1,turai:1,coriander:1,mint:1,currylv:1,gchilli:1,bigchilli:1,ginger:1,garlic:1,basil:1,tulsi:1,parsley:1,rosemary:1,thyme:1,sage:1,kasurimethi:1,italianherbs:1,collardgreens:1,lotusstem:1,gonguraleaves:1,mixedvegetables:1,ashgourd:1,pointedgourd:1,garadu:1};
   var fruit={lemon:1,coconut:1,rawmango:1,mango:1,banana:1,apple:1,amla:1,orange:1,pineapple:1,watermelon:1,pomegranate:1,mosambi:1,coconutmilk:1,tendercoconut:1,tendercoconutmalai:1,lemonzest:1,orangejuice:1,orangezest:1,blueberries:1,strawberries:1,desiccatedcoconut:1,pineapplerings:1,kiwi:1,lemonlimesoda:1,passionfruitpulp:1,lychee:1,peach:1,dates:1,guavajuice:1,cranberryjuice:1,orangeslices:1,gratedcoconut:1,foodgradeslakedlime:1,baelfruitpulp:1,dryfruit:1,cashews:1,almonds:1,walnuts:1,pistachios:1,raisins:1,berries:1,cherries:1};
   var protein={tofu:1,paneer:1,curd:1,butter:1,ghee:1,milk:1,cream:1,mawa:1,cheese:1,creamcheese:1,condensedmilk:1,ricottacheese:1,parmesanstylevegetariancheese:1,buttermilk:1,batter:1,bread:1,fermentedricebatter:1,eggs:1,chicken:1,fish:1,mutton:1,prawn:1,soya:1,soyachaap:1,sprouts:1,cookedwhitebeans:1};
@@ -2192,11 +2233,11 @@ function decoIcons(){var el=document.getElementById("ings");if(!el)return;Array.
     if(seen[id])return;seen[id]=1;
     if(protein[id]||NV.indexOf(id)>-1)k="Milk / Bread / Protein";
     else if(fruit[id]||c[0]==="Fruits & coconut")k="Fruits / Dry fruits";
-    else if(grains[id])k="Pulses";
+    else if(grains[id])k="Grains / Pulses";
     else if(veg[id]||/^Daily vegetables|^Seasonal|^Herbs/.test(c[0]))k="Vegetables";
     else if(cond[id])k="Condiments";
     else if(/^Dairy/.test(c[0]))k="Milk / Bread / Protein";
-    else if(/^Grains|^Dals/.test(c[0]))k="Pulses";
+    else if(/^Grains|^Dals/.test(c[0]))k="Grains / Pulses";
     else k="Specialty";
     groups[k].push(item);
   })});
@@ -2211,7 +2252,7 @@ function renderPantrySlides(){
   if(pantryTab>=cats.length)pantryTab=0;
   var tr=document.createElement("div");tr.className="ftray pantry-tray";
   var tb=document.createElement("div");tb.className="ftabs pantry-tabs";
-  var groupIcons={Vegetables:"🥬","Fruits / Dry fruits":"🍎","Milk / Bread / Protein":"🥛",Pulses:"🌾",Condiments:"🧂",Specialty:"🧺"};
+  var groupIcons={Vegetables:"🥬","Fruits / Dry fruits":"🍎","Milk / Bread / Protein":"🥛","Grains / Pulses":"🌾",Condiments:"🧂",Specialty:"🧺"};
   tb.innerHTML=cats.map(function(c,i){
     var selected=c[1].some(function(x){return !!have[x[0]]});
     return "<button class='ft"+(i===pantryTab?" on":"")+"' data-pantry-cat='"+i+"'><span class='fi'>"+(groupIcons[c[0]]||"🧺")+"</span><span class='fl'>"+c[0]+"</span>"+(selected?"<em></em>":"")+"</button>";
@@ -2634,8 +2675,8 @@ main#planner{box-shadow:none!important}
   .header-tools{gap:4px}
   .header-search{height:47px;padding:0 4px 0 9px;gap:5px}
   .header-search>svg{width:17px;height:17px}
-  .header-search #rq{font-size:13px}
-  .voice-btn{width:28px;height:28px}
+  .header-search #rq{font-size:16px}
+  .voice-btn{width:38px;height:38px}
   .voice-btn svg{width:17px;height:17px}
   .nav .mode-switches{gap:2px}
   .nav .mode-switch{min-width:62px;min-height:52px;padding:2px 1px}
@@ -2652,6 +2693,10 @@ main#planner{box-shadow:none!important}
   padding:0!important;
   background:#fff!important;
   isolation:isolate;
+}
+#pantrySlides .pantry-grid .sl.pantry-photo .pantry-fallback{
+  position:absolute;inset:0;display:grid;place-items:center;
+  font-size:27px;background:var(--accent-bg);color:var(--text);
 }
 #pantrySlides .pantry-grid .sl.pantry-photo .pantry-photo-image{
   position:absolute;
@@ -2685,12 +2730,17 @@ main#planner{box-shadow:none!important}
   -webkit-line-clamp:2;
   -webkit-box-orient:vertical;
   color:#fff!important;
-  font-size:9px;
+  font-size:10px;
   font-weight:700;
   line-height:1.12;
   text-align:center;
   text-shadow:0 1px 2px rgba(0,0,0,.6);
 }
+#pantrySlides .pantry-grid .sl.pantry-photo:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.more-results{display:block;margin:14px auto 20px;min-width:190px;border:1px solid var(--accent);color:var(--accent);background:var(--surface);font-weight:700}
+body.searching #pantrySlides,body.searching #slides,body.searching #pick{display:none!important}
+body.searching .sh,body.searching [data-shuffle]{display:none!important}
+@media(prefers-reduced-motion:reduce){.sl,.tile,.mtile{scroll-behavior:auto}}
 #pantrySlides .pantry-grid .sl.pantry-photo.on{
   background:#fff!important;
   border:1.5px solid var(--accent)!important;
@@ -2737,5 +2787,9 @@ main#planner{box-shadow:none!important}
 })();
 </script>
 <script type="module" src="./auth.js"></script>
+<script>
+// Register the already-bundled offline shell on HTTPS and localhost.
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){/* Online use still works if offline support is blocked. */})})}
+</script>
 </body>
 </html>
