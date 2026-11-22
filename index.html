@@ -411,6 +411,7 @@ details.dton{outline:3px solid var(--accent);outline-offset:-3px}
 <script src="./quick-north-recipes.js"></script>
 <script src="./street-food-recipes.js"></script>
 <script src="./rajasthani-recipes.js"></script>
+<script src="./ingredient-images.js"></script>
 <script>
 var COURSEO={},HVO={},RGO={},RECIPE_REELS={},MEASURED_RECIPES={};
 var SEASON=(function(m){return m>=10||m<=1?"w":m>=2&&m<=5?"s":"m"})(new Date().getMonth());
@@ -2164,8 +2165,20 @@ var _thC=tileHTML;tileHTML=function(m){var h=_thC(m),c=catsN(m.n);if(c.length<2)
   if(ch){m[5]=a;GGCHANGED++}})})();
 var ICO={"onion": "🧅", "tomato": "🍅", "potato": "🥔", "capsicum": "🫑", "brinjal": "🍆", "okra": "🌱", "cabbage": "🥬", "carrot": "🥕", "cucumber": "🥒", "lauki": "🍈", "beans": "🫛", "mushroom": "🍄", "corn": "🌽", "arbi": "🍠", "cauliflower": "🥦", "peas": "🫛", "spinach": "🥬", "sarson": "🥬", "methi": "🌿", "mooli": "🥕", "beetroot": "🫜", "sweetpotato": "🍠", "suran": "🍠", "pumpkin": "🎃", "drumstick": "🌿", "rawbanana": "🍌", "karela": "🥒", "tinda": "🍏", "turai": "🥒", "coriander": "🌿", "mint": "🍃", "currylv": "🍃", "gchilli": "🌶️", "bigchilli": "🌶️", "ginger": "🫚", "garlic": "🧄", "lemon": "🍋", "coconut": "🥥", "rawmango": "🥭", "mango": "🥭", "banana": "🍌", "apple": "🍎", "amla": "🍏", "paneer": "🧀", "curd": "🥣", "butter": "🧈", "ghee": "🧈", "milk": "🥛", "eggs": "🥚", "chicken": "🍗", "fish": "🐟", "mutton": "🍖", "prawn": "🦐", "rice": "🍚", "atta": "🌾", "besan": "🌾", "suji": "🌾", "poha": "🍚", "bread": "🍞", "bajra": "🌾", "makki": "🌽", "batter": "🥞", "sev": "🍜", "kuttu": "🌾", "singhara": "🌰", "samak": "🍚", "makhana": "🍿", "vermicelli": "🍜", "dryfruit": "🥜", "toor": "🫘", "moong": "🫘", "chickpea": "🫘", "rajma": "🫘", "peanut": "🥜", "urad": "🫘", "jowar": "🌾", "pav": "🍞", "sabudana": "⚪", "chanadal": "🫘", "matki": "🫘", "jaggery": "🟤", "sesame": "⚪", "poppy": "⚪", "mustardoil": "🛢️", "lobia": "🫘", "tamarind": "🟤", "sangri": "🌿", "oats": "🥣", "maida": "🌾", "soya": "🫘", "pasta": "🍝", "mawa": "🥛", "sprouts": "🌱", "murmura": "🍿", "daliya": "🌾", "cheese": "🧀", "masoor": "🫘", "sattu": "🌾", "ragi": "🌾", "noodles": "🍜", "basil": "🌿", "cream": "🥛", "cocoa": "🍫", "yeast": "🧫", "chocolate": "🍫", "broccoli": "🥦", "millet": "🌾", "orange": "🍊", "pineapple": "🍍", "watermelon": "🍉", "pomegranate": "🔴", "mosambi": "🍊", "tulsi": "🌿", "coffee": "☕", "tealeaves": "🍵", "greentea": "🍵", "soda": "🥤", "tendercoconut": "🥥", "icecream": "🍨", "rosesyrup": "🌹", "sabja": "⚫", "honey": "🍯", "cashews": "🥜", "sugar": "🍬", "almonds": "🥜", "breadcrumbs": "🍞", "chaatmasala": "🧂", "driedwhitepeas": "🫛", "fermentedricebatter": "🥞", "riceflour": "🌾", "coconutmilk": "🥥", "enofruitsaltorbakingsoda": "🧂", "pizzabaseordough": "🍕", "bakingpowder": "🧁", "turmeric": "🟡", "waterorvegetablestock": "🍲", "kolhapurimasalaordriedredchillies": "🌶️", "mustardseedsormustardpaste": "🟡", "basmatirice": "🍚", "oliveoil": "🫒", "blackpepper": "⚫", "cuminseeds": "🟤", "kokum": "🟣", "tendercoconutmalai": "🥥", "bakingsoda": "🧂", "redfoodcolour": "🔴", "vanillaessence": "🍦", "creamcheese": "🧀", "lemonzest": "🍋", "icingsugar": "🍬", "orangejuice": "🍊", "orangezest": "🍊", "cardamom": "🌿", "walnuts": "🌰", "blueberries": "🫐", "chocolatechips": "🍫", "strawberries": "🍓", "peanutbutter": "🥜", "desiccatedcoconut": "🥥", "condensedmilk": "🥛", "darkchocolate": "🍫", "italianherbs": "🌿", "cornflour": "🌽", "cinnamon": "🟤", "pineapplerings": "🍍", "cherries": "🍒", "digestivebiscuits": "🍪", "tuttifrutti": "🍬", "roastedcuminpowder": "🟤", "blacksalt": "🧂", "baelfruitpulp": "🍈", "nannarisyrup": "🍯", "sabjaseeds": "⚫", "ice": "🧊", "badampisin": "🍯", "pistachios": "🥜", "saffron": "🌼", "kiwi": "🥝", "bluecuraaononalcoholicsyrup": "🔵", "lemonlimesoda": "🥤", "passionfruitpulp": "🍈", "lychee": "🍒", "peach": "🍑", "driedhibiscuspetals": "🌺", "dates": "🌴", "guavajuice": "🧃", "redchillipowder": "🌶️", "cranberryjuice": "🧃", "orangeslices": "🍊", "espressocoffee": "☕", "tonicwater": "🥤", "ricottacheese": "🧀", "sage": "🌿", "cannellonipastatubes": "🍝", "tomatopassata": "🍅", "celery": "🥬", "olives": "🫒", "vinegar": "🍶", "capers": "🫒", "raisins": "🍇", "arboriorice": "🍚", "vegetablestock": "🍲", "parmesanstylevegetariancheese": "🧀", "truffleoil": "🫒", "parsley": "🌿", "rosemary": "🌿", "cookedwhitebeans": "🫘", "polenta": "🌽", "thyme": "🌿", "berries": "🫐", "jumbopastashells": "🍝", "tomatosauce": "🍅", "chickenstock": "🍲", "mustardseeds": "🟡", "cumin": "🟤", "jeeravanmasala": "🧂", "garadu": "🍠", "cloves": "🟤", "ajwain": "🌿", "garammasala": "🧂", "gingergarlicpaste": "🧄", "rabri": "🥛", "fennel": "🌿", "asafoetida": "🧂", "rawpapayapaste": "🍈", "kewrawater": "💧", "wholespices": "🧂", "ashgourd": "🍈", "foodgradeslakedlime": "⚪", "rosewater": "🌹", "driedblackchickpeas": "🫘", "redchilli": "🌶️", "pointedgourd": "🥒", "picklemasala": "🧂", "mustardpaste": "🟡", "gratedcoconut": "🥥", "coconutoil": "🥥", "fenugreekseeds": "🟤", "dryredchilli": "🌶️", "blackchickpeas": "🫘", "corianderpowder": "🌿", "mixedvegetables": "🥗", "gonguraleaves": "🍃", "corianderseeds": "🌿", "kadalacurry": "🍛", "kabulichana": "🫘", "cholemasala": "🧂", "anardana": "🔴", "tandoorimasala": "🧂", "soyachaap": "🍢", "kasurimethi": "🌿", "collardgreens": "🥬", "lotusstem": "🪷", "fennelpowder": "🌿", "drygingerpowder": "🫚", "papad": "🫓", "buttermilk": "🥛"},ICFB=["🥬","🥬","🥬","🌿","🍎","🥛","🍗","🌾","🫘","🥫","🧂"];
 function icoOf(id){if(ICO[id])return ICO[id];for(var i=0;i<CATS.length;i++){if(CATS[i][1].some(function(x){return x[0]===id}))return ICFB[i]||"🍽️"}return "🍽️"}
+function ingredientPhotoUrl(id){
+  if(typeof INGREDIENT_LOCAL_IMAGES!=="undefined"&&INGREDIENT_LOCAL_IMAGES[id])return INGREDIENT_LOCAL_IMAGES[id];
+  var p=typeof INGREDIENT_IMAGES!=="undefined"&&INGREDIENT_IMAGES[id];
+  return p?INGREDIENT_IMAGE_BASE+p:"";
+}
+function ingredientTileHTML(id,label,on){
+  var esc=function(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})};
+  var url=ingredientPhotoUrl(id);
+  return "<button type='button' class='sl pantry-photo"+(on?" on":"")+"' data-i='"+esc(id)+"' aria-label='"+esc(label)+"' aria-pressed='"+!!on+"'>"+
+    (url?"<img class='pantry-photo-image' src='"+esc(url)+"' alt='' loading='lazy' decoding='async'>":"")+
+    "<b>"+esc(label)+"</b></button>";
+}
 function decoIcons(){var el=document.getElementById("ings");if(!el)return;Array.prototype.forEach.call(el.querySelectorAll("button[data-i]"),function(b){if(b.querySelector(".ic"))return;var id=b.dataset.i,on=!!(typeof have!=="undefined"&&have[id])||b.classList.contains("on"),lab=NAME[id]||b.textContent.replace(/^✓\s*/,"");
-  b.textContent="";if(on)b.appendChild(document.createTextNode("✓ "));var s=document.createElement("span");s.className="ic";s.textContent=icoOf(id);b.appendChild(s);b.appendChild(document.createTextNode(lab))})}
+  b.textContent="";if(on)b.appendChild(document.createTextNode("✓ "));var s=document.createElement("span");s.className="ic";var url=ingredientPhotoUrl(id);if(url){var im=document.createElement("img");im.className="ic-photo";im.src=url;im.alt="";im.loading="lazy";im.decoding="async";s.appendChild(im)}b.appendChild(s);b.appendChild(document.createTextNode(lab))})}
 (function(){var q=false;function go(){if(q)return;q=true;requestAnimationFrame(function(){q=false;try{decoIcons()}catch(e){}})}try{new MutationObserver(go).observe(document.body,{childList:true,subtree:true})}catch(e){}try{decoIcons()}catch(e){}})();
 /* ===== Smart pantry groups ===== */
 (function(){
@@ -2211,7 +2224,7 @@ function renderPantrySlides(){
   var focused=oldGrid&&oldGrid.contains(document.activeElement)?document.activeElement.dataset.i:null;
   pn.innerHTML="<div class='fph'><h3>"+c[0]+" ("+c[1].filter(function(x){return !!have[x[0]]}).length+")</h3><div class='pantry-head-actions'><div class='pantry-bulk' role='group' aria-label='Select pantry items'><button type='button' data-pantry-bulk='all'>Select all</button><button type='button' data-pantry-bulk='none'>Clear all</button></div></div></div>";
   var g=document.createElement("div");g.className="fgrid pantry-grid";
-  c[1].forEach(function(x){g.insertAdjacentHTML("beforeend",slTile("data-i='"+x[0]+"'",icoOf(x[0]),NAME[x[0]]||x[1],"",!!have[x[0]],PAL.cat))});
+  c[1].forEach(function(x){g.insertAdjacentHTML("beforeend",ingredientTileHTML(x[0],NAME[x[0]]||x[1],!!have[x[0]]))});
   pn.appendChild(g);tr.appendChild(pn);el.replaceChildren(tr);
   el.dataset.pantryGroup=c[0];
   g.scrollLeft=gridLeft;
@@ -2630,6 +2643,66 @@ main#planner{box-shadow:none!important}
   .nav .switch-track{width:37px;height:21px}
   .nav .switch-track::after{width:17px;height:17px}
   .nav .mode-switch[aria-checked="true"] .switch-track::after{transform:translateX(16px)}
+}
+</style>
+<style>
+/* Photographic ingredient cards: keep the existing 68 × 64px mobile grid. */
+#pantrySlides .pantry-grid .sl.pantry-photo{
+  display:block!important;
+  padding:0!important;
+  background:#fff!important;
+  isolation:isolate;
+}
+#pantrySlides .pantry-grid .sl.pantry-photo .pantry-photo-image{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  background:#fff;
+  border-radius:inherit;
+  filter:none;
+}
+#pantrySlides .pantry-grid .sl.pantry-photo::after{
+  content:"";
+  position:absolute;
+  inset:26% 0 0;
+  z-index:1;
+  pointer-events:none;
+  background:linear-gradient(to bottom,transparent 0%,rgba(13,18,14,.25) 40%,rgba(7,12,9,.86) 100%);
+}
+#pantrySlides .pantry-grid .sl.pantry-photo b{
+  position:absolute;
+  z-index:2;
+  bottom:4px;
+  left:2px;
+  right:2px;
+  display:-webkit-box;
+  width:auto;
+  max-width:none;
+  margin:0;
+  overflow:hidden;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  color:#fff!important;
+  font-size:9px;
+  font-weight:700;
+  line-height:1.12;
+  text-align:center;
+  text-shadow:0 1px 2px rgba(0,0,0,.6);
+}
+#pantrySlides .pantry-grid .sl.pantry-photo.on{
+  background:#fff!important;
+  border:1.5px solid var(--accent)!important;
+  box-shadow:0 0 0 1px rgba(27,127,76,.22)!important;
+}
+#ings .ic-photo{
+  width:20px;
+  height:20px;
+  object-fit:cover;
+  border-radius:5px;
+  background:#fff;
+  vertical-align:middle;
 }
 </style>
 <script>
