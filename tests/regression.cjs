@@ -47,12 +47,14 @@ test('app boots with bounded results and usable mobile layouts', async () => {
       allImages: document.querySelectorAll('img').length,
       dom: document.querySelectorAll('*').length,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      tray: document.querySelector('#pantrySlides .pantry-tray').getBoundingClientRect().toJSON(),
       failedImageFallback: !!document.querySelector('.pantry-photo .pantry-fallback'),
     }));
     assert.ok(state.recipes > 700, `${width}: recipes loaded`);
     assert.ok(state.cards > 0 && state.cards <= 200, `${width}: bounded cards ${state.cards}`);
     assert.ok(state.dom < 10000, `${width}: DOM nodes ${state.dom}`);
     assert.ok(state.overflow <= 2, `${width}: horizontal overflow ${state.overflow}`);
+    assert.ok(state.tray.left >= 0 && state.tray.right <= width, `${width}: pantry tray stays inside the viewport`);
     assert.ok(state.failedImageFallback, `${width}: ingredient fallback`);
     await context.close();
   }
@@ -142,12 +144,19 @@ test('offline service worker installs and controls subsequent navigation', async
   await context.close();
 });
 
-test('ingredient photo failures expose named fallback without losing click behavior', async () => {
+test('ingredient photo failures preserve the fallback and selection badge', async () => {
   const {page, context} = await open();
   await page.waitForFunction(() => document.querySelector('.pantry-photo-image')?.hidden === true);
   const first = page.locator('#pantrySlides .pantry-photo').first();
+  const check = first.locator('.pantry-check');
   assert.ok((await first.locator('.pantry-fallback').innerText()).length > 0);
+  assert.equal(await first.getAttribute('aria-pressed'), 'false');
+  assert.equal(await check.count(), 0);
   await first.click();
   assert.equal(await first.getAttribute('aria-pressed'), 'true');
+  assert.ok(await check.isVisible());
+  await first.click();
+  assert.equal(await first.getAttribute('aria-pressed'), 'false');
+  assert.equal(await check.count(), 0);
   await context.close();
 });
