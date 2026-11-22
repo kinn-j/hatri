@@ -293,13 +293,22 @@ details.dton{outline:3px solid var(--accent);outline-offset:-3px}
 </head>
 <body>
 <nav class="nav"><a class="logo" href="#top">🍛 <span>Hatri</span></a><div class="links"><a href="#planner">Planner</a><a href="#kitchen">My Kitchen</a><a href="#features">Features</a></div>
-  <div class="mode-switches">
-    <button class="mode-switch" id="nvBtn" type="button" role="switch" aria-checked="false">Non-veg<span class="switch-track" aria-hidden="true"></span></button>
-    <button class="mode-switch" id="hostelBtn" type="button" role="switch" aria-checked="false" aria-controls="hostelSettings">Hostel mode<span class="switch-track" aria-hidden="true"></span></button>
-  </div>
   <button class="btn sm" id="acctBtn" data-view="kitchen" aria-label="Account and sync">☁️ <span id="acctLbl">Account</span></button><button class="btn sm" id="langBtn" aria-label="Language">हिन्दी</button><button class="btn primary sm" data-decide="1">🎲 Decide for me</button>
   <div class="rr-top-account" id="navAccount">
     <button class="rr-profile-trigger" type="button" data-rr-profile-open aria-haspopup="dialog" aria-controls="rr-profile-drawer" aria-label="Profile and settings"><span aria-hidden="true">👤</span></button>
+  </div>
+  <div class="header-tools">
+    <div class="header-search" role="search">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.7" cy="10.7" r="7"/><path d="m16 16 5 5"/></svg>
+      <input type="search" id="rq" placeholder="Search &quot;chole bhature&quot;" aria-label="Search recipes" enterkeyhint="search">
+      <button id="rrVoiceBtn" class="voice-btn" type="button" aria-label="Search recipes by voice" title="Voice search">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8"/></svg>
+      </button>
+    </div>
+    <div class="mode-switches" aria-label="Recipe modes">
+      <button class="mode-switch" id="nvBtn" type="button" role="switch" aria-label="Veg mode" aria-checked="true"><span class="mode-label">VEG<br>MODE</span><span class="switch-track" aria-hidden="true"></span></button>
+      <button class="mode-switch" id="hostelBtn" type="button" role="switch" aria-label="Hostel mode" aria-checked="false" aria-controls="hostelSettings"><span class="mode-label">HOSTEL<br>MODE</span><span class="switch-track" aria-hidden="true"></span></button>
+    </div>
   </div>
 </nav>
 <section class="hero" id="top"><div class="hero-in">
@@ -339,7 +348,7 @@ details.dton{outline:3px solid var(--accent);outline-offset:-3px}
       </div>
       <p class="note">One burner? Cook one thing at a time. We only show dishes you can make with just these. Little frying is OK; deep-frying dishes are hidden.</p>
     </div>
-    <input type="search" id="rq" placeholder="Search any recipe…" aria-label="Search recipes"><div class="ttabs" id="ttabs"></div><div class="trow"><button class="pkb" data-view="pantry">🧺 <span class="en">Pantry</span><span class="hi">सामान</span> <b id="pkCount"></b></button><button data-view="plan">⚙️ <span class="en">Filters</span><span class="hi">फ़िल्टर</span><b id="fcount"></b></button></div><div class="achips" id="achips"></div></div><div id="pantrySlides"></div><div id="slides"></div><div class="row" style="justify-content:space-between;margin:8px 0 0"><h2 class="sh" style="margin:0">Suggestions</h2><button class="btn sm" data-shuffle="1">🔀 Shuffle</button></div><div id="pick"></div><div id="results" style="margin-top:8px"></div></section>
+    <div class="ttabs" id="ttabs"></div><div class="trow"><button class="pkb" data-view="pantry">🧺 <span class="en">Pantry</span><span class="hi">सामान</span> <b id="pkCount"></b></button><button data-view="plan">⚙️ <span class="en">Filters</span><span class="hi">फ़िल्टर</span><b id="fcount"></b></button></div><div class="achips" id="achips"></div></div><div id="pantrySlides"></div><div id="slides"></div><div class="row" style="justify-content:space-between;margin:8px 0 0"><h2 class="sh" style="margin:0">Suggestions</h2><button class="btn sm" data-shuffle="1">🔀 Shuffle</button></div><div id="pick"></div><div id="results" style="margin-top:8px"></div></section>
 </main>
 <section class="band" id="kitchen" data-vs="kitchen"><h2>My Kitchen</h2><div class="card acct" id="acct"></div><p class="sub" style="margin:0 0 10px">Your recipe ratings sync to your account. Personal photo uploads are not yet available outside Claude.</p><button class="btn sm" id="bulkBtn" hidden>📷 Bulk upload dish photos</button><input type="file" id="fileBulk" accept="image/*" multiple hidden><div id="mykit"></div></section>
 <section class="band" id="features"><h2>Made for everyday cooking</h2><div class="cols c3">
@@ -989,7 +998,7 @@ document.addEventListener("click",function(e){
     nonveg=!nonveg;
     if(!nonveg)NV.forEach(function(i){delete cart[i]});
     lastPick=null;lastMeal=null;all();
-    toast(T(nonveg?"Non-veg mode on":"Vegetarian mode on",nonveg?"नॉन-वेज मोड चालू":"शाकाहारी मोड चालू"));
+    toast(T(nonveg?"Veg mode off — all recipes":"Veg mode on — vegetarian only",nonveg?"वेज मोड बंद — सभी रेसिपी":"वेज मोड चालू — केवल शाकाहारी"));
   }
   else if(t.id==="hostelBtn"){
     hostel=!hostel;
@@ -1076,10 +1085,10 @@ var nonveg=!!(s&&s.nonveg),NV=["eggs","chicken","fish","mutton","prawn","fishbal
 var APN={K:"☕ Kettle",R:"🍚 Rice cooker",I:"🔥 Induction pot",T:"🫓 Induction tava",N:"🙌 No cooking"};
 function hostOK(n){var h=HOSTEL[n];return !!h&&h.some(function(a){return a==="N"||app[a]})}
 function matchesModes(m){
-  return (nonveg?!m[1]:m[1])&&(!hostel||hostOK(m[0]));
+  return (nonveg||!!m[1])&&(!hostel||hostOK(m[0]));
 }
 function renderModes(){
-  $("nvBtn").setAttribute("aria-checked",nonveg);
+  $("nvBtn").setAttribute("aria-checked",!nonveg);
   $("hostelBtn").setAttribute("aria-checked",hostel);
   var settings=$("hostelSettings");
   settings.hidden=!hostel;
@@ -1763,7 +1772,7 @@ RX.unshift([/(\d+) recipes/g,"$1 रेसिपी"],[/(\d+) regions/g,"$1 क�
 var REG=["Punjabi","Rajasthani","Gujarati","Maharashtrian","Bengali","South Indian","North Indian","Bihari","Odia","Pahadi","Kashmiri","Goan & Konkan","Assam & NE"],WLD=["Indo-Chinese","Italian"];function isReg(c){return REG.indexOf(c)>-1||WLD.indexOf(c)>-1}function regOn(){return REG.concat(WLD).filter(function(c){return cuis[c]}).length}
 $("nReg").textContent=REG.length;
 Object.assign(HI,{"Search any recipe…":"कोई भी रेसिपी खोजें…"});
-$("rq").addEventListener("input",function(){renderResults()});
+$("rq").addEventListener("input",function(){if(this.value.trim()&&document.body.dataset.v!=="recipes")setView("recipes");renderResults()});
 var regOpen=false;
 function afl(){var a=[];if(!sel.meal)Object.keys(sel).forEach(function(k){var o=CRS.filter(function(c){return c[0]===k})[0];if(o)a.push(["crs",o[1]])});if(tmax)a.push(["tm",tmax>=60?tmax/60+" hr":tmax+" min"]);if(occ!=="All")a.push(["occ",occ]);if(hv!=="All")a.push(["hv",hv]);if(regOn()<REG.length+WLD.length)a.push(["reg",regOn()+" regions"]);return a}
 function renderCuis(){var n=Object.keys(cuis).length,O=[["All","All"],["Daily","Daily"],["Festive","Festive"],["Vrat","Vrat / Upvas"],["Sweets","Sweets"]],T=[[0,"Any"],[20,"20 min"],[30,"30 min"],[45,"45 min"],[60,"1 hr"],[90,"1.5 hr"],[120,"2 hr"]],H=[["All","All"],["Light","🪶 Light"],["Medium","⚖️ Medium"],["Heavy","🔥 Heavy"]],
@@ -2464,6 +2473,87 @@ body{padding-top:var(--nav-bottom)}
 .fgrid .sl.on,#pantrySlides .sl.on,#slides .sl.on:not(.cp){background:var(--accent-bg)!important;border-color:var(--accent)!important}
 .btn.primary,.chip.on,.fab,#cbadge:not(:empty),#fcount:not(:empty){color:var(--on-accent)}
 </style>
+<style>
+/* Header search + compact mode toggles; page mint follows the selected theme. */
+:root{--page-mint:#b8d8c8;--search-pill:rgba(255,255,255,.7);--search-pill-border:#94bca7;--search-pill-text:#173b2a}
+:root[data-theme="dark"]{--page-mint:#203a30;--search-pill:#172b22;--search-pill-border:#3e5d4b;--search-pill-text:#eef8f0}
+:root{--nav-bottom:var(--nav-height)}
+html{scroll-padding-top:var(--nav-height)}
+html,body{background:var(--page-mint)!important;background-image:none!important}
+body{padding-top:0!important}
+.nav{position:sticky!important;top:0!important;min-height:0;padding:calc(9px + var(--safe-top)) max(12px,var(--safe-left)) 8px max(12px,var(--safe-right));background:var(--page-mint)!important;border-color:var(--search-pill-border)!important;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.nav .logo{order:1;white-space:nowrap}
+.nav .links,.nav #acctBtn,.nav .btn.primary{display:none!important}
+.nav #langBtn{order:2!important;margin:0 0 0 auto!important}
+.nav .rr-top-account{order:3!important}
+.header-tools{order:4;width:100%;min-width:0;display:flex;align-items:center;gap:10px}
+.header-search{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0;height:51px;padding:0 9px 0 16px;border:1px solid var(--search-pill-border);border-radius:999px;background:var(--search-pill);color:var(--search-pill-text)}
+.header-search>svg{flex:none}
+.header-search #rq{display:block!important;flex:1 1 auto;min-width:0;width:100%;height:100%;margin:0!important;padding:0!important;border:0!important;outline:0;border-radius:0!important;background:transparent!important;color:var(--search-pill-text);font:inherit;font-size:15px;box-shadow:none;appearance:none}
+.header-search #rq::placeholder{color:var(--muted);opacity:.9}
+.header-search #rq::-webkit-search-cancel-button{cursor:pointer}
+.header-search:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.voice-btn{display:grid;place-items:center;flex:none;width:35px;height:35px;border:1px solid var(--search-pill-border);border-radius:50%;background:transparent;color:var(--search-pill-text);cursor:pointer}
+.voice-btn.listening{background:var(--accent);color:var(--on-accent);animation:voice-pulse 1s ease-in-out infinite alternate}
+@keyframes voice-pulse{from{box-shadow:0 0 0 0 rgba(27,127,76,.2)}to{box-shadow:0 0 0 6px rgba(27,127,76,.08)}}
+.nav .mode-switches{order:initial;display:flex;align-items:center;justify-content:flex-end;gap:6px;width:auto;flex:none}
+.nav .mode-switch{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;gap:4px;min-width:79px;min-height:55px;padding:2px 5px;border:0;border-radius:12px;background:transparent;color:var(--text);font:inherit;cursor:pointer}
+.nav .mode-switch .mode-label{text-align:center;font-size:11px;line-height:1.02;letter-spacing:.04em;font-weight:800}
+.nav .switch-track{width:43px;height:24px;background:#7e988a;border-radius:999px;transition:background .2s}
+.nav .switch-track::after{top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:white;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
+.nav .mode-switch[aria-checked="true"] .switch-track{background:#16864c}
+.nav .mode-switch[aria-checked="true"] .switch-track::after{transform:translateX(19px)}
+.nav .mode-switch:focus-visible,.nav .voice-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main#planner,main#planner [data-vs="recipes"],.topbar{background:var(--page-mint)!important}
+main#planner{box-shadow:none!important}
+:root[data-theme="dark"] .nav #langBtn{background:#2a4c3d;color:#eff8f0;border-color:#547967}
+@media(max-width:480px){
+  .nav{gap:6px 8px}
+  .header-tools{gap:4px}
+  .header-search{height:47px;padding:0 4px 0 9px;gap:5px}
+  .header-search>svg{width:17px;height:17px}
+  .header-search #rq{font-size:13px}
+  .voice-btn{width:28px;height:28px}
+  .voice-btn svg{width:17px;height:17px}
+  .nav .mode-switches{gap:2px}
+  .nav .mode-switch{min-width:62px;min-height:52px;padding:2px 1px}
+  .nav .mode-switch .mode-label{font-size:9.5px}
+  .nav .switch-track{width:37px;height:21px}
+  .nav .switch-track::after{width:17px;height:17px}
+  .nav .mode-switch[aria-checked="true"] .switch-track::after{transform:translateX(16px)}
+}
+</style>
+<script>
+(function(){
+  var button=document.getElementById("rrVoiceBtn"),search=document.getElementById("rq");
+  if(!button||!search)return;
+  var nav=document.querySelector(".nav"),themeMeta=document.querySelector('meta[name="theme-color"]');
+  function measureHeader(){document.documentElement.style.setProperty("--nav-height",Math.ceil(nav.getBoundingClientRect().height)+"px")}
+  function syncThemeMeta(){if(themeMeta)themeMeta.content=document.documentElement.dataset.theme==="dark"?"#203a30":"#b8d8c8"}
+  measureHeader();syncThemeMeta();
+  if(window.ResizeObserver)new ResizeObserver(measureHeader).observe(nav);
+  window.addEventListener("resize",measureHeader);
+  new MutationObserver(syncThemeMeta).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+  button.addEventListener("click",function(){
+    var Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!Speech){search.focus();toast("Voice search isn't available here. Please type your recipe.");return}
+    var recognition=new Speech();
+    recognition.lang=LANG==="hi"?"hi-IN":"en-IN";
+    recognition.maxAlternatives=1;
+    recognition.interimResults=false;
+    recognition.onresult=function(e){
+      if(!e.results||!e.results[0]||!e.results[0][0])return;
+      search.value=e.results[0][0].transcript;
+      search.dispatchEvent(new Event("input",{bubbles:true}));
+      search.focus();
+    };
+    recognition.onerror=function(e){if(e.error!=="no-speech"&&e.error!=="aborted")toast("Voice search needs microphone access.")};
+    recognition.onend=function(){button.classList.remove("listening");button.removeAttribute("aria-busy")};
+    try{recognition.start();button.classList.add("listening");button.setAttribute("aria-busy","true")}
+    catch(e){button.classList.remove("listening");button.removeAttribute("aria-busy");search.focus();toast("Voice search couldn't start.")}
+  });
+})();
+</script>
 <script type="module" src="./auth.js"></script>
 </body>
 </html>
