@@ -1772,7 +1772,7 @@ RX.unshift([/(\d+) recipes/g,"$1 रेसिपी"],[/(\d+) regions/g,"$1 क�
 var REG=["Punjabi","Rajasthani","Gujarati","Maharashtrian","Bengali","South Indian","North Indian","Bihari","Odia","Pahadi","Kashmiri","Goan & Konkan","Assam & NE"],WLD=["Indo-Chinese","Italian"];function isReg(c){return REG.indexOf(c)>-1||WLD.indexOf(c)>-1}function regOn(){return REG.concat(WLD).filter(function(c){return cuis[c]}).length}
 $("nReg").textContent=REG.length;
 Object.assign(HI,{"Search any recipe…":"कोई भी रेसिपी खोजें…"});
-$("rq").addEventListener("input",function(){if(this.value.trim()&&document.body.dataset.v!=="recipes")setView("recipes");renderResults()});
+$("rq").addEventListener("input",function(){if(this.value.trim()&&(document.body.dataset.v!=="recipes"||/(^| )sh-/.test(document.body.className)))setView("recipes");renderResults()});
 var regOpen=false;
 function afl(){var a=[];if(!sel.meal)Object.keys(sel).forEach(function(k){var o=CRS.filter(function(c){return c[0]===k})[0];if(o)a.push(["crs",o[1]])});if(tmax)a.push(["tm",tmax>=60?tmax/60+" hr":tmax+" min"]);if(occ!=="All")a.push(["occ",occ]);if(hv!=="All")a.push(["hv",hv]);if(regOn()<REG.length+WLD.length)a.push(["reg",regOn()+" regions"]);return a}
 function renderCuis(){var n=Object.keys(cuis).length,O=[["All","All"],["Daily","Daily"],["Festive","Festive"],["Vrat","Vrat / Upvas"],["Sweets","Sweets"]],T=[[0,"Any"],[20,"20 min"],[30,"30 min"],[45,"45 min"],[60,"1 hr"],[90,"1.5 hr"],[120,"2 hr"]],H=[["All","All"],["Light","🪶 Light"],["Medium","⚖️ Medium"],["Heavy","🔥 Heavy"]],
@@ -1810,7 +1810,7 @@ document.addEventListener("click",function(e){if(e.target===document.body&&/(^| 
 (function(){var y0=null,el=null;document.addEventListener("touchstart",function(e){var t=e.target.closest&&e.target.closest("[data-vs]");el=t&&/(^| )sh-/.test(document.body.className)&&t.scrollTop<=0?t:null;y0=el?e.touches[0].clientY:null},{passive:true});document.addEventListener("touchend",function(e){if(el&&y0!==null&&e.changedTouches[0].clientY-y0>110)setView("recipes");el=null;y0=null},{passive:true})})();
 KEYS=Object.keys(HI).sort(function(a,b){return b.length-a.length});KEYS.forEach(function(k){LOW[k.toLowerCase()]=HI[k]});WRX=new RegExp("(?<![A-Za-z])(?:"+KEYS.map(function(x){return x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}).join("|")+")(?![A-Za-z])","gi");
 try{all()}catch(e){}
-if(isMob()&&!Object.keys(have).length)setView("pantry");
+// Keep the recipe search and mode switches visible for first-time visitors.
 if(LANG==="hi")setLang("hi");
 
 /* ===== Multi-select filters + International / National region ===== */
