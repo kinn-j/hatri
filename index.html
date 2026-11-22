@@ -2215,8 +2215,7 @@ function ingredientTileHTML(id,label,on){
   return "<button type='button' class='sl pantry-photo"+(on?" on":"")+"' data-i='"+esc(id)+"' aria-label='"+esc(label)+"' aria-pressed='"+!!on+"'>"+
     "<span class='pantry-fallback' aria-hidden='true'>"+(ICO[id]||"🥣")+"</span>"+
     (url?"<img class='pantry-photo-image' src='"+esc(url)+"' alt='' loading='lazy' decoding='async'>":"")+
-    "<b>"+esc(label)+"</b>"+
-    (on?"<span class='pantry-check' aria-hidden='true'>✓</span>":"")+"</button>";
+    "<b>"+esc(label)+"</b><span class='pantry-check' aria-hidden='true'>✓</span></button>";
 }
 document.addEventListener("error",function(e){if(e.target.matches&&e.target.matches(".pantry-photo-image,.ic-photo"))e.target.hidden=true},true);
 function decoIcons(){var el=document.getElementById("ings");if(!el)return;Array.prototype.forEach.call(el.querySelectorAll("button[data-i]"),function(b){if(b.querySelector(".ic"))return;var id=b.dataset.i,on=!!(typeof have!=="undefined"&&have[id])||b.classList.contains("on"),lab=NAME[id]||b.textContent.replace(/^✓\s*/,"");
@@ -2251,24 +2250,39 @@ function renderPantrySlides(){
   if(!cats.length){el.innerHTML="<p class='empty'>No pantry categories available.</p>";return}
   if(typeof pantryTab!=="number")pantryTab=0;
   if(pantryTab>=cats.length)pantryTab=0;
+  var c=cats[pantryTab],oldGrid=el.querySelector(".pantry-grid");
+  var layout=JSON.stringify([cats.map(function(group){return group[0]}),pantryTab,c[1].map(function(x){return x[0]})]);
+  var selectedCount=String(c[1].filter(function(x){return !!have[x[0]]}).length);
+  // Keep the loaded images and scroll position when the visible ingredients are the same.
+  if(oldGrid&&el.dataset.pantryLayout===layout){
+    for(var tile of oldGrid.children){
+      var on=!!have[tile.dataset.i],pressed=String(on);
+      if(tile.getAttribute("aria-pressed")===pressed)continue;
+      tile.setAttribute("aria-pressed",pressed);
+      tile.classList.toggle("on",on);
+    }
+    var count=el.querySelector(".pantry-count");
+    if(count.textContent!==selectedCount)count.textContent=selectedCount;
+    return;
+  }
   var tr=document.createElement("div");tr.className="ftray pantry-tray";
   var tb=document.createElement("div");tb.className="ftabs pantry-tabs";
   var groupIcons={Vegetables:"🥬","Fruits / Dry fruits":"🍎","Milk / Bread / Protein":"🥛","Grains / Pulses":"🌾",Condiments:"🧂",Specialty:"🧺"};
   tb.innerHTML=cats.map(function(c,i){
-    var selected=c[1].some(function(x){return !!have[x[0]]});
-    return "<button class='ft"+(i===pantryTab?" on":"")+"' data-pantry-cat='"+i+"'><span class='fi'>"+(groupIcons[c[0]]||"🧺")+"</span><span class='fl'>"+c[0]+"</span>"+(selected?"<em></em>":"")+"</button>";
+    return "<button class='ft"+(i===pantryTab?" on":"")+"' data-pantry-cat='"+i+"'><span class='fi'>"+(groupIcons[c[0]]||"🧺")+"</span><span class='fl'>"+c[0]+"</span></button>";
   }).join("");
   tr.appendChild(tb);
-  var c=cats[pantryTab],pn=document.createElement("div");pn.className="fpanel pantry-panel";
-  var oldGrid=el.querySelector(".pantry-grid"),oldTabs=el.querySelector(".pantry-tabs");
+  var pn=document.createElement("div");pn.className="fpanel pantry-panel";
+  var oldTabs=el.querySelector(".pantry-tabs");
   var gridLeft=oldGrid&&el.dataset.pantryGroup===c[0]?oldGrid.scrollLeft:0;
   var tabsLeft=oldTabs?oldTabs.scrollLeft:0;
   var focused=oldGrid&&oldGrid.contains(document.activeElement)?document.activeElement.dataset.i:null;
-  pn.innerHTML="<div class='fph'><h3>"+c[0]+" ("+c[1].filter(function(x){return !!have[x[0]]}).length+")</h3><div class='pantry-head-actions'><div class='pantry-bulk' role='group' aria-label='Select pantry items'><button type='button' data-pantry-bulk='all'>Select all</button><button type='button' data-pantry-bulk='none'>Clear all</button></div></div></div>";
+  pn.innerHTML="<div class='fph'><h3>"+c[0]+" (<span class='pantry-count'>"+selectedCount+"</span>)</h3><div class='pantry-head-actions'><div class='pantry-bulk' role='group' aria-label='Select pantry items'><button type='button' data-pantry-bulk='all'>Select all</button><button type='button' data-pantry-bulk='none'>Clear all</button></div></div></div>";
   var g=document.createElement("div");g.className="fgrid pantry-grid";
   c[1].forEach(function(x){g.insertAdjacentHTML("beforeend",ingredientTileHTML(x[0],NAME[x[0]]||x[1],!!have[x[0]]))});
   pn.appendChild(g);tr.appendChild(pn);el.replaceChildren(tr);
   el.dataset.pantryGroup=c[0];
+  el.dataset.pantryLayout=layout;
   g.scrollLeft=gridLeft;
   tb.scrollLeft=tabsLeft;
   var item=focused&&g.querySelector("[data-i='"+CSS.escape(focused)+"']");
@@ -2528,7 +2542,6 @@ body{padding-top:var(--nav-bottom)}
 #pantrySlides .pantry-grid .sl i{order:1;position:static;margin:0 0 2px;font-size:21px;line-height:1;flex:none}
 #pantrySlides .pantry-grid .sl b{order:2;display:-webkit-box;width:100%;max-width:100%;font-size:9px;line-height:1.12;text-align:center;white-space:normal;word-break:normal;overflow-wrap:normal;overflow:hidden;text-overflow:ellipsis;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 #pantrySlides .pantry-grid .sl u{order:3;top:auto;right:3px;bottom:3px;font-size:9px;line-height:1}
-#pantrySlides .pantry-tabs .ft em{display:none!important}
 #pantrySlides .pantry-grid .sl.on{background:var(--accent-bg)!important;border:1.5px solid var(--accent);box-shadow:0 0 0 1px rgba(27,127,76,.16)}
 #pantrySlides .pantry-grid .sl.on u{display:none!important}
 #slides .sl.on{background:var(--accent-bg)!important;border-color:var(--accent)!important;color:var(--text);box-shadow:0 0 0 1px rgba(27,127,76,.16),0 4px 12px rgba(15,61,40,.12)}
@@ -2630,7 +2643,6 @@ main#planner{box-shadow:none!important}
 #pantrySlides .pantry-tabs .ft.on::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:4px;border-radius:8px 8px 0 0;background:var(--pantry-underline)}
 #pantrySlides .pantry-tabs .ft:focus-visible{outline:2px solid var(--pantry-underline);outline-offset:-2px}
 #pantrySlides .pantry-panel{padding-top:16px;padding-bottom:16px}
-#pantrySlides .pantry-tabs .ft em{display:none!important}
 /* Compact advanced-filter entry and bottom sheet. */
 #slides .mf-trigger{display:flex;align-items:center;gap:11px;width:100%;margin:10px 0 12px;padding:11px 13px;border:1px solid var(--pantry-divider);border-radius:17px;background:var(--page-paper);color:var(--text);font:inherit;text-align:left;cursor:pointer;box-shadow:0 2px 8px rgba(15,61,40,.04)}
 #slides .mf-trigger:focus-visible,.mf-dialog button:focus-visible,.mf-dialog input:focus-visible{outline:2px solid var(--pantry-underline);outline-offset:2px}
@@ -2747,7 +2759,7 @@ main#planner{box-shadow:none!important}
   top:3px;
   right:3px;
   z-index:3;
-  display:grid;
+  display:none;
   place-items:center;
   width:20px;
   height:20px;
@@ -2760,6 +2772,7 @@ main#planner{box-shadow:none!important}
   line-height:1;
   pointer-events:none;
 }
+.pantry-photo[aria-pressed="true"] .pantry-check{display:grid}
 .more-results{display:block;margin:14px auto 20px;min-width:190px;border:1px solid var(--accent);color:var(--accent);background:var(--surface);font-weight:700}
 body.searching #pantrySlides,body.searching #slides,body.searching #pick{display:none!important}
 body.searching .sh,body.searching [data-shuffle]{display:none!important}

@@ -86,7 +86,7 @@ test('pantry image fallback and accurate grains category exist', () => {
 
 test('PWA registers offline worker and caches the required shell files', () => {
   assert.match(src, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
-  assert.match(sw, /const CACHE = 'hatri-v21-pantry'/);
+  assert.match(sw, /const CACHE = 'hatri-v22-stable-pantry'/);
   for (const item of ['auth.js','ingredient-images.js','index.html','manifest.webmanifest']) assert.ok(sw.includes(`'./${item}'`));
   new vm.Script(sw);
 });

@@ -1,5 +1,5 @@
 /* Hatri website shell. Increase cache version when shipping changes. */
-const CACHE = 'hatri-v21-pantry';
+const CACHE = 'hatri-v22-stable-pantry';
 const SHELL = ['./', './index.html', './auth.js', './vrat-recipes.js', './instagram-recipes.js', './quick-north-recipes.js', './street-food-recipes.js', './rajasthani-recipes.js', './ingredient-images.js', './manifest.webmanifest',
   './icons/icon-192x192.png', './icons/icon-512x512.png',
   './icons/apple-touch-icon.png', './icons/favicon.png', './images/photos.json'];

@@ -28,8 +28,8 @@ test.before(async () => {
 });
 test.after(async () => { await browser?.close(); await new Promise(resolve => server?.close(resolve)); });
 
-async function open(viewport = { width: 390, height: 844 }) {
-  const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
+async function open(viewport = { width: 390, height: 844 }, device = {}) {
+  const context = await browser.newContext({ viewport, reducedMotion: 'reduce', ...device });
   // Deterministic offline-image fallback; external auth/provider connectivity is not under test.
   await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, route => route.abort());
   const page = await context.newPage();
@@ -151,12 +151,48 @@ test('ingredient photo failures preserve the fallback and selection badge', asyn
   const check = first.locator('.pantry-check');
   assert.ok((await first.locator('.pantry-fallback').innerText()).length > 0);
   assert.equal(await first.getAttribute('aria-pressed'), 'false');
-  assert.equal(await check.count(), 0);
+  assert.equal(await check.isVisible(), false);
   await first.click();
   assert.equal(await first.getAttribute('aria-pressed'), 'true');
   assert.ok(await check.isVisible());
   await first.click();
   assert.equal(await first.getAttribute('aria-pressed'), 'false');
-  assert.equal(await check.count(), 0);
+  assert.equal(await check.isVisible(), false);
   await context.close();
+});
+
+test('mobile pantry taps keep other ingredient photos and scroll position stable', async () => {
+  const {page, context} = await open({width: 390, height: 844}, {isMobile: true, hasTouch: true});
+  try {
+    const grid = page.locator('#pantrySlides .pantry-grid');
+    const lauki = grid.locator('[data-i="lauki"]');
+    const beans = grid.locator('[data-i="beans"]');
+    const photo = await lauki.locator('img').elementHandle();
+    await photo.evaluate(img => img.decode());
+    const scrollLeft = await grid.evaluate(el => {
+      el.scrollLeft = 120;
+      return el.scrollLeft;
+    });
+    assert.ok(scrollLeft > 0);
+
+    for (const [button, selected] of [[beans, true], [lauki, true], [beans, false], [lauki, false]]) {
+      await button.tap();
+      assert.equal(await button.getAttribute('aria-pressed'), String(selected));
+      assert.equal(await button.locator('.pantry-check').isVisible(), selected);
+      assert.equal(await photo.evaluate(img => img.isConnected && img.complete && img.naturalWidth > 0), true);
+      assert.equal(await grid.evaluate(el => el.scrollLeft), scrollLeft);
+    }
+
+    const panel = page.locator('#pantrySlides .pantry-panel');
+    for (const action of ['all', 'none']) {
+      await panel.locator(`[data-pantry-bulk="${action}"]`).tap();
+      const selected = action === 'all' ? await grid.locator('.pantry-photo').count() : 0;
+      assert.equal(await grid.locator('[aria-pressed="true"]').count(), selected);
+      assert.match(await panel.locator('h3').innerText(), new RegExp(`\\(${selected}\\)$`));
+      assert.equal(await photo.evaluate(img => img.isConnected), true);
+      assert.equal(await grid.evaluate(el => el.scrollLeft), scrollLeft);
+    }
+  } finally {
+    await context.close();
+  }
 });
