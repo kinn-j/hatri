@@ -107,11 +107,13 @@ test('Clear all time remains cleared across reload; show-more adds a bounded bat
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(() => window.MFREADY === true);
   assert.equal(await page.evaluate(() => Object.keys(TS).length), 0);
-  const before = await page.locator('#results details.tile,#results details.mtile').count();
   const first = page.locator('#results [data-show-more]').first();
   assert.ok(await first.count() > 0);
+  const groupId = await first.evaluate(button => button.parentElement.id);
+  const cards = page.locator(`#${groupId} > .tgrid > details`);
+  const before = await cards.count();
   await first.click();
-  const after = await page.locator('#results details.tile,#results details.mtile').count();
+  const after = await cards.count();
   assert.ok(after > before && after - before <= 24, `before ${before}, after ${after}`);
   await context.close();
 });
@@ -192,6 +194,149 @@ test('mobile pantry taps keep other ingredient photos and scroll position stable
       assert.equal(await photo.evaluate(img => img.isConnected), true);
       assert.equal(await grid.evaluate(el => el.scrollLeft), scrollLeft);
     }
+  } finally {
+    await context.close();
+  }
+});
+
+test('mobile dish and time selections and advanced filters preserve the controls', async () => {
+  const {page, context} = await open({width: 390, height: 844}, {isMobile: true, hasTouch: true});
+  try {
+    const slides = page.locator('#slides');
+    const dishes = slides.locator('.cr .sls');
+    const main = slides.locator('[data-crs="Main"]');
+    const bread = slides.locator('[data-crs="Bread"]');
+    const time = slides.locator('[data-sf="t|t2"]');
+    const more = slides.locator('[data-mf-open]');
+    await page.waitForFunction(() => document.querySelector('#slides [data-crs="Bread"]').classList.contains('cp'));
+    const breadTile = await bread.elementHandle();
+    const background = await breadTile.evaluate(tile => getComputedStyle(tile).backgroundImage);
+    const left = await dishes.evaluate(strip => {
+      strip.scrollLeft = strip.children[1].offsetLeft - strip.children[0].offsetLeft;
+      return strip.scrollLeft;
+    });
+    assert.ok(left > 0);
+
+    await main.tap();
+    assert.equal(await main.getAttribute('aria-pressed'), 'true');
+    assert.equal(await breadTile.evaluate(tile => tile.isConnected && getComputedStyle(tile).backgroundImage), background);
+    assert.equal(await dishes.evaluate(strip => strip.scrollLeft), left);
+    await bread.tap();
+    assert.equal(await bread.getAttribute('aria-pressed'), 'true');
+    await slides.locator('[data-remove-category="Main"]').tap();
+    assert.equal(await main.getAttribute('aria-pressed'), 'false');
+
+    const timeTile = await time.elementHandle();
+    await time.focus();
+    await page.keyboard.press('Space');
+    assert.equal(await time.getAttribute('aria-pressed'), 'true');
+    assert.equal(await timeTile.evaluate(tile => document.activeElement === tile), true);
+    await slides.locator('[data-sf="t|#none"]').tap();
+    assert.equal(await time.getAttribute('aria-pressed'), 'false');
+    await slides.locator('[data-sf="t|#all"]').tap();
+    assert.equal(await time.getAttribute('aria-pressed'), 'true');
+
+    const trigger = await more.elementHandle();
+    await more.tap();
+    const dialog = page.locator('#moreFiltersDialog');
+    const regionChoices = dialog.locator('.mf-region-choices .mf-choice');
+    const positions = buttons => buttons.map(button => [button.offsetLeft, button.offsetTop]);
+    const before = await regionChoices.evaluateAll(positions);
+    for (const option of ['r|Punjabi', 'o|Daily', 'h|Light']) {
+      const choice = dialog.locator(`[data-mf-option="${option}"]`);
+      await choice.tap();
+      assert.equal(await choice.getAttribute('aria-pressed'), 'true');
+    }
+    assert.deepEqual(await regionChoices.evaluateAll(positions), before);
+    await dialog.locator('[data-mf-apply]').tap();
+    assert.equal(await dialog.isVisible(), false);
+    assert.equal(await more.locator('.mf-count').innerText(), '3');
+    assert.equal(await trigger.evaluate(button => button.isConnected), true);
+    await more.tap();
+    await dialog.locator('[data-mf-reset]').tap();
+    await dialog.locator('[data-mf-apply]').tap();
+    assert.equal(await more.locator('.mf-count').count(), 0);
+    assert.equal(await breadTile.evaluate(tile => tile.isConnected && getComputedStyle(tile).backgroundImage), background);
+    await page.locator('#nvBtn').tap();
+    assert.equal(await page.locator('#nvBtn').getAttribute('aria-checked'), 'false');
+    await page.locator('#hostelBtn').tap();
+    assert.equal(await page.locator('#hostelBtn').getAttribute('aria-checked'), 'true');
+    const kettle = page.locator('#hostelSettings [data-app="K"]');
+    await kettle.tap();
+    assert.equal(await kettle.getAttribute('aria-pressed'), 'true');
+    assert.equal(await breadTile.evaluate(tile => tile.isConnected), true);
+  } finally {
+    await context.close();
+  }
+});
+
+test('mobile pantry category and drawer selections keep neighboring controls and photos mounted', async () => {
+  const {page, context} = await open({width: 390, height: 844}, {isMobile: true, hasTouch: true});
+  try {
+    const tabs = page.locator('#pantrySlides .pantry-tabs');
+    const vegetables = tabs.locator('[data-pantry-cat="0"]');
+    const vegetableTab = await vegetables.elementHandle();
+    const fruit = tabs.locator('[data-pantry-cat="1"]');
+    await fruit.tap();
+    assert.equal(await fruit.getAttribute('aria-pressed'), 'true');
+    assert.equal(await vegetableTab.evaluate(tab => tab.isConnected), true);
+    await vegetables.tap();
+    assert.equal(await vegetables.getAttribute('aria-pressed'), 'true');
+
+    const openPantry = page.locator('#results [data-view="pantry"]');
+    await openPantry.tap();
+    const drawer = page.locator('[data-vs="pantry"]');
+    const grid = drawer.locator('.pgrid');
+    const lauki = grid.locator('[data-i="lauki"]');
+    const photo = await lauki.locator('img').elementHandle();
+    await photo.evaluate(img => img.decode());
+    const tomato = grid.locator('[data-i="tomato"]');
+    await tomato.tap();
+    assert.equal(await tomato.getAttribute('aria-pressed'), 'true');
+    assert.equal(await photo.evaluate(img => img.isConnected && img.naturalWidth > 0), true);
+    await tomato.tap();
+    assert.equal(await tomato.getAttribute('aria-pressed'), 'false');
+    assert.equal(await photo.evaluate(img => img.isConnected), true);
+  } finally {
+    await context.close();
+  }
+});
+
+test('shopping selections preserve the open recipe, loaded photos, and neighboring shopping controls', async () => {
+  const {page, context} = await open({width: 390, height: 844}, {isMobile: true, hasTouch: true});
+  try {
+    await page.locator('#rq').fill('gajar halwa');
+    await page.locator('#rq').blur();
+    const recipe = page.locator('#results [data-recipe="Gajar%20Halwa"]');
+    const cover = await recipe.locator('summary img').elementHandle();
+    await cover.evaluate(img => img.decode());
+    await recipe.locator(':scope > summary').tap();
+    const details = page.locator('#dtray');
+    const photo = await details.locator('.tile.photo img').elementHandle();
+    await photo.evaluate(img => img.decode());
+    const sugar = details.locator('[data-oi="sugar"]');
+    const sugarButton = await sugar.elementHandle();
+    for (const selected of [true, false, true]) {
+      await sugar.tap();
+      assert.equal(await sugar.getAttribute('aria-pressed'), String(selected));
+      assert.equal(await sugarButton.evaluate(button => button.isConnected), true);
+      assert.equal(await cover.evaluate(img => img.isConnected && img.naturalWidth > 0), true);
+      assert.equal(await photo.evaluate(img => img.isConnected && img.naturalWidth > 0), true);
+    }
+    await page.locator('.tabbar [data-view="order"]').tap();
+    await page.locator('#shopq').fill('rice');
+    await page.locator('#shopq').blur();
+    const rice = page.locator('#shopres [data-oi="rice"]');
+    const other = await page.locator('#shopres [data-oi="basmatirice"]').elementHandle();
+    const sugarRow = await page.locator('#cart [data-rm="sugar"]').elementHandle();
+    await rice.tap();
+    assert.equal(await page.locator('#cart [data-rm="rice"]').count(), 1);
+    assert.equal(await other.evaluate(button => button.isConnected), true);
+    assert.equal(await sugarRow.evaluate(button => button.isConnected), true);
+    await page.locator('#cart [data-bought="rice"]').tap();
+    assert.equal(await page.locator('#cart [data-rm="rice"]').count(), 0);
+    assert.equal(await page.evaluate(() => !!have.rice), true);
+    assert.equal(await sugarRow.evaluate(button => button.isConnected), true);
   } finally {
     await context.close();
   }
