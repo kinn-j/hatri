@@ -56,6 +56,9 @@ test('app boots with bounded results and usable mobile layouts', async () => {
     assert.ok(state.overflow <= 2, `${width}: horizontal overflow ${state.overflow}`);
     assert.ok(state.tray.left >= 0 && state.tray.right <= width, `${width}: pantry tray stays inside the viewport`);
     assert.ok(state.failedImageFallback, `${width}: ingredient fallback`);
+    const hero = page.locator('.hero');
+    assert.equal(await hero.isVisible(), true);
+    assert.match(await hero.evaluate(el => getComputedStyle(el).backgroundImage), /hatri-pantry-header[.]webp/);
     await context.close();
   }
 });
@@ -83,6 +86,7 @@ test('search appears immediately and respects active region, time and diet', asy
   await page.locator('#rq').fill('gajar halwa');
   assert.equal(await page.locator('body').evaluate(el => el.classList.contains('searching')), true);
   assert.equal(await page.locator('#pantrySlides').evaluate(el => getComputedStyle(el).display), 'none');
+  assert.equal(await page.locator('.hero').isVisible(), false);
   assert.ok(await page.locator('#results').innerText().then(t => t.includes('Gajar Halwa')));
   await page.evaluate(() => {
     Object.keys(TS).forEach(k => delete TS[k]); TS.t1 = 1;
@@ -329,6 +333,14 @@ test('shopping selections preserve the open recipe, loaded photos, and neighbori
     const rice = page.locator('#shopres [data-oi="rice"]');
     const other = await page.locator('#shopres [data-oi="basmatirice"]').elementHandle();
     const sugarRow = await page.locator('#cart [data-rm="sugar"]').elementHandle();
+    const cartLinks = await page.locator('#cart a').evaluateAll(links => links.map(link => link.href));
+    assert.deepEqual(cartLinks.map(href => {
+      const link = new URL(href);
+      return [link.origin, link.pathname, link.searchParams.get('q')];
+    }), [
+      ['https://blinkit.com', '/', null],
+      ['https://blinkit.com', '/s/', 'Sugar'],
+    ]);
     await rice.tap();
     assert.equal(await page.locator('#cart [data-rm="rice"]').count(), 1);
     assert.equal(await other.evaluate(button => button.isConnected), true);
