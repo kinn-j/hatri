@@ -84,6 +84,9 @@ label.t{display:flex;gap:6px;align-items:center;font-size:13.5px;cursor:pointer}
 .cart-needed small{color:var(--muted);font-size:12px}
 .cart-needed .still-needed{background:var(--warn-bg)}
 .cart-needed .still-needed small{color:var(--warn);font-weight:700}
+.cart-needed .cart-add-item{border:0;border-radius:6px;padding:5px 8px;background:var(--accent-bg);color:var(--accent);font:inherit;font-size:12px;font-weight:700;line-height:1.2;cursor:pointer}
+.cart-needed .cart-add-item:focus-visible,.cart-add-dish:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cart-add-dish{width:100%;margin-top:9px;min-height:38px}
 #cart .order-blinkit{display:block;margin-top:14px;text-align:center}
 
 
@@ -1112,6 +1115,17 @@ document.addEventListener("click",function(e){
   }
   else if(t.dataset.up){upSlug=t.dataset.up;$("fileIn").click()}
   else if(t.dataset.cartQuantity){changeCartQuantity(t)}
+  else if(t.dataset.cartAddIngredient){
+    var ingredient=t.dataset.cartAddIngredient;
+    if(!have[ingredient]&&!cartQuantity(ingredient)){cart[ingredient]=1;all()}
+  }
+  else if(t.dataset.cartAddDish){
+    var dish=MEALS[Number(t.dataset.cartAddDish)];
+    if(dish){
+      var needed=Array.from(new Set(dish[5].filter(function(id){return !id.endsWith("?")&&!have[id]&&!cartQuantity(id)})));
+      if(needed.length){needed.forEach(function(id){cart[id]=1});all()}
+    }
+  }
   else if(t.dataset.oi){
     var id=t.dataset.oi,focused=document.activeElement===t&&t.classList.contains("shop-item");
     var area=focused&&t.closest("#dtray,#pick,#results"),tile=focused&&t.closest("details.tile[data-recipe]");
@@ -1792,15 +1806,20 @@ function cartThumbnail(url,fallback){
 }
 function cartDishes(limit){
   var suggestions=[];
-  for(var recipe of MEALS){
-    var ingredients=Array.from(new Set(recipe[5].filter(function(id){return !id.endsWith("?")})));
-    var inCart=ingredients.filter(function(id){return !!cart[id]}).length;
-    if(!inCart||!matchesFilters(recipe,false))continue;
+  var hasCart=Object.keys(cart).some(function(id){return cartQuantity(id)>0&&!have[id]});
+  for(var recipeIndex=0;recipeIndex<MEALS.length;recipeIndex++){
+    var recipe=MEALS[recipeIndex];
+    // Only mandatory ingredients absent from the pantry belong on a shopping list.
+    var ingredients=Array.from(new Set(recipe[5].filter(function(id){return !id.endsWith("?")&&!have[id]})));
+    if(!ingredients.length||!matchesFilters(recipe,false))continue;
+    var inCart=ingredients.filter(function(id){return cartQuantity(id)>0}).length;
+    if(hasCart&&!inCart)continue;
     suggestions.push({
       name:recipe[0],
+      index:recipeIndex,
       ingredients:ingredients,
       inCart:inCart,
-      missing:ingredients.filter(function(id){return !cart[id]&&!have[id]}).length,
+      missing:ingredients.length-inCart,
       minutes:effP(recipe)+recipe[3]
     });
   }
@@ -1819,27 +1838,23 @@ function cartDishes(limit){
 }
 function cartDishCard(dish){
   var photo=IMG[pslug(dish.name)];
+  var missing=dish.ingredients.filter(function(id){return !cartQuantity(id)});
   var rows=dish.ingredients.map(function(id){
-    var needed=!cart[id]&&!have[id];
-    var status=cart[id]?T("In cart","कार्ट में"):
-      have[id]?T("In pantry","रसोई में"):T("Still needed","अभी चाहिए");
-    return "<li"+(needed?" class='still-needed'":"")+"><span>"+escapeHTML(nmx(id)||id)+"</span><small>"+status+"</small></li>";
+    var needed=!cartQuantity(id);
+    return "<li"+(needed?" class='still-needed'":"")+"><span>"+escapeHTML(nmx(id)||id)+"</span>"+
+      (needed?"<button type='button' class='cart-add-item' data-cart-add-ingredient='"+escapeHTML(id)+"' aria-label='"+escapeHTML(T("Add "+(nmx(id)||id)+" to shopping list",(nmx(id)||id)+" खरीदारी सूची में जोड़ें"))+"'>+ "+T("Add","जोड़ें")+"</button>":"<small>✓ "+T("In cart","कार्ट में")+"</small>")+"</li>";
   }).join("");
   return "<article class='cart-dish-card'><div class='cart-dish'>"+cartThumbnail(photo?photoSrc(photo):"",emo(dish.name))+
     "<h4>"+escapeHTML(T(dish.name,HI[dish.name]||dish.name))+"</h4></div>"+
-    "<p class='cart-needed-label'>"+T("Ingredients","सामग्री")+"</p><ul class='cart-needed'>"+rows+"</ul></article>";
+    "<p class='cart-needed-label'>"+T("Ingredients to buy","खरीदने की सामग्री")+"</p><ul class='cart-needed'>"+rows+"</ul>"+
+    (missing.length?"<button type='button' class='btn sm primary cart-add-dish' data-cart-add-dish='"+dish.index+"'>"+
+      T("Add "+missing.length+" missing "+(missing.length===1?"item":"items")+" to cart",missing.length+" ज़रूरी सामान कार्ट में जोड़ें")+"</button>":"")+"</article>";
 }
 function renderCart(){
-  var items=Object.keys(cart).map(function(id){return [id,cartQuantity(id)]}).filter(function(item){return item[1]>0});
+  var items=Object.keys(cart).map(function(id){return [id,cartQuantity(id)]}).filter(function(item){return item[1]>0&&!have[item[0]]});
   var total=items.reduce(function(sum,item){return sum+item[1]},0);
   $("cartCount").textContent=total?"· "+total+" "+(total===1?T("item","सामान"):T("items","सामान")):"";
   $("cbadge").textContent=total||"";
-
-  if(!items.length){
-    renderHTML($("cart"),"<p class='note'>"+T("Add missing ingredients from a recipe.","किसी रेसिपी से ज़रूरी सामान जोड़ें।")+"</p>");
-    return;
-  }
-
   var rows=items.map(function(item){
     var id=item[0],quantity=item[1],name=nmx(id)||id;
     var decrease=escapeHTML(T("Decrease quantity for "+name,name+" की मात्रा घटाएँ"));
@@ -1854,9 +1869,9 @@ function renderCart(){
   var suggestions=dishes.length?"<section class='cart-suggestion' aria-labelledby='cart-suggestion-title'>"+
     "<h3 id='cart-suggestion-title'>"+T("Suggested dishes","सुझाए गए व्यंजन")+"</h3>"+
     "<div class='cart-dishes'>"+dishes.map(cartDishCard).join("")+"</div></section>":"";
-  renderHTML($("cart"),"<ul class='cart-items'>"+rows+"</ul>"+suggestions+
-    "<a class='btn primary order-blinkit' href='https://blinkit.com/' target='_blank' rel='noopener noreferrer'>"+
-    T("Order from Blinkit","Blinkit से ऑर्डर करें")+"</a>");
+  renderHTML($("cart"),(items.length?"<ul class='cart-items'>"+rows+"</ul>":"<p class='note'>"+T("Add missing ingredients from a recipe.","किसी रेसिपी से ज़रूरी सामान जोड़ें।")+"</p>")+suggestions+
+    (items.length?"<a class='btn primary order-blinkit' href='https://blinkit.com/' target='_blank' rel='noopener noreferrer'>"+
+    T("Order from Blinkit","Blinkit से ऑर्डर करें")+"</a>":""));
 }
 Object.assign(STEPS,{"Gulab Jamun": {"en": ["Knead crumbled mawa with a spoon of maida (or atta) into a smooth, crack-free dough and roll small balls.", "Boil 1 cup sugar, 1 cup water and a pinch of cardamom for 5 min to make a light syrup; keep it warm.", "Fry the balls in ghee or oil on low heat, turning often, until deep golden (8–10 min).", "Drop them into the warm syrup, soak at least 1 hour and serve warm."], "hi": ["मावा को मसलकर एक चम्मच मैदा (या आटा) के साथ चिकना, बिना दरार वाला आटा गूँथें और छोटे गोले बनाएँ।", "1 कप चीनी, 1 कप पानी और इलायची को 5 मिनट उबालकर हल्की चाशनी बनाएँ; गरम रखें।", "गोलों को धीमी आँच पर घी/तेल में पलटते हुए गहरा सुनहरा तलें (8–10 मिनट)।", "गरम चाशनी में डालकर कम से कम 1 घंटा भिगोएँ और गरम परोसें।"]}, "Mini Gulab Jamun": {"en": ["Knead crumbled mawa with a spoon of maida (or atta) into a smooth, crack-free dough and roll small balls.", "Boil 1 cup sugar, 1 cup water and a pinch of cardamom for 5 min to make a light syrup; keep it warm.", "Fry the balls in ghee or oil on low heat, turning often, until deep golden (8–10 min).", "Drop them into the warm syrup, soak at least 1 hour and serve warm."], "hi": ["मावा को मसलकर एक चम्मच मैदा (या आटा) के साथ चिकना, बिना दरार वाला आटा गूँथें और छोटे गोले बनाएँ।", "1 कप चीनी, 1 कप पानी और इलायची को 5 मिनट उबालकर हल्की चाशनी बनाएँ; गरम रखें।", "गोलों को धीमी आँच पर घी/तेल में पलटते हुए गहरा सुनहरा तलें (8–10 मिनट)।", "गरम चाशनी में डालकर कम से कम 1 घंटा भिगोएँ और गरम परोसें।"]}, "Rasgulla": {"en": ["Boil milk, switch off the heat and add lemon juice to curdle it; strain through muslin and rinse under water.", "Hang or press the chhena for 30 min, then knead 5 min until smooth and make crack-free balls.", "Boil 1 cup sugar with 4 cups water, add the balls, cover and boil 15–20 min until they double.", "Cool in the syrup and chill before serving."], "hi": ["दूध उबालकर आँच बंद करें और नींबू का रस डालकर फाड़ें; मलमल में छानकर पानी से धो लें।", "छैना 30 मिनट दबाकर रखें, फिर 5 मिनट चिकना गूँथें और बिना दरार के गोले बनाएँ।", "1 कप चीनी और 4 कप पानी उबालें, गोले डालकर ढककर 15–20 मिनट पकाएँ जब तक दुगने न हो जाएँ।", "चाशनी में ठंडा करें और फ्रिज में रखकर परोसें।"]}, "Rasmalai": {"en": ["Make chhena as for rasgulla and shape small flat patties.", "Cook the patties in light sugar syrup for 15 min and cool.", "Boil milk until reduced by a third; add sugar, cardamom and saffron.", "Gently press the patties, soak them in the milk and chill; garnish with pistachios."], "hi": ["रसगुल्ले की तरह छैना बनाकर छोटी चपटी टिक्कियाँ बनाएँ।", "टिक्कियों को हल्की चाशनी में 15 मिनट पकाकर ठंडा करें।", "दूध को एक तिहाई रहने तक उबालें; चीनी, इलायची और केसर डालें।", "टिक्कियाँ हल्का दबाकर दूध में डालें और ठंडा करें; पिस्ते से सजाएँ।"]}, "Sandesh": {"en": ["Curdle milk with lemon juice, strain and rinse the chhena.", "Knead the chhena with sugar, then cook on low heat 3–4 min until it leaves the pan.", "Shape into moulds or small discs and cool; garnish with nuts."], "hi": ["दूध को नींबू से फाड़कर छैना छानें और धो लें।", "छैना में चीनी मिलाकर गूँथें, फिर धीमी आँच पर 3–4 मिनट पकाएँ जब तक कड़ाही न छोड़े।", "साँचे में या छोटे गोल आकार में ढालकर ठंडा करें; मेवों से सजाएँ।"]}, "Atta Modak": {"en": ["Cook grated coconut with jaggery for 5 min and add cardamom to make the filling.", "Boil water with a pinch of salt and a little ghee, stir in atta, cover 5 min and knead while warm.", "Flatten a small ball into a cup, add filling and pleat the edges closed.", "Steam on a greased plate for 10 min."], "hi": ["कद्दूकस नारियल को गुड़ के साथ 5 मिनट पकाएँ और इलायची डालकर पूरन बनाएँ।", "पानी में चुटकी भर नमक और थोड़ा घी उबालें, आटा डालकर ढकें (5 मिनट) और गरम में गूँथें।", "छोटी लोई को कटोरी जैसा बनाकर पूरन भरें और किनारे मोड़कर बंद करें।", "चिकनी थाली पर 10 मिनट भाप में पकाएँ।"]}, "Gujiya": {"en": ["Roast mawa with sugar, chopped nuts and cardamom; cool it for the filling.", "Knead maida with ghee and a little water into a stiff dough; rest 30 min.", "Roll small circles, fill, seal the edges with water and crimp.", "Fry on low heat until golden (about 20 min) and cool."], "hi": ["मावा को चीनी, कटे मेवे और इलायची के साथ भूनकर ठंडा करें।", "मैदा में घी और थोड़ा पानी डालकर कड़ा आटा गूँथें; 30 मिनट रखें।", "छोटी पूरियाँ बेलकर भरें, किनारों पर पानी लगाकर बंद करें और मोड़ें।", "धीमी आँच पर सुनहरा तलें (लगभग 20 मिनट) और ठंडा करें।"]}, "Peanut Chikki": {"en": ["Dry-roast the peanuts or sesame, cool and (for peanuts) rub off the skins.", "Melt jaggery with a teaspoon of ghee on low heat until a drop in water turns brittle.", "Quickly mix in the peanuts or sesame, pour onto a greased plate and roll thin.", "Score into pieces while warm and cool completely."], "hi": ["मूंगफली या तिल को सूखा भूनकर ठंडा करें (मूंगफली के छिलके हटा दें)।", "गुड़ को 1 चम्मच घी के साथ धीमी आँच पर पिघलाएँ जब तक पानी में बूँद डालने पर कड़ी न हो जाए।", "जल्दी से मूंगफली/तिल मिलाएँ, चिकनी थाली पर डालकर पतला बेलें।", "गरम में ही टुकड़ों में काटें और पूरी तरह ठंडा करें।"]}, "Til Chikki": {"en": ["Dry-roast the peanuts or sesame, cool and (for peanuts) rub off the skins.", "Melt jaggery with a teaspoon of ghee on low heat until a drop in water turns brittle.", "Quickly mix in the peanuts or sesame, pour onto a greased plate and roll thin.", "Score into pieces while warm and cool completely."], "hi": ["मूंगफली या तिल को सूखा भूनकर ठंडा करें (मूंगफली के छिलके हटा दें)।", "गुड़ को 1 चम्मच घी के साथ धीमी आँच पर पिघलाएँ जब तक पानी में बूँद डालने पर कड़ी न हो जाए।", "जल्दी से मूंगफली/तिल मिलाएँ, चिकनी थाली पर डालकर पतला बेलें।", "गरम में ही टुकड़ों में काटें और पूरी तरह ठंडा करें।"]}, "Boondi Ladoo": {"en": ["Mix besan with water into a smooth, flowing batter.", "Pour it through a boondi ladle into hot ghee and fry until light; drain.", "Make a one-thread sugar syrup with cardamom.", "Soak the boondi in the syrup and shape into ladoos while warm."], "hi": ["बेसन में पानी मिलाकर चिकना बहने वाला घोल बनाएँ।", "बूंदी की झारी से गरम घी में डालकर हल्का तलें; निकाल लें।", "इलायची के साथ एक तार की चाशनी बनाएँ।", "बूंदी को चाशनी में मिलाकर गुनगुने में ही लड्डू बाँध लें।"]}, "Balushahi": {"en": ["Knead maida, ghee, curd and a pinch of baking soda into a soft dough; rest 30 min.", "Make discs with a thumb dent in the centre.", "Fry on very low heat 20–25 min until golden and cooked through.", "Dip in thick sugar syrup for 2 min and let it dry."], "hi": ["मैदा, घी, दही और चुटकी भर सोडा मिलाकर नरम आटा गूँथें; 30 मिनट रखें।", "बीच में अँगूठे से गड्ढा बनाकर टिक्कियाँ बनाएँ।", "बहुत धीमी आँच पर 20–25 मिनट सुनहरा और अंदर तक पकने तक तलें।", "गाढ़ी चाशनी में 2 मिनट डुबोकर सूखने दें।"]}, "Shrikhand": {"en": ["Hang thick curd in muslin for 4–5 hours so the whey drains.", "Whisk the hung curd with powdered sugar, cardamom and saffron milk until smooth.", "Chill and garnish with nuts."], "hi": ["गाढ़े दही को मलमल में 4–5 घंटे लटकाएँ ताकि पानी निकल जाए।", "छने दही को पिसी चीनी, इलायची और केसर वाले दूध के साथ चिकना फेंटें।", "ठंडा करें और मेवों से सजाएँ।"]}, "Basundi": {"en": ["Simmer milk in a heavy pan, stirring, until it reduces to about half (around 40 min).", "Add sugar, cardamom and a pinch of nutmeg.", "Add chopped nuts and saffron, simmer 5 min and chill."], "hi": ["भारी कड़ाही में दूध को चलाते हुए आधा रहने तक उबालें (लगभग 40 मिनट)।", "चीनी, इलायची और चुटकी भर जायफल डालें।", "कटे मेवे और केसर डालकर 5 मिनट उबालें और ठंडा करें।"]}, "Malai Kulfi": {"en": ["Boil milk until reduced by a third; add sugar and cardamom.", "Stir in chopped nuts and cool completely.", "Pour into moulds and freeze 6–8 hours; unmould and serve."], "hi": ["दूध को एक तिहाई रहने तक उबालें; चीनी और इलायची डालें।", "कटे मेवे मिलाएँ और पूरी तरह ठंडा करें।", "साँचों में डालकर 6–8 घंटे जमाएँ; निकालकर परोसें।"]}, "Malpua": {"en": ["Mix atta, suji, milk and a pinch of fennel into a thick batter; rest 15 min.", "Make a light sugar syrup.", "Fry small ladlefuls in ghee until the edges turn golden.", "Dip in the syrup for a minute and serve warm."], "hi": ["आटा, सूजी, दूध और चुटकी भर सौंफ मिलाकर गाढ़ा घोल बनाएँ; 15 मिनट रखें।", "हल्की चीनी की चाशनी बनाएँ।", "छोटे चम्मच घोल घी में किनारे सुनहरे होने तक तलें।", "एक मिनट चाशनी में डुबोकर गरम परोसें।"]}, "Veg Pizza (Tawa)": {"en": ["Knead maida with curd, a pinch of baking soda and salt into a soft dough; rest 30 min.", "Roll a 6-inch base and prick it with a fork.", "Cook one side on a tava, covered, 3–4 min, then flip.", "Spread pizza sauce, veggies and cheese; cover and cook 3 min until the cheese melts."], "hi": ["मैदा में दही, चुटकी भर सोडा और नमक मिलाकर नरम आटा गूँथें; 30 मिनट रखें।", "6 इंच का बेस बेलकर काँटे से छेद करें।", "तवे पर ढककर एक तरफ़ 3–4 मिनट सेंकें, फिर पलटें।", "पिज़्ज़ा सॉस, सब्ज़ियाँ और चीज़ फैलाकर ढकें और 3 मिनट चीज़ पिघलने तक पकाएँ।"]}, "Veg Momos": {"en": ["Knead maida with water and a pinch of salt into a stiff dough; rest 20 min.", "Mix finely chopped cabbage, carrot and ginger with salt and pepper for the filling.", "Roll thin rounds, add filling and pleat to seal.", "Steam 10–12 min and serve hot with chutney."], "hi": ["मैदा में पानी और चुटकी भर नमक डालकर कड़ा आटा गूँथें; 20 मिनट रखें।", "बारीक कटी पत्तागोभी, गाजर और अदरक में नमक-काली मिर्च मिलाकर भरावन बनाएँ।", "पतली पूरियाँ बेलकर भरें और मोड़कर बंद करें।", "10–12 मिनट भाप में पकाएँ और चटनी के साथ गरम परोसें।"]}, "Garlic Bread": {"en": ["Mix soft butter with chopped garlic, salt and, if you like, grated cheese.", "Spread it on bread slices.", "Toast on a tava on low heat 2 min per side until crisp and golden."], "hi": ["नरम मक्खन में कटा लहसुन, नमक और चाहें तो कद्दूकस चीज़ मिलाएँ।", "ब्रेड स्लाइस पर लगाएँ।", "तवे पर धीमी आँच पर हर तरफ़ 2 मिनट कुरकुरा और सुनहरा सेंकें।"]}, "Masala Toast": {"en": ["Mix chopped onion, tomato, capsicum and chilli with salt and chaat masala.", "Spread butter on bread and pile on the mixture.", "Toast on a tava, pressing lightly, until crisp."], "hi": ["कटे प्याज़, टमाटर, शिमला मिर्च और हरी मिर्च में नमक और चाट मसाला मिलाएँ।", "ब्रेड पर मक्खन लगाकर मिश्रण फैलाएँ।", "तवे पर हल्का दबाते हुए कुरकुरा सेंकें।"]}, "White Sauce Pasta": {"en": ["Boil pasta until just soft, drain and set aside.", "Melt butter, stir in maida for 1 min, then add milk slowly while whisking until thick.", "Season with salt, pepper and oregano.", "Add the pasta (and any veggies) and mix 2 min."], "hi": ["पास्ता को हल्का नरम उबालकर निथार लें।", "मक्खन पिघलाएँ, मैदा 1 मिनट भूनें, फिर दूध धीरे-धीरे फेंटते हुए डालें जब तक गाढ़ा न हो।", "नमक, काली मिर्च और ओरेगैनो डालें।", "पास्ता (और सब्ज़ियाँ) डालकर 2 मिनट मिलाएँ।"]}, "Sweet Corn Soup": {"en": ["Boil the corn; blend half of it coarsely.", "Simmer corn with water, grated carrot, ginger, salt and pepper for 8 min.", "Stir in a cornflour-water slurry and cook 2 min until lightly thick; serve hot."], "hi": ["भुट्टे के दाने उबालकर आधे दरदरे पीस लें।", "दाने, पानी, कद्दूकस गाजर, अदरक, नमक और काली मिर्च के साथ 8 मिनट उबालें।", "कॉर्नफ्लोर का घोल डालकर 2 मिनट हल्का गाढ़ा होने तक पकाएँ; गरम परोसें।"]}, "Litti Chokha": {"en": ["Mix sattu with chopped onion, garlic, ginger, lemon, ajwain, salt and mustard oil for the stuffing.", "Knead atta into a firm dough, stuff and roll into balls.", "Roast the littis, turning, 25–30 min until browned; dip in ghee.", "For chokha, roast brinjal, tomato and potato, mash with onion, chilli, mustard oil and salt."], "hi": ["सत्तू में कटा प्याज़, लहसुन, अदरक, नींबू, अजवाइन, नमक और सरसों का तेल मिलाकर भरावन बनाएँ।", "आटा कड़ा गूँथें, भरावन भरकर गोले बनाएँ।", "लिट्टी को पलटते हुए 25–30 मिनट भूरा सेंकें; घी में डुबोएँ।", "चोखा के लिए बैंगन, टमाटर, आलू भूनकर प्याज़, मिर्च, सरसों का तेल और नमक के साथ मसलें।"]}});Object.assign(HI,{"🔀 Shuffle": "🔀 फिर से मिलाएँ", "▶ Start cooking": "▶ पकाना शुरू करें", "💪 Add protein": "💪 प्रोटीन जोड़ें", "💪 Protein-rich meal": "💪 प्रोटीन से भरपूर खाना", "💪 Protein-rich": "💪 प्रोटीन से भरपूर", "👍 Protein OK": "👍 प्रोटीन ठीक है", "⚠️ Low protein — add dal, paneer or curd": "⚠️ प्रोटीन कम — दाल, पनीर या दही जोड़ें", "🥗 Add dal/curd for protein": "🥗 प्रोटीन के लिए दाल/दही जोड़ें", "📋 Copy list": "📋 सूची कॉपी करें", "💬 Share on WhatsApp": "💬 व्हाट्सऐप पर भेजें", "Order from": "यहाँ से ऑर्डर करें", "Tap ✓ when an item is bought: it moves to your pantry. Copy the list first; the apps don’t accept a pre-filled cart from here yet.": "सामान खरीदने पर ✓ दबाएँ: वह आपके पैंट्री में चला जाएगा। पहले सूची कॉपी कर लें; ये ऐप यहाँ से भरा हुआ कार्ट अभी नहीं लेते।", "No match": "कुछ नहीं मिला"});
 var LANG="en";try{LANG=localStorage.getItem("rasoi-lang")||"en"}catch(e){}
