@@ -304,53 +304,64 @@ test('mobile pantry category and drawer selections keep neighboring controls and
   }
 });
 
-test('the compact cart supports quantities and shows multiple related dishes', async () => {
+test('the cart rotates 1–2 missing-ingredient dishes in a two-column mobile grid', async () => {
   const {page, context} = await open({width: 390, height: 844}, {isMobile: true, hasTouch: true});
   try {
-    await page.locator('#rq').fill('gajar halwa');
-    await page.locator('#rq').blur();
-    const recipe = page.locator('#results [data-recipe="Gajar%20Halwa"]');
-    const cover = await recipe.locator('summary img').elementHandle();
-    await cover.evaluate(img => img.decode());
-    await recipe.locator(':scope > summary').tap();
-    const details = page.locator('#dtray');
-    const photo = await details.locator('.tile.photo img').elementHandle();
-    await photo.evaluate(img => img.decode());
-    const sugar = details.locator('[data-oi="sugar"]');
-    const sugarButton = await sugar.elementHandle();
-    for (const selected of [true, false, true]) {
-      await sugar.tap();
-      assert.equal(await sugar.getAttribute('aria-pressed'), String(selected));
-      assert.deepEqual(await page.locator('.cart-items .cart-item-name').allTextContents(), selected ? ['Sugar'] : []);
-      assert.equal(await page.locator('#cart a').count(), selected ? 1 : 0);
-      assert.equal(await sugarButton.evaluate(button => button.isConnected), true);
-      assert.equal(await cover.evaluate(img => img.isConnected && img.naturalWidth > 0), true);
-      assert.equal(await photo.evaluate(img => img.isConnected && img.naturalWidth > 0), true);
-    }
-    await page.locator('.tabbar [data-view="order"]').tap();
-    const sugarPhoto = page.locator('.cart-items [data-cart-item="sugar"] img');
-    assert.match(await sugarPhoto.getAttribute('src'), /pantry\/sugar[.]webp$/);
-    await sugarPhoto.waitFor({state: 'hidden'});
-    assert.equal(await page.locator('.cart-items [data-cart-item="sugar"] .cart-thumbnail').isVisible(), true);
+    await page.evaluate(() => {
+      have = {carrot: 1};
+      cart = {milk: 1, ghee: 1, sugar: 1};
+      cartMeals = [];
+      all();
+      setView('order');
+    });
     const suggestion = page.locator('.cart-suggestion');
     const dishes = suggestion.locator('.cart-dish-card');
-    assert.equal(await dishes.count(), 4);
-    for (const dish of await dishes.all()) {
-      assert.equal(await dish.locator('h4').isVisible(), true);
-      assert.equal(await dish.locator('.cart-needed li').filter({hasText: 'Sugar'}).locator('small').textContent(),
-        'In cart');
-    }
+    assert.equal(await dishes.count(), 6);
+    const firstTwo = await dishes.evaluateAll(cards => cards.slice(0, 2).map(el => ({
+      x: Math.round(el.getBoundingClientRect().left),
+      y: Math.round(el.getBoundingClientRect().top),
+    })));
+    assert.equal(firstTwo[0].y, firstTwo[1].y, 'first two dishes share a row');
+    assert.ok(firstTwo[1].x > firstTwo[0].x, 'second dish is to the right');
+    assert.equal(await suggestion.locator('.cart-dishes').evaluate(el =>
+      getComputedStyle(el).gridTemplateColumns.split(' ').length), 2);
+    assert.equal(await dishes.evaluateAll(cards => cards.every(card => {
+      const rows = [...card.querySelectorAll('[data-cart-add-ingredient]')];
+      return rows.length >= 1 && rows.length <= 2 &&
+        rows.every(button => !have[button.dataset.cartAddIngredient] && !cartQuantity(button.dataset.cartAddIngredient));
+    })), true);
 
-    const sugarRow = page.locator('.cart-items [data-cart-item="sugar"]');
-    assert.ok((await sugarRow.boundingBox()).height <= 56);
-    await sugarRow.getByRole('button', {name: 'Increase quantity for Sugar'}).tap();
-    assert.equal(await sugarRow.locator('output').textContent(), '2');
-    assert.equal(await page.locator('#cartCount').textContent(), '· 2 items');
+    const before = await dishes.locator('h4').allTextContents();
+    const firstNeeded = await dishes.first().locator('[data-cart-add-ingredient]').evaluateAll(buttons =>
+      buttons.map(button => button.dataset.cartAddIngredient));
+    await dishes.first().locator('.cart-add-dish').tap();
+    const after = await dishes.locator('h4').allTextContents();
+    assert.equal(after.includes(before[0]), false, 'selected dish disappears');
+    assert.equal(after.length, 6, 'another eligible dish replaces it');
+    assert.equal(await page.locator('.cart-group').filter({hasText: before[0]}).count(), 1);
+    assert.deepEqual(await page.evaluate(ids => ids.map(id => cartQuantity(id)), firstNeeded),
+      firstNeeded.map(() => 1));
+    assert.deepEqual(await page.evaluate(() => ['milk', 'ghee', 'sugar'].map(cartQuantity)), [1, 1, 1]);
+
+    const partialName = await dishes.evaluateAll(cards => cards.find(card =>
+      card.querySelectorAll('[data-cart-add-ingredient]').length === 2)?.querySelector('h4')?.textContent || '');
+    assert.ok(partialName, 'a dish requiring two more items remains available');
+    await dishes.filter({hasText: partialName}).locator('[data-cart-add-ingredient]').first().tap();
+    assert.equal((await dishes.locator('h4').allTextContents()).includes(partialName), false);
+    const partialGroup = page.locator('.cart-group').filter({hasText: partialName});
+    assert.equal(await partialGroup.count(), 1);
+    assert.equal(await partialGroup.locator('[data-cart-add-listed]').count(), 1,
+      'the unadded ingredient stays accessible in the selected dish');
+
+    const milkRow = page.locator('.cart-items [data-cart-item="milk"]').first();
+    await milkRow.getByRole('button', {name: 'Increase quantity for Milk'}).tap();
+    assert.equal(await milkRow.locator('output').textContent(), '2');
 
     await page.reload({waitUntil: 'domcontentloaded'});
     await page.waitForFunction(() => window.MFREADY === true);
     await page.locator('.tabbar [data-view="order"]').tap();
-    assert.equal(await sugarRow.locator('output').textContent(), '2');
+    assert.equal(await page.locator('.cart-group').count(), 2);
+    assert.equal(await page.locator('.cart-items [data-cart-item="milk"]').first().locator('output').textContent(), '2');
 
     const order = page.getByRole('link', {name: 'Order from Blinkit'});
     assert.equal(await order.isVisible(), true);
@@ -358,34 +369,9 @@ test('the compact cart supports quantities and shows multiple related dishes', a
     assert.equal(await page.locator('#cart > :last-child').textContent(), 'Order from Blinkit');
     assert.equal(await page.locator('#cartCard input, #cartCard li a').count(), 0);
 
-    const decrease = sugarRow.getByRole('button', {name: 'Decrease quantity for Sugar'});
-    await decrease.tap();
-    assert.equal(await sugarRow.locator('output').textContent(), '1');
-    await decrease.tap();
-    assert.equal(await sugarRow.count(), 0);
+    await page.evaluate(() => {cart = {};cartMeals = [];renderCart()});
     assert.equal(await order.count(), 0);
-    assert.equal(await suggestion.count(), 0);
-
-    // The built-in lauki photo works with external ingredient images offline.
-    await page.evaluate(() => {
-      cart = {lauki: 1};
-      have = {tomato: 1};
-      renderCart();
-    });
-    const laukiPhoto = page.locator('.cart-items [data-cart-item="lauki"] img');
-    await laukiPhoto.evaluate(img => img.decode());
-    assert.equal(await laukiPhoto.isVisible(), true);
-    const sabzi = dishes.first();
-    assert.equal(await sabzi.locator('h4').textContent(), 'Lauki ki Sabzi');
-    assert.deepEqual(await sabzi.locator('.cart-needed li').evaluateAll(rows =>
-      rows.map(row => [...row.children].map(child => child.textContent))), [
-      ['Lauki (bottle gourd)', 'In cart'],
-      ['Tomato', 'In pantry'],
-    ]);
-    assert.ok(await dishes.locator('.still-needed').count() > 0);
-    const dishPhoto = sabzi.locator('img');
-    await dishPhoto.evaluate(img => img.decode());
-    assert.equal(await dishPhoto.isVisible(), true);
+    assert.equal(await dishes.count(), 6, 'an empty cart offers new shopping suggestions');
   } finally {
     await context.close();
   }

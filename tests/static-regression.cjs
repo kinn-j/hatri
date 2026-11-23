@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const {execFileSync} = require('node:child_process');
 const src = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf8');
 const sw = fs.readFileSync(path.resolve(__dirname, '../sw.js'), 'utf8');
 
@@ -121,18 +122,24 @@ test('adding all recipe ingredients preserves existing and legacy cart quantitie
 
 test('PWA registers offline worker and caches the required shell files', () => {
   assert.match(src, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
-  assert.match(sw, /const CACHE = 'hatri-v27-cart-quantities'/);
+  assert.match(sw, /const CACHE = 'hatri-v28-dynamic-cart-dishes'/);
   for (const item of ['auth.js','ingredient-images.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp']) assert.ok(sw.includes(`'./${item}'`));
   new vm.Script(sw);
 });
 
 test('all mapped recipe photos and local ingredient photos exist', () => {
   const photos = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../images/photos.json')));
+  // Sparse test checkouts leave most photo blobs out of the working tree.
+  let tracked = new Set();
+  try {
+    tracked = new Set(execFileSync('git', ['ls-tree', '-r', '--name-only', 'HEAD', 'images'],
+      {cwd: path.resolve(__dirname, '..'), encoding: 'utf8'}).trim().split('\n'));
+  } catch { /* Full release ZIPs do not necessarily have git metadata. */ }
   let count = 0;
   for (const image of Object.values(photos)) {
     if (typeof image !== 'string' || !image.includes('.webp')) continue;
     const candidate = path.resolve(__dirname, '../images', image);
-    assert.ok(fs.existsSync(candidate), `Missing ${image}`);
+    assert.ok(fs.existsSync(candidate) || tracked.has(`images/${image}`), `Missing ${image}`);
     count++;
   }
   assert.ok(count > 500);
