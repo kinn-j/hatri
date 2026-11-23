@@ -84,9 +84,31 @@ test('pantry image fallback and accurate grains category exist', () => {
   assert.match(src, /\.pantry-photo:focus-visible/);
 });
 
+test('cart suggestions prefer recipes that need fewer extra ingredients and use more of the cart', () => {
+  const recipes = [
+    ['One match', true, 10, 0, 0, ['tomato']],
+    ['Still missing', true, 5, 0, 0, ['tomato', 'onion', 'paneer']],
+    ['Good match', true, 15, 0, 0, ['tomato', 'onion', 'rice', 'garlic?']],
+    ['Excluded by filters', false, 1, 0, 0, ['tomato', 'onion']],
+    ['No required cart items', true, 1, 0, 0, ['rice', 'tomato?']],
+  ];
+  const c = fn('function cartDish()', 'function cartSuggestion(', {
+    MEALS: recipes, cart: { tomato: 1, onion: 1 }, have: { rice: 1 },
+    matchesFilters: recipe => recipe[1], effP: recipe => recipe[2],
+  });
+  const match = c.cartDish();
+  assert.equal(match.name, 'Good match');
+  assert.equal(match.missing, 0);
+  assert.deepEqual([...match.ingredients], ['tomato', 'onion', 'rice']);
+  c.have = {};
+  assert.equal(c.cartDish().name, 'One match');
+  c.cart = { carrot: 1 };
+  assert.equal(c.cartDish(), undefined);
+});
+
 test('PWA registers offline worker and caches the required shell files', () => {
   assert.match(src, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
-  assert.match(sw, /const CACHE = 'hatri-v25-recipe-shopping'/);
+  assert.match(sw, /const CACHE = 'hatri-v26-cart-photos'/);
   for (const item of ['auth.js','ingredient-images.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp']) assert.ok(sw.includes(`'./${item}'`));
   new vm.Script(sw);
 });

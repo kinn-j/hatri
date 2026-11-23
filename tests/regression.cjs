@@ -304,7 +304,7 @@ test('mobile pantry category and drawer selections keep neighboring controls and
   }
 });
 
-test('the shopping list shows only selected recipe ingredients and a single Blinkit action', async () => {
+test('the cart shows selected ingredient photos, a related dish, and a single Blinkit action', async () => {
   const {page, context} = await open({width: 390, height: 844}, {isMobile: true, hasTouch: true});
   try {
     await page.locator('#rq').fill('gajar halwa');
@@ -321,18 +321,46 @@ test('the shopping list shows only selected recipe ingredients and a single Blin
     for (const selected of [true, false, true]) {
       await sugar.tap();
       assert.equal(await sugar.getAttribute('aria-pressed'), String(selected));
-      assert.deepEqual(await page.locator('#cart li').allTextContents(), selected ? ['Sugar'] : []);
+      assert.deepEqual(await page.locator('.cart-items li > span:last-child').allTextContents(), selected ? ['Sugar'] : []);
       assert.equal(await page.locator('#cart a').count(), selected ? 1 : 0);
       assert.equal(await sugarButton.evaluate(button => button.isConnected), true);
       assert.equal(await cover.evaluate(img => img.isConnected && img.naturalWidth > 0), true);
       assert.equal(await photo.evaluate(img => img.isConnected && img.naturalWidth > 0), true);
     }
     await page.locator('.tabbar [data-view="order"]').tap();
+    const sugarPhoto = page.locator('.cart-items [data-cart-item="sugar"] img');
+    assert.match(await sugarPhoto.getAttribute('src'), /pantry\/sugar[.]webp$/);
+    await sugarPhoto.waitFor({state: 'hidden'});
+    assert.equal(await page.locator('.cart-items [data-cart-item="sugar"] .cart-thumbnail').isVisible(), true);
+    const suggestion = page.locator('.cart-suggestion');
+    assert.equal(await suggestion.locator('h4').isVisible(), true);
+    assert.equal(await suggestion.locator('.cart-needed li').filter({hasText: 'Sugar'}).locator('small').textContent(),
+      'In your cart');
+
     const order = page.getByRole('link', {name: 'Order from Blinkit'});
     assert.equal(await order.isVisible(), true);
     assert.equal(await order.getAttribute('href'), 'https://blinkit.com/');
     assert.equal(await page.locator('#cart > :last-child').textContent(), 'Order from Blinkit');
     assert.equal(await page.locator('#cartCard input, #cartCard button:not(.sx), #cartCard li a').count(), 0);
+
+    // The built-in lauki photo works with external ingredient images offline.
+    await page.evaluate(() => {
+      cart = {lauki: 1};
+      have = {tomato: 1};
+      renderCart();
+    });
+    const laukiPhoto = page.locator('.cart-items [data-cart-item="lauki"] img');
+    await laukiPhoto.evaluate(img => img.decode());
+    assert.equal(await laukiPhoto.isVisible(), true);
+    assert.equal(await suggestion.locator('h4').textContent(), 'Lauki ki Sabzi');
+    assert.deepEqual(await suggestion.locator('.cart-needed li').evaluateAll(rows =>
+      rows.map(row => [...row.children].map(child => child.textContent))), [
+      ['Lauki (bottle gourd)', 'In your cart'],
+      ['Tomato', 'In your pantry'],
+    ]);
+    const dishPhoto = suggestion.locator('img');
+    await dishPhoto.evaluate(img => img.decode());
+    assert.equal(await dishPhoto.isVisible(), true);
   } finally {
     await context.close();
   }
