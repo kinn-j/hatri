@@ -40,29 +40,14 @@ test('Veg Mode excludes egg dishes even when the catalog marks them vegetarian',
   assert.match(html, /\["Mughlai Egg Curry", 1,/);
 });
 
-test('recipe thumbnails support enlarged, accessible images and a dish description', () => {
+test('dish images leave activation to their enclosing recipe control', () => {
   const c = isolate('function recipeImage(', '(function loadPublishedPhotos(', {
     photoSrc: value => value,
-    escapeHTML: value => String(value).replace(/&/g, '&amp;').replace(/'/g, '&#39;'),
-    T: en => en
+    escapeHTML: value => String(value).replace(/&/g, '&amp;').replace(/'/g, '&#39;')
   });
-  const thumbnail = c.recipeImage('images/egg-curry.webp', 'Egg Curry');
-  assert.match(thumbnail, /data-dish-photo='Egg%20Curry'/);
-  assert.match(thumbnail, /tabindex='0'/);
-  assert.match(thumbnail, /aria-label='Enlarge photo of Egg Curry'/);
-
-  const descriptions = isolate('function dishPhotoDescription(', 'function openDishPhoto(', {
-    course: () => 'Main', nmx: x => ({eggs: 'Eggs', onion: 'Onion', curd: 'Curd'})[x] || x,
-    T: en => en, isVegetarianDish: () => false
-  });
-  const info = descriptions.dishPhotoDescription(['Egg Curry', 0, 15, 25, 0, ['eggs', 'onion', 'curd'], 'North Indian']);
-  assert.match(info.description, /North Indian-style main dish/);
-  assert.match(info.description, /Eggs, Onion, Curd/);
-  assert.match(info.meta, /Prep 15 min.*Cook 25 min.*non-vegetarian/);
-
-  assert.match(html, /PHOTO_DIALOG\.showModal\(\)/);
-  assert.match(html, /PHOTO_DIALOG\.close\(\)/);
-  assert.match(html, /e\.preventDefault\(\);e\.stopImmediatePropagation\(\);openDishPhoto\(image\)/);
-  assert.match(html, /e\.key!=="Enter"&&e\.key!==" "/);
-  assert.match(html, /dish-photo-dialog::backdrop/);
+  const thumbnail = c.recipeImage("images/chef's-curry.webp");
+  assert.match(thumbnail, /src='images\/chef&#39;s-curry.webp'/);
+  assert.match(thumbnail, /alt='' loading='lazy'/);
+  assert.doesNotMatch(thumbnail, /role=|tabindex=/);
+  assert.doesNotMatch(c.recipeImage('images/curry.webp', true), /loading='lazy'/);
 });

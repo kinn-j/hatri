@@ -77,10 +77,10 @@ label.t{display:flex;gap:6px;align-items:center;font-size:13.5px;cursor:pointer}
 .cart-dish-card{display:flex;flex-direction:column;min-width:0;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
 .cart-dish-card .cart-dish{align-items:flex-start;gap:7px;min-height:44px}
 .cart-dish-card .cart-dish .cart-thumbnail{width:44px;height:44px}
-.cart-dish-card .cart-dish h4{font-size:13px;line-height:1.25}
+.cart-dish-card .cart-dish-name{font-size:13px;line-height:1.25}
 .cart-dish{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .cart-dish .cart-thumbnail{width:55px;height:46px}
-.cart-dish h4{margin:0;color:var(--text);font-size:15px;line-height:1.25;overflow-wrap:anywhere}
+.cart-dish-name{display:block;font-weight:700;margin:0;color:var(--text);font-size:15px;line-height:1.25;overflow-wrap:anywhere}
 .cart-needed-label{margin:0 0 4px;color:var(--muted);font-size:13px;font-weight:650}
 .cart .cart-needed{display:flex;flex-wrap:wrap;gap:4px}
 .cart-needed li{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 4px;max-width:100%;padding:3px 6px;border-radius:5px;background:var(--surface);font-size:13px;overflow-wrap:anywhere}
@@ -99,7 +99,7 @@ label.t{display:flex;gap:6px;align-items:center;font-size:13.5px;cursor:pointer}
 .cart-selected,.cart-loose{display:grid;gap:9px;margin-bottom:16px}
 .cart-selected h3,.cart-loose h3{margin:0;color:var(--text);font-size:16px}
 .cart-group{min-width:0;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
-.cart-group .cart-dish{margin-bottom:10px}
+.cart-group-header{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px}.cart-group-header .cart-dish{flex:1;min-width:0;margin:0}
 .cart-group-heading{flex:1;min-width:0}
 .cart-group-heading small{display:block;margin-top:3px;color:var(--muted);font-size:12px}
 .cart-group .cart-items li:last-child{border-bottom:0}
@@ -334,27 +334,25 @@ body[class*="sh-"]::after{background:rgba(55,18,0,.66);-webkit-backdrop-filter:b
 body[class*="sh-"] [data-vs] .card{background:#fff;border-color:#f4d9b6}
 body[class*="sh-"] [data-vs] .card>h2:first-child{background:var(--accent-bg);color:#9a3c06;margin:-14px -14px 10px;padding:12px 14px;border-radius:14px 14px 0 0;font-size:17px}
 body.sh-plan [data-vs="plan"] #cuis{border-top:0}
-#dtray{position:fixed;left:max(8px,var(--safe-left));right:max(8px,var(--safe-right));top:var(--nav-bottom);max-height:66vh;overflow:auto;-webkit-overflow-scrolling:touch;z-index:45;background:#fffdfa;border:2px solid var(--accent);border-radius:20px;box-shadow:0 18px 48px rgba(110,35,0,.45);animation:dtin .22s ease-out}
-@keyframes dtin{from{transform:translateY(-14px);opacity:0}}
-.dt-h{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;justify-content:space-between;padding:10px 12px;background:var(--surface);border-bottom:1px solid var(--line);border-radius:18px 18px 0 0}
-.dt-h b{font-size:16px;color:var(--text)}
-.dt-x{flex:none;width:34px;height:34px;border-radius:50%;border:1px solid #eba466;background:#fff;font-size:16px;color:#7a3205}
-.dt-b{padding:10px 12px 14px}
-details.dton{outline:3px solid var(--accent);outline-offset:-3px}
 }
 </style>
 <style>
-.dish-photo-dialog{width:min(92vw,720px);max-height:90dvh;padding:0;border:0;border-radius:20px;background:var(--surface);color:var(--text);box-shadow:0 24px 80px rgba(0,0,0,.45);overflow:auto}
-.dish-photo-dialog::backdrop{background:rgba(7,25,17,.78)}
-.dish-photo-dialog .photo-zoom-image{display:block;width:100%;height:min(55dvh,500px);object-fit:contain;background:#10231a}
-.dish-photo-dialog .photo-zoom-body{padding:18px 20px 22px}
-.dish-photo-dialog h2{font-size:21px;line-height:1.25;margin:0 42px 8px 0}
-.dish-photo-dialog p{font-size:14px;line-height:1.6;margin:9px 0;color:var(--text)}
-.dish-photo-dialog .photo-zoom-meta{font-size:12px;color:var(--muted)}
-.dish-photo-dialog .photo-zoom-close{position:sticky;float:right;top:12px;margin:12px 12px -48px 0;z-index:1;border:0;border-radius:50%;background:var(--surface);color:var(--text);width:36px;height:36px;font-size:22px;box-shadow:0 2px 12px rgba(0,0,0,.25);cursor:pointer}
-img[data-dish-photo]{cursor:zoom-in}
-img[data-dish-photo]:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
-@media(max-width:520px){.dish-photo-dialog{width:calc(100% - 20px)}.dish-photo-dialog .photo-zoom-image{height:min(52dvh,430px)}}
+#dtray{width:min(calc(100% - 24px),720px);max-height:90dvh;padding:0;border:0;border-radius:20px;background:var(--surface);color:var(--text);box-shadow:0 24px 80px rgba(0,0,0,.45);overflow:auto;overscroll-behavior:contain}
+#dtray::backdrop{background:rgba(7,25,17,.68)}
+.dt-h{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;justify-content:space-between;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.dt-h h2{font-size:20px;line-height:1.25;margin:0;overflow-wrap:anywhere}
+.dt-x{flex:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:19px;cursor:pointer}
+.dt-b{padding:0 16px 18px}
+.dt-b>.meal{margin:0;padding:0;border:0}
+.dt-photo{position:relative;display:grid;place-items:center;aspect-ratio:16/9;max-height:44dvh;margin:0 -16px 14px;background:var(--accent-bg);overflow:hidden}
+.dt-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#10231a}
+.dt-photo span{font-size:64px}
+.dt-photo img:not([hidden])+span{display:none}
+.dt-description{margin:0 0 12px}
+.dish-opener{appearance:none;border:0;background:none;padding:0;color:inherit;text-align:start;cursor:pointer;font:inherit}
+.dish-opener:focus-visible,#dtray .dt-x:focus-visible,.tile>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.meal-dish-opener{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.recipe-personal-photo{display:inline-flex}
 </style>
 </head>
 <body>
@@ -473,6 +471,10 @@ img[data-dish-photo]:focus-visible{outline:3px solid var(--accent);outline-offse
     </label>
   </section>
   <button class="btn" id="rr-drawer-logout" type="button" data-rr-auth="logout" hidden><span class="en">Log out</span><span class="hi">लॉग आउट</span></button>
+</dialog>
+<dialog id="dtray" aria-labelledby="dish-title">
+  <header class="dt-h"><h2 id="dish-title"></h2><button type="button" class="dt-x" id="dish-detail-close" aria-label="Close recipe" autofocus>✕</button></header>
+  <div class="dt-b" id="dish-detail-body"></div>
 </dialog>
 <script src="./vrat-recipes.js"></script>
 <script src="./instagram-recipes.js"></script>
@@ -1012,14 +1014,16 @@ function pickSuggestion(options,previous,key,missing){
 function matchesFilters(m,wholeMeal){
   return matchesModes(m)&&(wholeMeal||timeOK(m))&&regOK(m)&&occOK(m)&&hvOK(m,wholeMeal);
 }
+function dishState(m){
+  var h=[],x=[],oh=[],ox=[];
+  m[5].forEach(function(r){var o=r.endsWith("?"),i=o?r.slice(0,-1):r;(o?(have[i]?oh:ox):(have[i]?h:x)).push(i)});
+  return {recipe:m,n:m[0],v:isVegetarianDish(m),p:effP(m),c:m[3],s:m[4],h:h,x:x,oh:oh,ox:ox,tot:h.length+x.length,cu:m[6],w:wt(m[0],m[6]),ing:m[5],ov:!!(m[4]&&m[4][0]<=30),oc:m[8],f:m[9]};
+}
 function score(singleDishes){
   var wholeMeal=!!sel.meal&&!singleDishes;
   var allDishes=wholeMeal||sel.all||(crs==="meal"&&vratOnly());
-  return MEALS.filter(function(m){return matchesFilters(m,wholeMeal)&&(allDishes||inSel(m))}).map(function(m){
-    var h=[],x=[],oh=[],ox=[];
-    m[5].forEach(function(r){var o=r.slice(-1)==="?",i=o?r.slice(0,-1):r;(o?(have[i]?oh:ox):(have[i]?h:x)).push(i)});
-    return {recipe:m,n:m[0],v:isVegetarianDish(m),p:effP(m),c:m[3],s:m[4],h:h,x:x,oh:oh,ox:ox,tot:h.length+x.length,cu:m[6],w:wt(m[0],m[6]),ing:m[5],ov:!!(m[4]&&m[4][0]<=30),oc:m[8],f:m[9]};
-  }).sort(function(a,b){return a.x.length-b.x.length||(b.h.length/b.tot)-(a.h.length/a.tot)||fit(b)-fit(a)||hsh(a.n)-hsh(b.n)});
+  return MEALS.filter(function(m){return matchesFilters(m,wholeMeal)&&(allDishes||inSel(m))}).map(dishState)
+    .sort(function(a,b){return a.x.length-b.x.length||(b.h.length/b.tot)-(a.h.length/a.tot)||fit(b)-fit(a)||hsh(a.n)-hsh(b.n)});
 }
 function isLong(m){return m.s&&m.s[0]>=240}
 function soakTxt(m){var s=m.s,t=s[0];return "Soak "+s[1]+" for "+(t>=360?Math.round(t/60)+" h (overnight) — start the night before":t>=120?Math.round(t/60)+" h — start early in the day":t<=30?t+" min — start it first, then chop while it soaks":t+" min before cooking")}
@@ -1028,14 +1032,18 @@ function shoppingIngredient(i){
   return "<button type='button' class='chip miss shop-item' data-oi='"+i+"' aria-pressed='"+added+"' title='"+hint+"'>"+
     nmx(i)+" <span class='shop-mark' aria-hidden='true'>"+(added?"✓":"+")+"</span></button>";
 }
-function card(m){
-  var pct=Math.round(m.h.length/m.tot*100),all=m.x.every(function(i){return cart[i]});
+function card(m,expanded){
+  var pct=m.tot?Math.round(m.h.length/m.tot*100):100,all=m.x.every(function(i){return cart[i]});
   var ready=m.p+m.c+(m.s&&!isLong(m)&&!m.ov?m.s[0]:0),c=CCOL[m.cu]||CCOL.Everyday;
-  var sl=pslug(m.n),im=IMG[sl];var tile=im?"<div class='tile photo'>"+recipeImage(im,m.n)+"</div>":"<div class='tile' style='background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.55),transparent 55%),linear-gradient(135deg,"+c[0]+","+c[1]+")'>"+emo(m.n)+"</div>";
+  var diet=expanded?(m.v?T("Vegetarian","शाकाहारी"):T("Contains non-vegetarian ingredients","मांसाहारी सामग्री"))+" · ":"";
+  var sl=pslug(m.n),im=IMG[sl];
+  var thumbnail=im?"<span class='tile photo'>"+recipeImage(im)+"</span>":
+    "<span class='tile' aria-hidden='true' style='background:linear-gradient(135deg,"+c[0]+","+c[1]+")'>"+emo(m.n)+"</span>";
+  var opener=expanded?"":"<button type='button' class='dish-opener meal-dish-opener' data-open-dish='"+MEALS.indexOf(m.recipe)+"' aria-haspopup='dialog' aria-controls='dtray'>"+thumbnail+"<b>"+escapeHTML(dn(m.n))+"</b></button>";
   var link="<a href='https://www.google.com/search?tbm=isch&q="+encodeURIComponent(m.n+" recipe")+"' target='_blank' rel='noopener'>📷 photos</a>";
-  return "<div class='meal' data-recipe='"+encodeURIComponent(m.n)+"'><div class='mh'><div style='display:flex;gap:10px;min-width:0'>"+tile+"<div><b>"+m.n+"</b>"+"<div class='meta'><span class='dot "+(m.v?"veg":"nv")+"'></span>"+m.cu+" · "+({Light:"🪶 Light",Medium:"⚖️ Medium",Heavy:"🔥 Heavy"})[m.w]+" · Prep "+m.p+" min · "+(m.c?"Cook "+m.c+" min":"No cooking")+" · Ready in ~"+ready+" min"+(m.s&&!isLong(m)&&!m.ov?" incl. soak":"")+(m.ov?" · soak while you chop":"")+(m.f?" · 🎉 "+m.f:"")+(ptag(m)?" · "+ptag(m):"")+" · "+link+(UPL?" · <button class='x' data-up='"+sl+"' style='font-size:12px;color:var(--accent)'>📷 "+(im?"change":"add")+" photo</button>":"")+"</div></div></div>"+
+  return "<div class='meal' data-recipe='"+encodeURIComponent(m.n)+"'><div class='mh'><div>"+opener+"<div class='meta'><span class='dot "+(m.v?"veg":"nv")+"'></span>"+diet+m.cu+" · "+({Light:"🪶 Light",Medium:"⚖️ Medium",Heavy:"🔥 Heavy"})[m.w]+" · Prep "+m.p+" min · "+(m.c?"Cook "+m.c+" min":"No cooking")+" · Ready in ~"+ready+" min"+(m.s&&!isLong(m)&&!m.ov?" incl. soak":"")+(m.ov?" · soak while you chop":"")+(m.f?" · 🎉 "+m.f:"")+(ptag(m)?" · "+ptag(m):"")+" · "+link+(UPL?" · <button class='x' data-up='"+sl+"' style='font-size:12px;color:var(--accent)'>📷 "+(im?"change":"add")+" photo</button>":"")+"</div></div>"+
    (m.x.length?"<button class='btn sm"+(all?"":" primary")+"' data-add='"+m.n+"'>"+(all?"Added ✓":"Add "+m.x.length+" to order")+"</button>":"<span class='chip have'>Ready to cook</span>")+"</div>"+
-   (m.s?"<div class='soak'>💧 "+soakTxt(m)+"</div>":"")+(m.oc.indexOf("Vrat")>-1?"<div class='soak' style='border-color:#e8590c'>🙏 Vrat-friendly — use sendha namak; no onion or garlic</div>":"")+extra(m)+
+   (m.s?"<div class='soak'>💧 "+soakTxt(m)+"</div>":"")+(m.oc.indexOf("Vrat")>-1?"<div class='soak' style='border-color:#e8590c'>🙏 Vrat-friendly — use sendha namak; no onion or garlic</div>":"")+extra(m,expanded)+
    "<div class='bar'><i style='width:"+pct+"%'></i></div><div class='chips'>"+
    m.h.map(function(i){return "<span class='chip have'>"+NAME[i]+"</span>"}).join("")+
    m.x.map(shoppingIngredient).join("")+
@@ -1056,8 +1064,9 @@ function renderSearch(r,q){renderHTML($("pick"),"");var tk=q.split(/\s+/).filter
     var keywords=(MEASURED_RECIPES[m[0]]||{}).keywords||"";
     var hay=(nm+" "+m[6]+" "+m[9]+vrat+video+" "+ingredients+" "+keywords).toLowerCase();
     if(!tk.every(function(t){return hay.indexOf(t)>-1}))return null;
-    var h=[],x=[],oh=[],ox=[];m[5].forEach(function(g){var o=g.slice(-1)==="?",i=o?g.slice(0,-1):g;(o?(have[i]?oh:ox):(have[i]?h:x)).push(i)});
-    return {n:m[0],v:isVegetarianDish(m),p:effP(m),c:m[3],s:m[4],h:h,x:x,oh:oh,ox:ox,tot:h.length+x.length,cu:m[6],w:wt(m[0],m[6]),ing:m[5],ov:!!(m[4]&&m[4][0]<=30),oc:m[8],f:m[9],nm:tk.every(function(t){return nm.indexOf(t)>-1})?1:0}
+    var dish=dishState(m);
+    dish.nm=tk.every(function(t){return nm.indexOf(t)>-1})?1:0;
+    return dish;
   }).filter(Boolean);
   L.sort(function(a,b){return (b.nm-a.nm)||(a.x.length-b.x.length)});var tot=L.length;
   var visible=Math.min(tot,SHOW_COUNTS.search||SHOW_BATCH);
@@ -1195,7 +1204,7 @@ $("basics").addEventListener("change",function(){toast(this.checked?"Assuming oi
 var IMG={},UPL=false,db=null,assets=null,upSlug=null;
 // Published sites use checked-in photos; Claude artifacts keep their blob URLs.
 function photoSrc(id){return id.indexOf("images/")===0?id:"/_blob/"+id}
-function recipeImage(id,name){return "<img alt='' loading='lazy' decoding='async' src='"+escapeHTML(photoSrc(id))+"' data-dish-photo='"+encodeURIComponent(name)+"' role='button' tabindex='0' aria-label='"+escapeHTML(T("Enlarge photo of "+name,name+" की तस्वीर बड़ी करें"))+"'>"}
+function recipeImage(id,eager){return "<img alt='' "+(eager?"":"loading='lazy' ")+"decoding='async' src='"+escapeHTML(photoSrc(id))+"'>"}
 (function loadPublishedPhotos(){
   if(window.claude&&claude.use)return;
   fetch("images/photos.json").then(function(r){if(!r.ok)throw Error("Photo index unavailable");return r.json()}).then(function(files){
@@ -1273,9 +1282,9 @@ function renderModes(){
     b.setAttribute("aria-pressed",on);
   });
 }
-function extra(m){var h="";
+function extra(m,expanded){var h="";
   if(hostel&&HOSTEL[m.n]){h+="<div class='soak' style='border-color:#2f7d57'>🎒 Make it in: "+HOSTEL[m.n].filter(function(a){return a==="N"||app[a]}).map(function(a){return APN[a]}).join(" / ")+"</div>";if(TIP[m.n])h+="<div class='note'>💡 "+TIP[m.n][LANG]+"</div>"}
-  h+=recipePanel(m);
+  h+=recipePanel(m,expanded);
   return h}
 var HEAVYN=["Onion Pakora", "Singhare ke Atte ke Pakode", "Kadhi Pakora", "Mirchi Vada", "Medu Vada", "Sabudana Vada", "Vada Pav", "Kuttu Puri", "Chole Bhature", "Dal Makhani", "Butter Chicken", "Chicken Biryani", "Punjabi Mutton Curry", "Laal Maas", "Kosha Mangsho", "Dal Baati", "Gajar Halwa", "Moong Dal Halwa", "Besan Ladoo", "Rava Ladoo", "Shahi Tukda", "Puran Poli"],LIGHTN=["Poha", "Upma", "Besan Chilla", "Moong Dal Chilla", "Bread Omelette", "Egg Bhurji", "Idli with Coconut Chutney", "Masala Dosa", "Dhokla", "Khandvi", "Veg Maggi (Noodles)", "Masala Oats", "Curd Rice", "Tomato Rasam", "Sabudana Khichdi", "Samak Rice Khichdi", "Lemon Rice"],hv="All";
 function wt(n,cu){if(typeof HVO!=="undefined"&&HVO[n])return HVO[n];return HEAVYN.indexOf(n)>-1?"Heavy":(LIGHTN.indexOf(n)>-1||cu==="Street & chaat"||cu==="Chutneys & sides")?"Light":"Medium"}
@@ -1294,7 +1303,7 @@ function rtype(n){var t=n.toLowerCase();
 function nmx(i){return LANG==="hi"?(HI[NAME[i]]||NAME[i]):NAME[i]}
 function rateRow(m){var sl=slug(m.n),my=MY[sl]||{},r=my.rating||0,ph=my.photos||[];
  if(!ME)return "<p class='note'>Sign in to rate this recipe and save photos of your creation.</p>";
- return "<div class='rate'><b>Your rating:</b> "+[1,2,3,4,5].map(function(n){return "<button class='star"+(n<=r?" on":"")+"' data-rate='"+sl+"|"+n+"' aria-label='"+n+"'>★</button>"}).join("")+"</div><div class='mine'>"+ph.map(function(id){return "<img src='"+escapeHTML(photoSrc(id))+"' data-dish-photo='"+encodeURIComponent(m.n)+"' role='button' tabindex='0' aria-label='"+escapeHTML(T("Enlarge photo of "+m.n,m.n+" की तस्वीर बड़ी करें"))+"' alt=''>"}).join("")+(asx?"<button class='btn sm' data-cp='"+sl+"'>📸 Add your photo</button>":"")+"</div>"}
+ return "<div class='rate'><b>Your rating:</b> "+[1,2,3,4,5].map(function(n){return "<button class='star"+(n<=r?" on":"")+"' data-rate='"+sl+"|"+n+"' aria-label='"+n+"'>★</button>"}).join("")+"</div><div class='mine'>"+ph.map(function(id){return "<button type='button' class='dish-opener recipe-personal-photo' data-open-dish='"+MEALS.indexOf(m.recipe)+"' data-detail-photo='"+escapeHTML(id)+"' aria-haspopup='dialog' aria-controls='dtray' aria-label='"+escapeHTML(T("View photo of "+m.n,m.n+" की तस्वीर देखें"))+"'>"+recipeImage(id)+"</button>"}).join("")+(asx?"<button class='btn sm' data-cp='"+sl+"'>📸 Add your photo</button>":"")+"</div>"}
 function recipeList(tag,items){
   return "<"+tag+">"+items.map(function(item){return "<li>"+escapeHTML(item)+"</li>"}).join("")+"</"+tag+">";
 }
@@ -1308,7 +1317,7 @@ function recipeSafety(m){
   if(raw.includes("eggs"))return T("Cook eggs until whites and yolks are firm. For mixed egg dishes, check for 71°C (160°F) in the centre.","अंडे की सफ़ेदी और ज़र्दी जमने तक पकाएँ। अंडे वाले मिश्रित व्यंजन के बीच का तापमान 71°C (160°F) होना चाहिए।");
   return "";
 }
-function recipePanel(m){
+function recipePanel(m,expanded){
   var name=m.n,sl=slug(name),details=typeof HATRI_RECIPE_DETAILS==="undefined"?null:HATRI_RECIPE_DETAILS[name];
   var original=STEPS[name], revised=details&&details.steps;
   var measured=details||MEASURED_RECIPES[name];
@@ -1339,7 +1348,7 @@ function recipePanel(m){
   var safety=recipeSafety(m);
   var steps=st.length?"<div lang='"+lang+"' translate='no'>"+recipeList("ol",st)+"</div>":
     "<p class='note'>"+T("The method is currently unavailable.","बनाने की विधि अभी उपलब्ध नहीं है।")+"</p>";
-  return watch+"<details class='steps' data-sl='"+sl+"'"+(openR[sl]?" open":"")+"><summary>📖 Recipe</summary>"+
+  return watch+"<details class='steps' data-sl='"+sl+"'"+(expanded||openR[sl]?" open":"")+"><summary>📖 Recipe</summary>"+
     "<p class='recipe-section'><b>"+ingredientTitle+"</b></p>"+ingredients+fasting+
     "<p class='recipe-section'><b>"+methodTitle+"</b></p>"+steps+
     (safety?"<p class='note'>"+safety+"</p>":"")+credit+rateRow(m)+"</details>";
@@ -1491,7 +1500,7 @@ function buildMeals(){
 function mealTileHTML(c,force){
   var items=c.items,n=Math.min(items.length,4),open=force||!!MOPEN[c.key];
   var ims=items.slice(0,4).map(function(m,i){var im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;
-    return "<span class='mc' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im,m.n):"<i>"+emo(m.n)+"</i>")+(i===3&&items.length>4?"<em>+"+(items.length-4)+"</em>":"")+"</span>"}).join("");
+    return "<span class='mc' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im):"<i>"+emo(m.n)+"</i>")+(i===3&&items.length>4?"<em>+"+(items.length-4)+"</em>":"")+"</span>"}).join("");
   var ok=!c.miss.length,done=c.miss.length&&c.miss.every(function(i){return cart[i]}),protein=protBadge(c);
   return "<details class='mtile' data-mk='"+encodeURIComponent(c.key)+"'"+(open?" open":"")+"><summary><div class='mos n"+n+"'>"+ims+
     "<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+c.miss.length+" to buy")+"</span><span class='tm'>⏱ ~"+c.t+" min</span></div>"+
@@ -1892,9 +1901,9 @@ function changeCartQuantity(button){
   all();
   if(restoreFocus)focusTarget.focus({preventScroll:true});
 }
-function cartThumbnail(url,fallback,dishName){
-  return "<span class='cart-thumbnail'"+(dishName?"":" aria-hidden='true'")+">"+fallback+
-    (url?"<img src='"+escapeHTML(url)+"' alt='' loading='lazy' decoding='async'"+(dishName?" data-dish-photo='"+encodeURIComponent(dishName)+"' tabindex='0' role='button' aria-label='"+escapeHTML(T("Enlarge photo of "+dishName,dishName+" की तस्वीर बड़ी करें"))+"'":"")+">":"")+"</span>";
+function cartThumbnail(url,fallback){
+  return "<span class='cart-thumbnail' aria-hidden='true'>"+fallback+
+    (url?"<img src='"+escapeHTML(url)+"' alt='' loading='lazy' decoding='async'>":"")+"</span>";
 }
 function cartDishes(limit){
   var suggestions=[];
@@ -1939,8 +1948,8 @@ function cartDishCard(dish){
     return "<li class='still-needed'><span>"+escapeHTML(nmx(id)||id)+"</span>"+
       "<button type='button' class='cart-add-item' data-cart-add-ingredient='"+escapeHTML(id)+"' aria-label='"+escapeHTML(T("Add "+(nmx(id)||id)+" to shopping list",(nmx(id)||id)+" खरीदारी सूची में जोड़ें"))+"'>+ "+T("Add","जोड़ें")+"</button></li>";
   }).join("");
-  return "<article class='cart-dish-card' data-cart-recipe='"+dish.index+"'><div class='cart-dish'>"+cartThumbnail(photo?photoSrc(photo):"",emo(dish.name),dish.name)+
-    "<h4>"+escapeHTML(T(dish.name,HI[dish.name]||dish.name))+"</h4></div>"+
+  return "<article class='cart-dish-card' data-cart-recipe='"+dish.index+"'><button type='button' class='cart-dish dish-opener' data-open-dish='"+dish.index+"' aria-haspopup='dialog' aria-controls='dtray'>"+cartThumbnail(photo?photoSrc(photo):"",emo(dish.name))+
+    "<span class='cart-dish-name'>"+escapeHTML(T(dish.name,HI[dish.name]||dish.name))+"</span></button>"+
     "<p class='cart-needed-label'>"+T(dish.missing+(dish.missing===1?" more ingredient":" more ingredients"),dish.missing+" और सामग्री")+"</p><ul class='cart-needed'>"+rows+"</ul>"+
     "<button type='button' class='btn sm primary cart-add-dish' data-cart-add-dish='"+dish.index+"'>"+
       T("Add "+dish.missing+(dish.missing===1?" item":" items"),dish.missing+" सामग्री जोड़ें")+"</button></article>";
@@ -1975,9 +1984,12 @@ function renderCart(){
   var cards=groups.map(function(g){
     var name=g.group.name,photo=IMG[pslug(name)];
     var added=g.needed.filter(function(id){return cartQuantity(id)>0}).length;
-    return "<article class='cart-group'><div class='cart-dish'>"+cartThumbnail(photo?photoSrc(photo):"",emo(name),name)+
-      "<div class='cart-group-heading'><h4>"+escapeHTML(T(name,HI[name]||name))+"</h4><small>"+
-      T(added+" of "+g.needed.length+" ingredients in cart",added+" / "+g.needed.length+" सामग्री कार्ट में")+"</small></div>"+
+    var recipeIndex=MEALS.findIndex(function(m){return m[0]===name&&cartDishKey(m[0],m[5])===cartDishKey(name,g.group.ingredients)});
+    var trigger=recipeIndex>=0?"<button type='button' class='cart-dish dish-opener' data-open-dish='"+recipeIndex+"' aria-haspopup='dialog' aria-controls='dtray'>":"<div class='cart-dish'>";
+    return "<article class='cart-group'><div class='cart-group-header'>"+trigger+cartThumbnail(photo?photoSrc(photo):"",emo(name))+
+      "<span class='cart-group-heading'><span class='cart-dish-name'>"+escapeHTML(T(name,HI[name]||name))+"</span><small>"+
+      T(added+" of "+g.needed.length+" ingredients in cart",added+" / "+g.needed.length+" सामग्री कार्ट में")+"</small></span>"+
+      (recipeIndex>=0?"</button>":"</div>")+
       "<button type='button' class='cart-remove-dish' data-cart-remove-dish='"+g.index+"' aria-label='"+
       escapeHTML(T("Remove "+name+" from cart",name+" कार्ट से हटाएँ"))+"'>"+T("Remove","हटाएँ")+"</button></div>"+
       "<ul class='cart-items'>"+g.needed.map(function(id){return cartItemRow(id,g.index,uses[id]>1)}).join("")+"</ul></article>";
@@ -2115,7 +2127,7 @@ function renderIngsM(){var q=$("q").value.trim().toLowerCase(),vis=CATS.filter(f
   $("count").textContent="· "+Object.keys(have).length+" selected"}
 function tileHTML(m){var ok=!m.x.length,im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;
  return '<details class="tile" data-recipe="'+encodeURIComponent(m.n)+'">'+
-  "<summary><div class='ti' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im,m.n):"<span class='em'>"+emo(m.n)+"</span>")+"<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+m.x.length+" to buy")+"</span><span class='vg "+(m.v?"v":"n")+"'></span><span class='tm'>⏱ "+(m.p+m.c)+" min"+(isLong(m)?" + "+Math.round(m.s[0]/60)+" h soak":"")+"</span></div><div class='tx'><b>"+dn(m.n)+"</b><small>"+(ok?"Everything is at home":"Need "+m.x.map(function(i){return NAME[i]}).join(", "))+"</small></div></summary>"+card(m)+"</details>"}
+  "<summary data-open-dish='"+MEALS.indexOf(m.recipe)+"' aria-haspopup='dialog' aria-controls='dtray'><div class='ti' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im):"<span class='em'>"+emo(m.n)+"</span>")+"<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+m.x.length+" to buy")+"</span><span class='vg "+(m.v?"v":"n")+"'></span><span class='tm'>⏱ "+(m.p+m.c)+" min"+(isLong(m)?" + "+Math.round(m.s[0]/60)+" h soak":"")+"</span></div><div class='tx'><b>"+dn(m.n)+"</b><small>"+(ok?"Everything is at home":"Need "+m.x.map(function(i){return NAME[i]}).join(", "))+"</small></div></summary>"+card(m)+"</details>"}
 document.body.dataset.v="recipes";setView("recipes");
 try{var standalone=(window.navigator&&navigator.standalone)||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
  if(standalone||localStorage.getItem("rr-inst"))$("install").classList.add("hide");
@@ -2366,64 +2378,56 @@ Object.assign(HI,{"International / National":"अंतरराष्ट्र�
 RX.unshift([/Regions \((\d+) selected\)/g,"क्षेत्र ($1 चुने)"],[/Regions \(all\)/g,"क्षेत्र (सभी)"]);
 KEYS=Object.keys(HI).sort(function(a,b){return b.length-a.length});LOW={};KEYS.forEach(function(k){LOW[k.toLowerCase()]=HI[k]});
 WRX=new RegExp("(?<![A-Za-z])(?:"+KEYS.map(function(x){return x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}).join("|")+")(?![A-Za-z])","gi");
-var DTK=null,DT=null;
-var PHOTO_DIALOG=null,photoReturnFocus=null;
-function dishPhotoDescription(m){
-  var types={Main:"main dish",Bread:"bread",Rice:"rice dish",Complete:"complete meal",Sweet:"sweet",Side:"side dish",Snack:"snack",Chaat:"chaat",NoCook:"no-cook dish",Pickle:"pickle or preserve",Baked:"baked dish",Drink:"drink"};
-  var kind=types[course(m[0])]||"dish",region=m[6]&&m[6]!=="Everyday"?m[6]:"";
-  var ingredients=(m[5]||[]).filter(function(id){return !id.endsWith("?")}).slice(0,4).map(function(id){return nmx(id)||id});
-  var english="This "+(region?region+"-style ":"")+kind+(ingredients.length?" brings together "+ingredients.join(", "):" is made for a delicious meal")+".";
-  var hindi="यह "+(region?region+" शैली का ":"")+"व्यंजन"+(ingredients.length?" "+ingredients.join(", ")+" से बनाया जाता है":" स्वादिष्ट है")+"।";
-  return {description:T(english,hindi),meta:T("Prep "+m[2]+" min · Cook "+m[3]+" min · "+(isVegetarianDish(m)?"Vegetarian":"Contains non-vegetarian ingredients"),
-    "तैयारी "+m[2]+" मिनट · पकाने में "+m[3]+" मिनट · "+(isVegetarianDish(m)?"शाकाहारी":"मांसाहारी सामग्री"))};
+var dishDialog=$("dtray"),openDish=null,dishTrigger=null,detailPhoto=null;
+function renderDishDetails(){
+  var m=dishState(openDish),name=m.n,img=detailPhoto||IMG[pslug(name)];
+  var ingredients=m.ing.filter(function(id){return !id.endsWith("?")}).slice(0,4).map(function(id){return nmx(id)||id});
+  var description=ingredients.length?"<p class='sub dt-description'>"+escapeHTML(T(
+    "Made with "+ingredients.join(", ")+".",ingredients.join(", ")+" से बना व्यंजन।"))+"</p>":"";
+  $("dish-title").textContent=T(dn(name),HI[name]||dn(name));
+  renderHTML($("dish-detail-body"),"<div class='dt-photo'>"+(img?recipeImage(img,true):"")+
+    "<span aria-hidden='true'>"+emo(name)+"</span></div>"+description+card(m,true));
 }
-function openDishPhoto(image){
-  var name=decodeURIComponent(image.dataset.dishPhoto||""),recipe=MEALS.find(function(m){return m[0]===name});
-  if(!recipe)return;
-  if(!PHOTO_DIALOG){
-    PHOTO_DIALOG=document.createElement("dialog");PHOTO_DIALOG.className="dish-photo-dialog";PHOTO_DIALOG.id="dishPhotoDialog";
-    PHOTO_DIALOG.innerHTML="<button type='button' class='photo-zoom-close' aria-label='Close enlarged photo'>×</button>"+
-      "<img class='photo-zoom-image' alt=''><div class='photo-zoom-body'><h2 id='dishPhotoTitle'></h2>"+
-      "<p class='photo-zoom-description'></p><p class='photo-zoom-meta'></p></div>";
-    PHOTO_DIALOG.setAttribute("aria-labelledby","dishPhotoTitle");document.body.appendChild(PHOTO_DIALOG);
-    PHOTO_DIALOG.querySelector(".photo-zoom-close").addEventListener("click",function(){PHOTO_DIALOG.close()});
-    PHOTO_DIALOG.addEventListener("click",function(e){if(e.target===PHOTO_DIALOG)PHOTO_DIALOG.close()});
-    PHOTO_DIALOG.addEventListener("close",function(){if(photoReturnFocus&&photoReturnFocus.isConnected)photoReturnFocus.focus({preventScroll:true})});
+function showDishDetails(trigger,recipe){
+  if(!dishDialog.open){
+    dishTrigger=trigger;
+    $("dish-detail-close").setAttribute("aria-label",T("Close recipe","रेसिपी बंद करें"));
+    // Start each visit with the recipe expanded, even if it was collapsed last time.
+    $("dish-detail-body").replaceChildren();
+    renderedHTML.delete($("dish-detail-body"));
   }
-  photoReturnFocus=image;
-  var details=dishPhotoDescription(recipe),large=PHOTO_DIALOG.querySelector(".photo-zoom-image");
-  large.src=image.currentSrc||image.src;large.alt=T("Photo of "+name,name+" की तस्वीर");
-  PHOTO_DIALOG.querySelector("#dishPhotoTitle").textContent=T(name,HI[name]||name);
-  PHOTO_DIALOG.querySelector(".photo-zoom-description").textContent=details.description;
-  PHOTO_DIALOG.querySelector(".photo-zoom-meta").textContent=details.meta;
-  if(!PHOTO_DIALOG.open)PHOTO_DIALOG.showModal();
-  PHOTO_DIALOG.querySelector(".photo-zoom-close").focus();
+  openDish=recipe;
+  detailPhoto=trigger.dataset.detailPhoto||null;
+  renderDishDetails();
+  if(!dishDialog.open)dishDialog.showModal();
+  dishDialog.scrollTop=0;
+  $("dish-detail-close").focus({preventScroll:true});
 }
-// The photo has its own action; clicking the rest of a card still opens recipe details.
+$("dish-detail-close").addEventListener("click",function(){dishDialog.close()});
+dishDialog.addEventListener("click",function(e){if(e.target===dishDialog)dishDialog.close()});
+dishDialog.addEventListener("close",function(){
+  if(dishDialog.open)return;
+  if(dishTrigger&&dishTrigger.isConnected)dishTrigger.focus({preventScroll:true});
+  openDish=dishTrigger=detailPhoto=null;
+});
 document.addEventListener("click",function(e){
-  var image=e.target.closest&&e.target.closest("img[data-dish-photo]");if(!image)return;
-  e.preventDefault();e.stopImmediatePropagation();openDishPhoto(image);
+  var trigger=e.target.closest&&e.target.closest("[data-open-dish]");
+  if(!trigger)return;
+  var recipe=MEALS[Number(trigger.dataset.openDish)];
+  if(!recipe)return;
+  e.preventDefault();
+  e.stopPropagation();
+  showDishDetails(trigger,recipe);
 },true);
-document.addEventListener("keydown",function(e){
-  if(e.key!=="Enter"&&e.key!==" ")return;
-  var image=e.target.closest&&e.target.closest("img[data-dish-photo]");if(!image)return;
-  e.preventDefault();e.stopImmediatePropagation();openDishPhoto(image);
-},true);
-function dtFind(k){return document.querySelector('details.tile[data-recipe="'+CSS.escape(k)+'"]')}
-function closeDT(){if(DT){DT.remove();DT=null}DTK=null;document.querySelectorAll(".dton").forEach(function(x){x.classList.remove("dton")})}
-function dtFill(d){if(!DT){DT=document.createElement("div");DT.id="dtray";document.body.appendChild(DT)}
- var ti=d.querySelector("summary .tx b").textContent;
- var c=d.cloneNode(true),cs=c.querySelector("summary");if(cs)cs.remove();
- var photo=c.querySelector(".tile.photo img");if(photo)photo.loading="eager";
- renderHTML(DT,"<div class='dt-h'><b>"+escapeHTML(ti)+"</b><button class='dt-x' aria-label='Close'>✕</button></div><div class='dt-b'>"+c.innerHTML+"</div>");
-}
-document.addEventListener("click",function(e){if(!isMob())return;var tg=e.target.closest?e.target:e.target.parentNode;
- if(tg.closest(".dt-x")){closeDT();e.preventDefault();return}
- var s=tg.closest("details.tile[data-recipe]>summary");if(!s)return;
- e.preventDefault();e.stopPropagation();var d=s.parentNode,k=d.dataset.recipe;if(DTK===k){closeDT();return}
- closeDT();DTK=k;d.classList.add("dton");dtFill(d)},true);
-var _rr2=renderResults;renderResults=function(){var r=_rr2.apply(this,arguments);if(DTK){var d=dtFind(DTK);if(d){d.classList.add("dton");dtFill(d)}else closeDT()}return r};
-var _sv2=setView;setView=function(){closeDT();return _sv2.apply(this,arguments)};
+var _rr2=renderResults;renderResults=function(){
+  var r=_rr2.apply(this,arguments);
+  if(dishDialog.open)renderDishDetails();
+  return r;
+};
+var _sv2=setView;setView=function(){
+  if(dishDialog.open)dishDialog.close();
+  return _sv2.apply(this,arguments);
+};
 try{if(!localStorage.getItem("rr-allon-v1")){defaults();localStorage.setItem("rr-allon-v1","1");saveF()}}catch(e){defaults()}
 document.addEventListener("click",function(e){var tg=e.target.closest?e.target:e.target.parentNode,c=tg.closest&&tg.closest("[data-reset]");if(c){defaults();syncT();saveF();renderCuis();renderResults()}});
 
@@ -2576,7 +2580,7 @@ function ingredientTileHTML(id,label,on){
     (url?"<img class='pantry-photo-image' src='"+escapeHTML(url)+"' alt='' loading='lazy' decoding='async'>":"")+
     "<b>"+escapeHTML(label)+"</b><span class='pantry-check' aria-hidden='true'>✓</span></button>";
 }
-document.addEventListener("error",function(e){if(e.target.matches&&e.target.matches(".pantry-photo-image,.ic-photo,.cart-thumbnail img"))e.target.hidden=true},true);
+document.addEventListener("error",function(e){if(e.target.matches&&e.target.matches(".pantry-photo-image,.ic-photo,.cart-thumbnail img,.dt-photo img"))e.target.hidden=true},true);
 /* ===== Smart pantry groups ===== */
 (function(){
   var groups={"Vegetables":[],"Fruits / Dry fruits":[],"Milk / Bread / Protein":[],"Grains / Pulses":[],"Condiments":[],"Specialty":[]},seen={};
@@ -2664,7 +2668,6 @@ body.sh-pantry [data-vs="pantry"],body.sh-plan [data-vs="plan"],body.sh-order [d
 body[class*="sh-"]::after{background:rgba(10,35,24,.55)}
 body[class*="sh-"] [data-vs] .card{background:var(--surface);border-color:var(--line)}
 body[class*="sh-"] [data-vs] .card>h2:first-child{background:var(--accent-bg);color:var(--text)}
-#dtray{background:var(--surface);border-color:var(--accent)}
 .ctg{color:var(--accent)}
 }
 
@@ -2755,7 +2758,6 @@ main#planner{max-width:980px;width:100%;box-sizing:border-box;margin-left:auto;m
 .fab{right:max(14px,calc(50% - 490px + 14px))}
 body.sh-pantry [data-vs="pantry"],body.sh-plan [data-vs="plan"],body.sh-order [data-vs="order"]{width:min(860px,100%);margin-left:auto;margin-right:auto;box-sizing:border-box;border-radius:24px 24px 0 0}
 body[class*="sh-"] .nextbar{max-width:836px;margin-left:auto!important;margin-right:auto!important}
-#dtray{max-width:900px;margin-left:auto;margin-right:auto}
 .slr.cr .sls{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:12px;overflow:visible;margin:0;padding-left:0;padding-right:0}
 .slr.cr .sl{width:100%}
 .tabbar>*{flex:0 0 140px!important}

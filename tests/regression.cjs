@@ -189,6 +189,52 @@ test('recipe details cover the entire live catalog and render measured methods i
   }
 });
 
+test('dish photo and text open the same full recipe on mobile and desktop', async () => {
+  for (const width of [390, 1366]) {
+    const {page, context} = await open({width, height: 844});
+    try {
+      await page.locator('#rq').fill('gobi pakora');
+      const summary = page.locator('#results details.tile[data-recipe="Gobi%20Pakora"] > summary');
+      const thumbnail = summary.locator('img');
+      await thumbnail.evaluate(img => img.decode());
+      const thumbWidth = (await thumbnail.boundingBox()).width;
+      const modal = page.getByRole('dialog', {name: 'Gobi Pakora'});
+
+      async function details() {
+        assert.equal(await page.locator('dialog[open]').count(), 1);
+        assert.equal(await modal.isVisible(), true);
+        const image = modal.locator('.dt-photo img');
+        await image.evaluate(img => img.decode());
+        assert.equal(await image.getAttribute('src'), await thumbnail.getAttribute('src'));
+        assert.ok((await image.boundingBox()).width > thumbWidth);
+        assert.match(await modal.locator('.meta').textContent(), /Prep \d+ min.*Cook \d+ min/);
+        assert.equal(await modal.locator('details.steps').getAttribute('open'), '');
+        assert.match(await modal.locator('.steps ul').innerText(), /250 g small cauliflower florets/);
+        assert.match(await modal.locator('.steps ol').innerText(), /170–175°C/);
+        return modal.locator('.dt-b').textContent();
+      }
+
+      await thumbnail.click();
+      const fromPhoto = await details();
+      await modal.getByRole('button', {name: 'Close recipe'}).click();
+      await modal.waitFor({state: 'hidden'});
+      await summary.locator('.tx b').click();
+      assert.equal(await details(), fromPhoto);
+      const ingredient = modal.locator('.shop-item').first();
+      await ingredient.click();
+      assert.equal(await ingredient.getAttribute('aria-pressed'), 'true');
+      assert.equal(await modal.isVisible(), true);
+      await page.keyboard.press('Escape');
+      await modal.waitFor({state: 'hidden'});
+      assert.equal(await summary.evaluate(el => el === document.activeElement), true);
+      await summary.press('Enter');
+      await details();
+    } finally {
+      await context.close();
+    }
+  }
+});
+
 test('offline service worker installs and controls subsequent navigation', async () => {
   const {page, context} = await open();
   await page.waitForFunction(async () => !!(await navigator.serviceWorker.getRegistration()), { timeout: 10000 });
@@ -389,11 +435,24 @@ test('the cart rotates 1–2 missing-ingredient dishes in a two-column mobile gr
         rows.every(button => !have[button.dataset.cartAddIngredient] && !cartQuantity(button.dataset.cartAddIngredient));
     })), true);
 
-    const before = await dishes.locator('h4').allTextContents();
+    const opener = dishes.locator('button.dish-opener:has(img)').first();
+    const name = await opener.locator('.cart-dish-name').textContent();
+    const modal = page.locator('#dtray');
+    await opener.locator('img').tap();
+    assert.equal(await modal.locator('h2').textContent(), name);
+    const fromPhoto = await modal.locator('.dt-b').textContent();
+    assert.equal(await modal.locator('.steps').getAttribute('open'), '');
+    await modal.getByRole('button', {name: 'Close recipe'}).tap();
+    await opener.locator('.cart-dish-name').tap();
+    assert.equal(await modal.locator('.dt-b').textContent(), fromPhoto);
+    await page.keyboard.press('Escape');
+    await modal.waitFor({state:'hidden'});
+
+    const before = await dishes.locator('.cart-dish-name').allTextContents();
     const firstNeeded = await dishes.first().locator('[data-cart-add-ingredient]').evaluateAll(buttons =>
       buttons.map(button => button.dataset.cartAddIngredient));
     await dishes.first().locator('.cart-add-dish').tap();
-    const after = await dishes.locator('h4').allTextContents();
+    const after = await dishes.locator('.cart-dish-name').allTextContents();
     assert.equal(after.includes(before[0]), false, 'selected dish disappears');
     assert.equal(after.length, 6, 'another eligible dish replaces it');
     assert.equal(await page.locator('.cart-group').filter({hasText: before[0]}).count(), 1);
@@ -402,10 +461,10 @@ test('the cart rotates 1–2 missing-ingredient dishes in a two-column mobile gr
     assert.deepEqual(await page.evaluate(() => ['milk', 'ghee', 'sugar'].map(cartQuantity)), [1, 1, 1]);
 
     const partialName = await dishes.evaluateAll(cards => cards.find(card =>
-      card.querySelectorAll('[data-cart-add-ingredient]').length === 2)?.querySelector('h4')?.textContent || '');
+      card.querySelectorAll('[data-cart-add-ingredient]').length === 2)?.querySelector('.cart-dish-name')?.textContent || '');
     assert.ok(partialName, 'a dish requiring two more items remains available');
     await dishes.filter({hasText: partialName}).locator('[data-cart-add-ingredient]').first().tap();
-    assert.equal((await dishes.locator('h4').allTextContents()).includes(partialName), false);
+    assert.equal((await dishes.locator('.cart-dish-name').allTextContents()).includes(partialName), false);
     const partialGroup = page.locator('.cart-group').filter({hasText: partialName});
     assert.equal(await partialGroup.count(), 1);
     assert.equal(await partialGroup.locator('[data-cart-add-listed]').count(), 1,

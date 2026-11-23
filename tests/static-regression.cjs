@@ -122,7 +122,7 @@ test('adding all recipe ingredients preserves existing and legacy cart quantitie
 
 test('PWA registers offline worker and caches the required shell files', () => {
   assert.match(src, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
-  assert.match(sw, /const CACHE = 'hatri-v30-veg-photo-dialog'/);
+  assert.match(sw, /const CACHE = 'hatri-v31-unified-dish-details'/);
   for (const item of ['auth.js','ingredient-images.js','recipe-details.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp']) assert.ok(sw.includes(`'./${item}'`));
   new vm.Script(sw);
 });
