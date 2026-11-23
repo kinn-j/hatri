@@ -343,6 +343,19 @@ body.sh-plan [data-vs="plan"] #cuis{border-top:0}
 details.dton{outline:3px solid var(--accent);outline-offset:-3px}
 }
 </style>
+<style>
+.dish-photo-dialog{width:min(92vw,720px);max-height:90dvh;padding:0;border:0;border-radius:20px;background:var(--surface);color:var(--text);box-shadow:0 24px 80px rgba(0,0,0,.45);overflow:auto}
+.dish-photo-dialog::backdrop{background:rgba(7,25,17,.78)}
+.dish-photo-dialog .photo-zoom-image{display:block;width:100%;height:min(55dvh,500px);object-fit:contain;background:#10231a}
+.dish-photo-dialog .photo-zoom-body{padding:18px 20px 22px}
+.dish-photo-dialog h2{font-size:21px;line-height:1.25;margin:0 42px 8px 0}
+.dish-photo-dialog p{font-size:14px;line-height:1.6;margin:9px 0;color:var(--text)}
+.dish-photo-dialog .photo-zoom-meta{font-size:12px;color:var(--muted)}
+.dish-photo-dialog .photo-zoom-close{position:sticky;float:right;top:12px;margin:12px 12px -48px 0;z-index:1;border:0;border-radius:50%;background:var(--surface);color:var(--text);width:36px;height:36px;font-size:22px;box-shadow:0 2px 12px rgba(0,0,0,.25);cursor:pointer}
+img[data-dish-photo]{cursor:zoom-in}
+img[data-dish-photo]:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+@media(max-width:520px){.dish-photo-dialog{width:calc(100% - 20px)}.dish-photo-dialog .photo-zoom-image{height:min(52dvh,430px)}}
+</style>
 </head>
 <body>
 <nav class="nav"><a class="logo" href="#top">🍛 <span>Hatri</span></a><div class="links"><a href="#planner">Planner</a><a href="#kitchen">My Kitchen</a><a href="#features">Features</a></div>
@@ -1005,7 +1018,7 @@ function score(singleDishes){
   return MEALS.filter(function(m){return matchesFilters(m,wholeMeal)&&(allDishes||inSel(m))}).map(function(m){
     var h=[],x=[],oh=[],ox=[];
     m[5].forEach(function(r){var o=r.slice(-1)==="?",i=o?r.slice(0,-1):r;(o?(have[i]?oh:ox):(have[i]?h:x)).push(i)});
-    return {recipe:m,n:m[0],v:m[1],p:effP(m),c:m[3],s:m[4],h:h,x:x,oh:oh,ox:ox,tot:h.length+x.length,cu:m[6],w:wt(m[0],m[6]),ing:m[5],ov:!!(m[4]&&m[4][0]<=30),oc:m[8],f:m[9]};
+    return {recipe:m,n:m[0],v:isVegetarianDish(m),p:effP(m),c:m[3],s:m[4],h:h,x:x,oh:oh,ox:ox,tot:h.length+x.length,cu:m[6],w:wt(m[0],m[6]),ing:m[5],ov:!!(m[4]&&m[4][0]<=30),oc:m[8],f:m[9]};
   }).sort(function(a,b){return a.x.length-b.x.length||(b.h.length/b.tot)-(a.h.length/a.tot)||fit(b)-fit(a)||hsh(a.n)-hsh(b.n)});
 }
 function isLong(m){return m.s&&m.s[0]>=240}
@@ -1018,7 +1031,7 @@ function shoppingIngredient(i){
 function card(m){
   var pct=Math.round(m.h.length/m.tot*100),all=m.x.every(function(i){return cart[i]});
   var ready=m.p+m.c+(m.s&&!isLong(m)&&!m.ov?m.s[0]:0),c=CCOL[m.cu]||CCOL.Everyday;
-  var sl=pslug(m.n),im=IMG[sl];var tile=im?"<div class='tile photo'>"+recipeImage(im)+"</div>":"<div class='tile' style='background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.55),transparent 55%),linear-gradient(135deg,"+c[0]+","+c[1]+")'>"+emo(m.n)+"</div>";
+  var sl=pslug(m.n),im=IMG[sl];var tile=im?"<div class='tile photo'>"+recipeImage(im,m.n)+"</div>":"<div class='tile' style='background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.55),transparent 55%),linear-gradient(135deg,"+c[0]+","+c[1]+")'>"+emo(m.n)+"</div>";
   var link="<a href='https://www.google.com/search?tbm=isch&q="+encodeURIComponent(m.n+" recipe")+"' target='_blank' rel='noopener'>📷 photos</a>";
   return "<div class='meal' data-recipe='"+encodeURIComponent(m.n)+"'><div class='mh'><div style='display:flex;gap:10px;min-width:0'>"+tile+"<div><b>"+m.n+"</b>"+"<div class='meta'><span class='dot "+(m.v?"veg":"nv")+"'></span>"+m.cu+" · "+({Light:"🪶 Light",Medium:"⚖️ Medium",Heavy:"🔥 Heavy"})[m.w]+" · Prep "+m.p+" min · "+(m.c?"Cook "+m.c+" min":"No cooking")+" · Ready in ~"+ready+" min"+(m.s&&!isLong(m)&&!m.ov?" incl. soak":"")+(m.ov?" · soak while you chop":"")+(m.f?" · 🎉 "+m.f:"")+(ptag(m)?" · "+ptag(m):"")+" · "+link+(UPL?" · <button class='x' data-up='"+sl+"' style='font-size:12px;color:var(--accent)'>📷 "+(im?"change":"add")+" photo</button>":"")+"</div></div></div>"+
    (m.x.length?"<button class='btn sm"+(all?"":" primary")+"' data-add='"+m.n+"'>"+(all?"Added ✓":"Add "+m.x.length+" to order")+"</button>":"<span class='chip have'>Ready to cook</span>")+"</div>"+
@@ -1044,7 +1057,7 @@ function renderSearch(r,q){renderHTML($("pick"),"");var tk=q.split(/\s+/).filter
     var hay=(nm+" "+m[6]+" "+m[9]+vrat+video+" "+ingredients+" "+keywords).toLowerCase();
     if(!tk.every(function(t){return hay.indexOf(t)>-1}))return null;
     var h=[],x=[],oh=[],ox=[];m[5].forEach(function(g){var o=g.slice(-1)==="?",i=o?g.slice(0,-1):g;(o?(have[i]?oh:ox):(have[i]?h:x)).push(i)});
-    return {n:m[0],v:m[1],p:effP(m),c:m[3],s:m[4],h:h,x:x,oh:oh,ox:ox,tot:h.length+x.length,cu:m[6],w:wt(m[0],m[6]),ing:m[5],ov:!!(m[4]&&m[4][0]<=30),oc:m[8],f:m[9],nm:tk.every(function(t){return nm.indexOf(t)>-1})?1:0}
+    return {n:m[0],v:isVegetarianDish(m),p:effP(m),c:m[3],s:m[4],h:h,x:x,oh:oh,ox:ox,tot:h.length+x.length,cu:m[6],w:wt(m[0],m[6]),ing:m[5],ov:!!(m[4]&&m[4][0]<=30),oc:m[8],f:m[9],nm:tk.every(function(t){return nm.indexOf(t)>-1})?1:0}
   }).filter(Boolean);
   L.sort(function(a,b){return (b.nm-a.nm)||(a.x.length-b.x.length)});var tot=L.length;
   var visible=Math.min(tot,SHOW_COUNTS.search||SHOW_BATCH);
@@ -1182,7 +1195,7 @@ $("basics").addEventListener("change",function(){toast(this.checked?"Assuming oi
 var IMG={},UPL=false,db=null,assets=null,upSlug=null;
 // Published sites use checked-in photos; Claude artifacts keep their blob URLs.
 function photoSrc(id){return id.indexOf("images/")===0?id:"/_blob/"+id}
-function recipeImage(id){return "<img alt='' loading='lazy' decoding='async' src='"+photoSrc(id)+"'>"}
+function recipeImage(id,name){return "<img alt='' loading='lazy' decoding='async' src='"+escapeHTML(photoSrc(id))+"' data-dish-photo='"+encodeURIComponent(name)+"' role='button' tabindex='0' aria-label='"+escapeHTML(T("Enlarge photo of "+name,name+" की तस्वीर बड़ी करें"))+"'>"}
 (function loadPublishedPhotos(){
   if(window.claude&&claude.use)return;
   fetch("images/photos.json").then(function(r){if(!r.ok)throw Error("Photo index unavailable");return r.json()}).then(function(files){
@@ -1235,8 +1248,19 @@ Object.assign(HI,{"Hostel mode":"हॉस्टल मोड","Non-veg":"नॉ
 var nonveg=!!(s&&s.nonveg),NV=["eggs","chicken","fish","mutton","prawn","fishballs","chickenstock"],hostel=!!(s&&s.hostel),app=(s&&s.app)||{R:1};
 var APN={K:"☕ Kettle",R:"🍚 Rice cooker",I:"🔥 Induction pot",T:"🫓 Induction tava",N:"🙌 No cooking"};
 function hostOK(n){var h=HOSTEL[n];return !!h&&h.some(function(a){return a==="N"||app[a]})}
+function isEggDish(m){
+  // Some imported recipes say "veg" even though they contain eggs.
+  // The ingredient check includes optional eggs, but names such as "Eggless Cake" stay veg.
+  return (m[5]||[]).some(function(id){return /^eggs?(?:white|yolk)?$/i.test(id.replace(/\?$/, ""))})||
+    (/\b(?:eggs?|omelettes?|omelets?|frittata|shakshuka)\b/i.test(m[0])&&!/\b(?:eggless|egg-free)\b/i.test(m[0]));
+}
+function isVegetarianDish(m){
+  return !!m[1]&&!isEggDish(m)&&!(m[5]||[]).some(function(id){
+    return NV.indexOf(id.replace(/\?$/, ""))>=0||id.replace(/\?$/, "")==="gelatin";
+  });
+}
 function matchesModes(m){
-  return (nonveg||!!m[1])&&(!hostel||hostOK(m[0]));
+  return (nonveg||isVegetarianDish(m))&&(!hostel||hostOK(m[0]));
 }
 function renderModes(){
   $("nvBtn").setAttribute("aria-checked",!nonveg);
@@ -1270,7 +1294,7 @@ function rtype(n){var t=n.toLowerCase();
 function nmx(i){return LANG==="hi"?(HI[NAME[i]]||NAME[i]):NAME[i]}
 function rateRow(m){var sl=slug(m.n),my=MY[sl]||{},r=my.rating||0,ph=my.photos||[];
  if(!ME)return "<p class='note'>Sign in to rate this recipe and save photos of your creation.</p>";
- return "<div class='rate'><b>Your rating:</b> "+[1,2,3,4,5].map(function(n){return "<button class='star"+(n<=r?" on":"")+"' data-rate='"+sl+"|"+n+"' aria-label='"+n+"'>★</button>"}).join("")+"</div><div class='mine'>"+ph.map(function(id){return "<img src='"+photoSrc(id)+"' alt=''>"}).join("")+(asx?"<button class='btn sm' data-cp='"+sl+"'>📸 Add your photo</button>":"")+"</div>"}
+ return "<div class='rate'><b>Your rating:</b> "+[1,2,3,4,5].map(function(n){return "<button class='star"+(n<=r?" on":"")+"' data-rate='"+sl+"|"+n+"' aria-label='"+n+"'>★</button>"}).join("")+"</div><div class='mine'>"+ph.map(function(id){return "<img src='"+escapeHTML(photoSrc(id))+"' data-dish-photo='"+encodeURIComponent(m.n)+"' role='button' tabindex='0' aria-label='"+escapeHTML(T("Enlarge photo of "+m.n,m.n+" की तस्वीर बड़ी करें"))+"' alt=''>"}).join("")+(asx?"<button class='btn sm' data-cp='"+sl+"'>📸 Add your photo</button>":"")+"</div>"}
 function recipeList(tag,items){
   return "<"+tag+">"+items.map(function(item){return "<li>"+escapeHTML(item)+"</li>"}).join("")+"</"+tag+">";
 }
@@ -1325,7 +1349,7 @@ function renderKitchen(){var k=$("mykit");if(!k)return;
  var ids=Object.keys(MY).filter(function(x){return MY[x].rating||(MY[x].photos||[]).length});
  if(!ids.length){k.innerHTML="<p class='sub'>Nothing saved yet — rate a recipe or add a photo of something you cooked.</p>";return}
  k.innerHTML="<div class='kgrid'>"+ids.map(function(sl){var e=MY[sl],r=MEALS.filter(function(m){return slug(m[0])===sl})[0],nme=r?r[0]:sl,im=(e.photos||[]).slice(-1)[0];
-  return "<div class='kc'>"+(im?"<img src='"+photoSrc(im)+"' alt=''>":"<div class='tile' style='width:100%;height:110px'>"+emo(nme)+"</div>")+"<b>"+nme+"</b><div>"+"★★★★★".slice(0,e.rating||0)+"</div></div>"}).join("")+"</div>"}
+  return "<div class='kc'>"+(im?"<img src='"+escapeHTML(photoSrc(im))+"' data-dish-photo='"+encodeURIComponent(nme)+"' role='button' tabindex='0' aria-label='"+escapeHTML(T("Enlarge photo of "+nme,nme+" की तस्वीर बड़ी करें"))+"' alt=''>":"<div class='tile' style='width:100%;height:110px'>"+emo(nme)+"</div>")+"<b>"+nme+"</b><div>"+"★★★★★".slice(0,e.rating||0)+"</div></div>"}).join("")+"</div>"}
 async function saveMy(sl,patch){var o=Object.assign({},MY[sl]||{},patch,{at:Date.now()});await dbx.doc("data/users/"+ME+"/d-"+sl).set(o);MY[sl]=o;renderResults();renderPick();renderKitchen()}
 function renderCuis(){
   var n=Object.keys(cuis).length;
@@ -1467,7 +1491,7 @@ function buildMeals(){
 function mealTileHTML(c,force){
   var items=c.items,n=Math.min(items.length,4),open=force||!!MOPEN[c.key];
   var ims=items.slice(0,4).map(function(m,i){var im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;
-    return "<span class='mc' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im):"<i>"+emo(m.n)+"</i>")+(i===3&&items.length>4?"<em>+"+(items.length-4)+"</em>":"")+"</span>"}).join("");
+    return "<span class='mc' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im,m.n):"<i>"+emo(m.n)+"</i>")+(i===3&&items.length>4?"<em>+"+(items.length-4)+"</em>":"")+"</span>"}).join("");
   var ok=!c.miss.length,done=c.miss.length&&c.miss.every(function(i){return cart[i]}),protein=protBadge(c);
   return "<details class='mtile' data-mk='"+encodeURIComponent(c.key)+"'"+(open?" open":"")+"><summary><div class='mos n"+n+"'>"+ims+
     "<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+c.miss.length+" to buy")+"</span><span class='tm'>⏱ ~"+c.t+" min</span></div>"+
@@ -1868,9 +1892,9 @@ function changeCartQuantity(button){
   all();
   if(restoreFocus)focusTarget.focus({preventScroll:true});
 }
-function cartThumbnail(url,fallback){
-  return "<span class='cart-thumbnail' aria-hidden='true'>"+fallback+
-    (url?"<img src='"+escapeHTML(url)+"' alt='' loading='lazy' decoding='async'>":"")+"</span>";
+function cartThumbnail(url,fallback,dishName){
+  return "<span class='cart-thumbnail'"+(dishName?"":" aria-hidden='true'")+">"+fallback+
+    (url?"<img src='"+escapeHTML(url)+"' alt='' loading='lazy' decoding='async'"+(dishName?" data-dish-photo='"+encodeURIComponent(dishName)+"' tabindex='0' role='button' aria-label='"+escapeHTML(T("Enlarge photo of "+dishName,dishName+" की तस्वीर बड़ी करें"))+"'":"")+">":"")+"</span>";
 }
 function cartDishes(limit){
   var suggestions=[];
@@ -1915,7 +1939,7 @@ function cartDishCard(dish){
     return "<li class='still-needed'><span>"+escapeHTML(nmx(id)||id)+"</span>"+
       "<button type='button' class='cart-add-item' data-cart-add-ingredient='"+escapeHTML(id)+"' aria-label='"+escapeHTML(T("Add "+(nmx(id)||id)+" to shopping list",(nmx(id)||id)+" खरीदारी सूची में जोड़ें"))+"'>+ "+T("Add","जोड़ें")+"</button></li>";
   }).join("");
-  return "<article class='cart-dish-card' data-cart-recipe='"+dish.index+"'><div class='cart-dish'>"+cartThumbnail(photo?photoSrc(photo):"",emo(dish.name))+
+  return "<article class='cart-dish-card' data-cart-recipe='"+dish.index+"'><div class='cart-dish'>"+cartThumbnail(photo?photoSrc(photo):"",emo(dish.name),dish.name)+
     "<h4>"+escapeHTML(T(dish.name,HI[dish.name]||dish.name))+"</h4></div>"+
     "<p class='cart-needed-label'>"+T(dish.missing+(dish.missing===1?" more ingredient":" more ingredients"),dish.missing+" और सामग्री")+"</p><ul class='cart-needed'>"+rows+"</ul>"+
     "<button type='button' class='btn sm primary cart-add-dish' data-cart-add-dish='"+dish.index+"'>"+
@@ -1951,7 +1975,7 @@ function renderCart(){
   var cards=groups.map(function(g){
     var name=g.group.name,photo=IMG[pslug(name)];
     var added=g.needed.filter(function(id){return cartQuantity(id)>0}).length;
-    return "<article class='cart-group'><div class='cart-dish'>"+cartThumbnail(photo?photoSrc(photo):"",emo(name))+
+    return "<article class='cart-group'><div class='cart-dish'>"+cartThumbnail(photo?photoSrc(photo):"",emo(name),name)+
       "<div class='cart-group-heading'><h4>"+escapeHTML(T(name,HI[name]||name))+"</h4><small>"+
       T(added+" of "+g.needed.length+" ingredients in cart",added+" / "+g.needed.length+" सामग्री कार्ट में")+"</small></div>"+
       "<button type='button' class='cart-remove-dish' data-cart-remove-dish='"+g.index+"' aria-label='"+
@@ -2091,7 +2115,7 @@ function renderIngsM(){var q=$("q").value.trim().toLowerCase(),vis=CATS.filter(f
   $("count").textContent="· "+Object.keys(have).length+" selected"}
 function tileHTML(m){var ok=!m.x.length,im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;
  return '<details class="tile" data-recipe="'+encodeURIComponent(m.n)+'">'+
-  "<summary><div class='ti' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im):"<span class='em'>"+emo(m.n)+"</span>")+"<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+m.x.length+" to buy")+"</span><span class='vg "+(m.v?"v":"n")+"'></span><span class='tm'>⏱ "+(m.p+m.c)+" min"+(isLong(m)?" + "+Math.round(m.s[0]/60)+" h soak":"")+"</span></div><div class='tx'><b>"+dn(m.n)+"</b><small>"+(ok?"Everything is at home":"Need "+m.x.map(function(i){return NAME[i]}).join(", "))+"</small></div></summary>"+card(m)+"</details>"}
+  "<summary><div class='ti' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im,m.n):"<span class='em'>"+emo(m.n)+"</span>")+"<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+m.x.length+" to buy")+"</span><span class='vg "+(m.v?"v":"n")+"'></span><span class='tm'>⏱ "+(m.p+m.c)+" min"+(isLong(m)?" + "+Math.round(m.s[0]/60)+" h soak":"")+"</span></div><div class='tx'><b>"+dn(m.n)+"</b><small>"+(ok?"Everything is at home":"Need "+m.x.map(function(i){return NAME[i]}).join(", "))+"</small></div></summary>"+card(m)+"</details>"}
 document.body.dataset.v="recipes";setView("recipes");
 try{var standalone=(window.navigator&&navigator.standalone)||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
  if(standalone||localStorage.getItem("rr-inst"))$("install").classList.add("hide");
@@ -2343,6 +2367,48 @@ RX.unshift([/Regions \((\d+) selected\)/g,"क्षेत्र ($1 चुन�
 KEYS=Object.keys(HI).sort(function(a,b){return b.length-a.length});LOW={};KEYS.forEach(function(k){LOW[k.toLowerCase()]=HI[k]});
 WRX=new RegExp("(?<![A-Za-z])(?:"+KEYS.map(function(x){return x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}).join("|")+")(?![A-Za-z])","gi");
 var DTK=null,DT=null;
+var PHOTO_DIALOG=null,photoReturnFocus=null;
+function dishPhotoDescription(m){
+  var types={Main:"main dish",Bread:"bread",Rice:"rice dish",Complete:"complete meal",Sweet:"sweet",Side:"side dish",Snack:"snack",Chaat:"chaat",NoCook:"no-cook dish",Pickle:"pickle or preserve",Baked:"baked dish",Drink:"drink"};
+  var kind=types[course(m[0])]||"dish",region=m[6]&&m[6]!=="Everyday"?m[6]:"";
+  var ingredients=(m[5]||[]).filter(function(id){return !id.endsWith("?")}).slice(0,4).map(function(id){return nmx(id)||id});
+  var english="This "+(region?region+"-style ":"")+kind+(ingredients.length?" brings together "+ingredients.join(", "):" is made for a delicious meal")+".";
+  var hindi="यह "+(region?region+" शैली का ":"")+"व्यंजन"+(ingredients.length?" "+ingredients.join(", ")+" से बनाया जाता है":" स्वादिष्ट है")+"।";
+  return {description:T(english,hindi),meta:T("Prep "+m[2]+" min · Cook "+m[3]+" min · "+(isVegetarianDish(m)?"Vegetarian":"Contains non-vegetarian ingredients"),
+    "तैयारी "+m[2]+" मिनट · पकाने में "+m[3]+" मिनट · "+(isVegetarianDish(m)?"शाकाहारी":"मांसाहारी सामग्री"))};
+}
+function openDishPhoto(image){
+  var name=decodeURIComponent(image.dataset.dishPhoto||""),recipe=MEALS.find(function(m){return m[0]===name});
+  if(!recipe)return;
+  if(!PHOTO_DIALOG){
+    PHOTO_DIALOG=document.createElement("dialog");PHOTO_DIALOG.className="dish-photo-dialog";PHOTO_DIALOG.id="dishPhotoDialog";
+    PHOTO_DIALOG.innerHTML="<button type='button' class='photo-zoom-close' aria-label='Close enlarged photo'>×</button>"+
+      "<img class='photo-zoom-image' alt=''><div class='photo-zoom-body'><h2 id='dishPhotoTitle'></h2>"+
+      "<p class='photo-zoom-description'></p><p class='photo-zoom-meta'></p></div>";
+    PHOTO_DIALOG.setAttribute("aria-labelledby","dishPhotoTitle");document.body.appendChild(PHOTO_DIALOG);
+    PHOTO_DIALOG.querySelector(".photo-zoom-close").addEventListener("click",function(){PHOTO_DIALOG.close()});
+    PHOTO_DIALOG.addEventListener("click",function(e){if(e.target===PHOTO_DIALOG)PHOTO_DIALOG.close()});
+    PHOTO_DIALOG.addEventListener("close",function(){if(photoReturnFocus&&photoReturnFocus.isConnected)photoReturnFocus.focus({preventScroll:true})});
+  }
+  photoReturnFocus=image;
+  var details=dishPhotoDescription(recipe),large=PHOTO_DIALOG.querySelector(".photo-zoom-image");
+  large.src=image.currentSrc||image.src;large.alt=T("Photo of "+name,name+" की तस्वीर");
+  PHOTO_DIALOG.querySelector("#dishPhotoTitle").textContent=T(name,HI[name]||name);
+  PHOTO_DIALOG.querySelector(".photo-zoom-description").textContent=details.description;
+  PHOTO_DIALOG.querySelector(".photo-zoom-meta").textContent=details.meta;
+  if(!PHOTO_DIALOG.open)PHOTO_DIALOG.showModal();
+  PHOTO_DIALOG.querySelector(".photo-zoom-close").focus();
+}
+// The photo has its own action; clicking the rest of a card still opens recipe details.
+document.addEventListener("click",function(e){
+  var image=e.target.closest&&e.target.closest("img[data-dish-photo]");if(!image)return;
+  e.preventDefault();e.stopImmediatePropagation();openDishPhoto(image);
+},true);
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Enter"&&e.key!==" ")return;
+  var image=e.target.closest&&e.target.closest("img[data-dish-photo]");if(!image)return;
+  e.preventDefault();e.stopImmediatePropagation();openDishPhoto(image);
+},true);
 function dtFind(k){return document.querySelector('details.tile[data-recipe="'+CSS.escape(k)+'"]')}
 function closeDT(){if(DT){DT.remove();DT=null}DTK=null;document.querySelectorAll(".dton").forEach(function(x){x.classList.remove("dton")})}
 function dtFill(d){if(!DT){DT=document.createElement("div");DT.id="dtray";document.body.appendChild(DT)}
@@ -2370,7 +2436,7 @@ var PREFNV={meal:["butter-chicken","chicken-curry"],Main:["chicken-curry","butte
 function photoFor(k){
   var L=((nonveg&&PREFNV[k])||[]).concat(PREF[k]||[]);
   for(var i=0;i<L.length;i++){if(IMG[L[i]])return IMG[L[i]]}
-  var pool=MEALS.filter(function(m){if(nonveg?m[1]:!m[1])return false;if(k==="all"||k==="meal")return true;try{return cats(m).indexOf(k)>-1}catch(e){return false}});
+  var pool=MEALS.filter(function(m){if(nonveg?isVegetarianDish(m):!isVegetarianDish(m))return false;if(k==="all"||k==="meal")return true;try{return cats(m).indexOf(k)>-1}catch(e){return false}});
   for(var j=0;j<pool.length;j++){var id=IMG[pslug(pool[j][0])];if(id)return id}
   return null}
 function slTile(attr,emo,lab,sub,on,pal,photo){
@@ -2580,6 +2646,8 @@ var pantryTab=0;
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pantry-bulk]");if(!b)return;var cats=CATS.map(function(c){return [c[0],c[1].filter(function(x){return nonveg||NV.indexOf(x[0])<0})]}).filter(function(c){return c[1].length}),c=cats[pantryTab];if(!c)return;var allItems=b.getAttribute("data-pantry-bulk")==="all";c[1].forEach(function(x){if(allItems){have[x[0]]=1;delete cart[x[0]]}else delete have[x[0]]});save();all();e.preventDefault();e.stopPropagation()},true);
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pantry-cat]");if(!b)return;pantryTab=+b.getAttribute("data-pantry-cat")||0;renderPantrySlides();e.preventDefault();e.stopPropagation()},true);
 var _allWithPantry=all;all=function(){var r=_allWithPantry.apply(this,arguments);try{renderPantrySlides()}catch(e){}return r};
+// Keep badges and other features that read the recipe flag consistent with Veg Mode.
+MEALS.forEach(function(m){if(!isVegetarianDish(m))m[1]=0});
 MFREADY=true;syncT();try{all()}catch(e){try{renderCuis();renderResults()}catch(e2){}}
 </script>
 <style>
