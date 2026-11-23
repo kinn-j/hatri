@@ -136,6 +136,59 @@ test('veg pantry excludes chicken stock; recipe guidance is corrected', async ()
   await context.close();
 });
 
+test('recipe details cover the entire live catalog and render measured methods in search', async () => {
+  const {page, context} = await open();
+  try {
+    const audit = await page.evaluate(() => {
+      const dishes = new Set(MEALS.map(recipe => recipe[0]));
+      const overrides = Object.entries(HATRI_RECIPE_DETAILS);
+      const missing = [], invalid = [];
+      const panel = document.createElement("div");
+      for (const language of ["en", "hi"]) {
+        LANG = language;
+        for (const recipe of MEALS) {
+          const [n, v, , c, , ing, , , oc] = recipe;
+          panel.innerHTML = recipePanel({n, v, c, ing, oc});
+          if (![...panel.querySelectorAll(".steps ol li")].some(li => li.textContent.trim())) missing.push([n, language]);
+          if (!panel.querySelector(".steps ul li")) invalid.push([n, language, "ingredients"]);
+          if (panel.innerHTML.includes("undefined")) invalid.push([n, language, "undefined"]);
+        }
+      }
+      LANG = "en";
+      return {
+        total: dishes.size,
+        measured: [...dishes].filter(name => HATRI_RECIPE_DETAILS[name] || MEASURED_RECIPES[name]).length,
+        missing,
+        invalid,
+        orphaned: overrides.filter(([name, data]) => !dishes.has(name) || data.serves < 1 ||
+          data.amounts.en.length < 2 || (data.steps && data.steps.en.length < 3)).map(([name]) => name),
+      };
+    });
+    assert.ok(audit.total >= 887);
+    assert.equal(audit.measured, audit.total);
+    assert.deepEqual(audit.missing, []);
+    assert.deepEqual(audit.invalid, []);
+    assert.deepEqual(audit.orphaned, []);
+
+    await page.locator('#rq').fill('gobi pakora');
+    const recipe = page.locator('#results .steps').first();
+    await expectRecipe(recipe);
+    await page.locator('#langBtn').click();
+    await expectRecipe(page.locator('#results .steps').first());
+    assert.equal(await page.locator('#results .steps ol').first().locator('..').getAttribute('lang'), 'en');
+    await page.locator('#rq').fill('gajar halwa');
+    assert.match(await page.locator('#results .steps ul').first().textContent(), /500 ग्राम गाजर/);
+
+    async function expectRecipe(recipe) {
+      assert.match(await recipe.textContent(), /250 g small cauliflower florets/);
+      assert.match(await recipe.textContent(), /170–175°C/);
+      assert.equal(await recipe.locator("ol li").count(), 3);
+    }
+  } finally {
+    await context.close();
+  }
+});
+
 test('offline service worker installs and controls subsequent navigation', async () => {
   const {page, context} = await open();
   await page.waitForFunction(async () => !!(await navigator.serviceWorker.getRegistration()), { timeout: 10000 });
@@ -145,6 +198,11 @@ test('offline service worker installs and controls subsequent navigation', async
     return !!navigator.serviceWorker.controller;
   });
   assert.equal(controlled, true);
+  await context.setOffline(true);
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(() => window.MFREADY === true);
+  await page.locator('#rq').fill('gobi pakora');
+  assert.match(await page.locator('#results .steps').first().textContent(), /250 g small cauliflower florets/);
   await context.close();
 });
 
