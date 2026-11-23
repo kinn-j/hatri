@@ -58,7 +58,7 @@ test('app boots with bounded results and usable mobile layouts', async () => {
     assert.ok(state.failedImageFallback, `${width}: ingredient fallback`);
     const hero = page.locator('.hero');
     assert.equal(await hero.isVisible(), true);
-    assert.match(await hero.evaluate(el => getComputedStyle(el).backgroundImage), /hatri-pantry-header[.]webp/);
+    assert.match(await hero.locator('.hero-slide').first().evaluate(el => getComputedStyle(el).backgroundImage), /hatri-pantry-header[.]webp/);
     await context.close();
   }
 });
@@ -489,6 +489,37 @@ test('the cart rotates 1–2 missing-ingredient dishes in a two-column mobile gr
     await page.evaluate(() => {cart = {};cartMeals = [];renderCart()});
     assert.equal(await order.count(), 0);
     assert.equal(await dishes.count(), 6, 'an empty cart offers new shopping suggestions');
+  } finally {
+    await context.close();
+  }
+});
+
+test('the home carousel rotates, supports manual navigation and opens Christmas recipes', async () => {
+  const {page, context} = await open({width: 390, height: 844}, {reducedMotion: 'no-preference', hasTouch: true});
+  try {
+    const dots = page.locator('.hero-dot');
+    assert.equal(await dots.count(), 3);
+    await page.waitForFunction(() => document.querySelectorAll('.hero-dot')[1].ariaCurrent === 'true');
+    await page.waitForFunction(() => document.querySelectorAll('.hero-dot')[2].ariaCurrent === 'true');
+    await dots.nth(0).tap();
+    assert.equal(await dots.nth(0).getAttribute('aria-current'), 'true');
+
+    await page.emulateMedia({reducedMotion: 'reduce'});
+    await dots.nth(2).tap();
+    assert.equal(await dots.nth(2).getAttribute('aria-current'), 'true');
+    await page.getByRole('button', {name: 'See more Christmas dish suggestions'}).tap();
+    assert.equal(await page.locator('#rq').inputValue(), 'Christmas');
+    const results = page.locator('#results');
+    assert.match(await results.textContent(), /Eggless Christmas Plum Cake/);
+    assert.match(await results.textContent(), /Goan Neureos/);
+
+    const audit = await page.evaluate(() => ({
+      missing: SEASONAL_RECIPES.flatMap(recipe => recipe.pantry.filter(id => !NAME[id.replace(/\?$/, '')])),
+      sindhi: MEALS.filter(recipe => regionOf(recipe) === 'Sindhi').map(recipe => recipe[0]),
+    }));
+    assert.deepEqual(audit.missing, []);
+    assert.ok(audit.sindhi.includes('Dal Pakwan'));
+    assert.ok(audit.sindhi.includes('Sai Bhaji'));
   } finally {
     await context.close();
   }

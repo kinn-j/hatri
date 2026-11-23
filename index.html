@@ -127,19 +127,39 @@ a.btn{display:inline-block;text-decoration:none}
 .logo{font-weight:700;font-size:19px;color:var(--text);text-decoration:none}.logo span{color:var(--accent)}
 .links{display:flex;gap:18px;margin-left:auto}.links a{color:var(--muted);text-decoration:none;font-size:14px}
 .hero{
-  width:min(948px,calc(100% - 24px));margin:12px auto 4px;border-radius:18px;overflow:hidden;
-  background:#183b2c linear-gradient(90deg,#183b2c 0%,#183b2c 36%,#183b2c90 54%,transparent 79%);
-  background-image:linear-gradient(90deg,#183b2c 0%,#183b2cf5 36%,#183b2c90 54%,transparent 79%),url("./images/hatri-pantry-header.webp");
-  background-position:center,right center;background-size:cover,78% auto;background-repeat:no-repeat;
+  display:none;width:min(948px,calc(100% - 24px));margin:12px auto 4px;
+  border-radius:18px;overflow:hidden;position:relative;background:#183b2c;
 }
-.hero-in{padding:clamp(18px,4vw,33px) clamp(18px,4vw,35px);max-width:56%}
-.hero h1{font-family:Georgia,serif;font-size:clamp(24px,4.2vw,44px);line-height:1.05;font-weight:normal;margin:0;color:#fff}
+.hero-track{display:grid;grid-auto-flow:column;grid-auto-columns:100%;transition:transform .38s ease;touch-action:pan-y}
+.hero-slide{
+  --hero-color:#183b2c;--hero-image:url("./images/hatri-pantry-header.webp");
+  display:flex;align-items:center;min-height:164px;
+  background:linear-gradient(90deg,var(--hero-color) 8%,var(--hero-color) 30%,transparent 86%),var(--hero-image) right center/auto no-repeat,var(--hero-color);
+  background-size:cover,78% auto,auto;
+}
+.hero-pantry{--hero-color:#142e24;--hero-image:url("./images/hatri-dinner-header.webp")}
+.hero-christmas{--hero-color:#3b2024;--hero-image:url("./images/hatri-christmas-header.webp")}
+.hero-in{padding:clamp(18px,4vw,33px) clamp(18px,4vw,35px) 39px;max-width:66%}
+.hero h1,.hero h2{font-family:Georgia,serif;font-size:clamp(24px,4.2vw,44px);line-height:1.05;font-weight:normal;margin:0;color:#fff}
 .hero p{font-size:14px;line-height:1.4;margin:8px 0 0;color:#eff6ec}
+.hero-cta{margin-top:10px;color:#401f24;background:#fff2db;border-color:transparent}
+.hero-controls{position:absolute;bottom:3px;left:0;right:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.hero-controls button{
+  pointer-events:auto;width:32px;height:32px;padding:0;border:0;border-radius:50%;
+  background:transparent;color:#fff;display:grid;place-items:center;cursor:pointer;
+}
+.hero-controls button:focus-visible{outline:2px solid #fff;outline-offset:-3px}
+.hero-dot::before{content:"";width:8px;height:8px;border:1px solid #fff;border-radius:50%;background:#17292299}
+.hero-dot[aria-current="true"]::before{background:#fff;width:10px;height:10px}
+.hero-controls .hero-motion{position:absolute;right:6px;background:#18271dcc}
+.hero-controls .hero-motion[hidden]{display:none}
 body[data-v="recipes"]:not(.searching) .hero{display:block}
 @media(max-width:520px){
-  .hero{background-size:cover,auto 155%;background-position:center,88% center}
-  .hero-in{max-width:66%}
+  .hero-slide{background-size:cover,auto 115%,auto;background-position:center,87% center,center}
+  .hero-slide:first-child{background-size:cover,auto 155%,auto;background-position:center,88% center,center}
+  .hero-in{max-width:75%}
 }
+@media(prefers-reduced-motion:reduce){.hero-track{transition:none}}
 .band{max-width:1100px;margin:auto;padding:36px 16px}.band h2{font-size:24px;margin:0 0 16px}
 .cols{display:grid;gap:14px;grid-template-columns:1fr}@media(min-width:700px){.cols{grid-template-columns:repeat(3,1fr)}}
 .fc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}.fc b{display:block;margin-bottom:4px}.fc p{margin:0;color:var(--muted);font-size:14px}
@@ -375,10 +395,27 @@ body.sh-plan [data-vs="plan"] #cuis{border-top:0}
     </div>
   </div>
 </nav>
-<section class="hero" id="top" aria-labelledby="hatri-hero-title"><div class="hero-in">
-  <h1 id="hatri-hero-title"><span class="en">Cook with what you have</span><span class="hi">घर के सामान से खाना बनाएँ</span></h1>
-  <p><span class="en">Pick ingredients from your pantry to find recipes.</span><span class="hi">रेसिपी खोजने के लिए अपनी रसोई का सामान चुनें।</span></p>
-</div></section>
+<section class="hero" id="top" aria-label="Hatri highlights">
+  <div class="hero-track">
+    <div class="hero-slide"><div class="hero-in">
+      <h1><span class="en">Cook with what you have</span><span class="hi">घर के सामान से खाना बनाएँ</span></h1>
+      <p><span class="en">Pick ingredients from your pantry to find recipes.</span><span class="hi">रेसिपी खोजने के लिए अपनी रसोई का सामान चुनें।</span></p>
+    </div></div>
+    <div class="hero-slide hero-pantry" inert aria-hidden="true"><div class="hero-in">
+      <h2 translate="no"><span class="en">Hatri me dekho .. aaj kya banyein??</span><span class="hi">Hatri में देखो… आज क्या बनाएँ?</span></h2>
+    </div></div>
+    <div class="hero-slide hero-christmas" inert aria-hidden="true"><div class="hero-in">
+      <h2 translate="no"><span class="en">Christmas recipes</span><span class="hi">क्रिसमस रेसिपी</span></h2>
+      <button type="button" class="btn sm hero-cta" translate="no"><span class="en">See more Christmas dish suggestions</span><span class="hi">और क्रिसमस व्यंजन देखें</span></button>
+    </div></div>
+  </div>
+  <div class="hero-controls" role="group" aria-label="Slide controls">
+    <button class="hero-dot" type="button" aria-label="Show pantry slide" aria-current="true"></button>
+    <button class="hero-dot" type="button" aria-label="Show dinner ideas slide" aria-current="false"></button>
+    <button class="hero-dot" type="button" aria-label="Show Christmas slide" aria-current="false"></button>
+    <button class="hero-motion" type="button" aria-label="Pause slides"><span aria-hidden="true">Ⅱ</span></button>
+  </div>
+</section>
 <div class="sect"><h2>Plan tonight’s meal</h2><p class="sub">Start with the pantry on the left, then set your occasion and time.</p></div>
 <main id="planner">
   <section class="left" data-vs="pantry">
@@ -481,6 +518,7 @@ body.sh-plan [data-vs="plan"] #cuis{border-top:0}
 <script src="./quick-north-recipes.js"></script>
 <script src="./street-food-recipes.js"></script>
 <script src="./rajasthani-recipes.js"></script>
+<script src="./seasonal-recipes.js"></script>
 <script src="./ingredient-images.js"></script>
 <script src="./recipe-details.js"></script>
 <script>
@@ -1062,7 +1100,7 @@ function renderSearch(r,q){renderHTML($("pick"),"");var tk=q.split(/\s+/).filter
     var reel=RECIPE_REELS[m[0]],video=reel?" instagram reel इंस्टाग्राम रील "+reel.creator:"";
     var ingredients=m[5].map(function(i){var n=NAME[i.replace("?","")]||"";return n+" "+(HI[n]||"")}).join(" ");
     var keywords=(MEASURED_RECIPES[m[0]]||{}).keywords||"";
-    var hay=(nm+" "+m[6]+" "+m[9]+vrat+video+" "+ingredients+" "+keywords).toLowerCase();
+    var hay=(nm+" "+m[6]+" "+m[9]+" "+(HI[m[9]]||"")+vrat+video+" "+ingredients+" "+keywords).toLowerCase();
     if(!tk.every(function(t){return hay.indexOf(t)>-1}))return null;
     var dish=dishState(m);
     dish.nm=tk.every(function(t){return nm.indexOf(t)>-1})?1:0;
@@ -1328,7 +1366,7 @@ function recipePanel(m,expanded){
   var st=method&&method[lang]||[];
   if(st.length===1)st=st[0].split(/(?<=[.!?।])\s+(?=[A-Zअ-ह])/u);
   var reel=RECIPE_REELS[name];
-  var credit=MEASURED_RECIPES[name]?"<p class='note'>"+T("AI-generated dish image","एआई से बनाई गई व्यंजन की तस्वीर")+"</p>":"";
+  var credit=MEASURED_RECIPES[name]&&IMG[pslug(name)]?"<p class='note'>"+T("AI-generated dish image","एआई से बनाई गई व्यंजन की तस्वीर")+"</p>":"";
   var watch="";
   if(reel){
     watch='<div class="row"><a class="btn sm" href="'+reel.reel+'" target="_blank" rel="noopener">'+T("Watch on Instagram","इंस्टाग्राम पर देखें")+"</a></div>";
@@ -1740,7 +1778,7 @@ var IT4=[
 ["Lasaniya Batata",1,10,15,["potato","garlic"],"Gujarati",["Daily"],["Make a garlic-chilli paste.","Sauté baby potatoes with the paste, haldi and salt until coated."],1],
 ["Mangodi Sabzi",1,10,20,["moong","onion","tomato"],"Rajasthani",["Daily"],["Fry mangodi (moong wadi) lightly.","Cook onion, tomato and spices; add mangodi and a splash of water.","Simmer 10 min."],1],
 ["Besan Chakki",1,10,25,["besan","ghee"],"Rajasthani",["Sweets","Festive"],["Roast besan in ghee until fragrant.","Add sugar syrup to a thick dough; set in a tray.","Cut into pieces."],1],
-["Dal Pakwan",1,30,25,["chanadal","maida"],"Rajasthani",["Festive"],["Cook chana dal with turmeric and a tadka.","Make a stiff maida dough with ajwain; roll, prick and fry crisp.","Serve with dal and tamarind chutney."],1],
+["Dal Pakwan",1,30,25,["chanadal","maida"],"Sindhi",["Festive"],["Cook chana dal with turmeric and a tadka.","Make a stiff maida dough with ajwain; roll, prick and fry crisp.","Serve with dal and tamarind chutney."],1],
 ["Kuzhi Paniyaram",1,5,15,["batter","onion?"],"South Indian",["Daily"],["Mix idli/dosa batter with onion, chilli and curry leaves.","Pour in a paniyaram pan; cook until golden on both sides."],1],
 ["Ragi Mudde",1,5,15,["ragi"],"South Indian",["Daily"],["Stir ragi flour into boiling salted water; cook, mixing vigorously.","Shape into balls and serve with sambar or saaru."],1],
 ["Mor Kuzhambu",1,10,15,["curd","coconut","okra?"],"South Indian",["Daily"],["Grind coconut with green chilli and jeera; mix into whisked curd.","Cook gently with veg; temper with mustard and curry leaves."],1],
@@ -2134,7 +2172,7 @@ try{var standalone=(window.navigator&&navigator.standalone)||(window.matchMedia&
  $("instX").addEventListener("click",function(){$("install").classList.add("hide");try{localStorage.setItem("rr-inst","1")}catch(e){}})}catch(e){}
 Object.assign(HI,{"Pick ingredients":"सामान चुनें","Shopping list":"खरीदारी सूची","Filters":"फ़िल्टर","Suggestions":"सुझाव","Show recipes":"रेसिपी दिखाओ","Non-veg — eggs, meat & fish":"नॉन-वेज — अंडे, मांस और मछली","Dairy":"डेयरी"});
 RX.unshift([/(\d+) recipes/g,"$1 रेसिपी"],[/(\d+) regions/g,"$1 क्षेत्र"]);
-var REG=["Punjabi","Rajasthani","Gujarati","Maharashtrian","Bengali","South Indian","North Indian","Bihari","Odia","Pahadi","Kashmiri","Goan & Konkan","Assam & NE"],WLD=["Indo-Chinese","Italian"];function isReg(c){return REG.indexOf(c)>-1||WLD.indexOf(c)>-1}function regOn(){return REG.concat(WLD).filter(function(c){return cuis[c]}).length}
+var REG=["Punjabi","Rajasthani","Sindhi","Gujarati","Maharashtrian","Bengali","South Indian","North Indian","Bihari","Odia","Pahadi","Kashmiri","Goan & Konkan","Assam & NE"],WLD=["Indo-Chinese","Italian"];function isReg(c){return REG.indexOf(c)>-1||WLD.indexOf(c)>-1}function regOn(){return REG.concat(WLD).filter(function(c){return cuis[c]}).length}
 Object.assign(HI,{"Search any recipe…":"कोई भी रेसिपी खोजें…"});
 $("rq").addEventListener("input",function(){SHOW_COUNTS.search=SHOW_BATCH;if(this.value.trim()&&(document.body.dataset.v!=="recipes"||/(^| )sh-/.test(document.body.className)))setView("recipes");renderResults()});
 var regOpen=false;
@@ -2181,7 +2219,7 @@ if(LANG==="hi")setLang("hi");
 var INTL="International / National",RS={},OS={},HS={},TS={};
 try{var _f=JSON.parse(localStorage.getItem("rr-filters-v2")||"{}");RS=_f.r||{};OS=_f.o||{};HS=_f.h||{};TS=_f.t||{}}catch(e){}
 var TB=[["t1","Up to 20 min",-1,20],["t2","20–30 min",20,30],["t3","30–45 min",30,45],["t4","45–60 min",45,60],["t5","1–1.5 hr",60,90],["t6","1.5–2 hr",90,120]],
-OB=[["Daily","Daily"],["Festive","Festive"],["Vrat","Vrat / Upvas"],["Sweets","Sweets"]],
+OB=[["Daily","Daily"],["Festive","Festive"],["Christmas","Christmas"],["Vrat","Vrat / Upvas"],["Sweets","Sweets"]],
 HB=[["Light","🪶 Light"],["Medium","⚖️ Medium"],["Heavy","🔥 Heavy"]],
 RULES=[[/pav bhaji|vada pav|misal|thalipeeth|puran poli|zunka|bharli|sabudana|sol kadhi|poha/i,"Maharashtrian"],
 [/dosa|idli|sambar|rasam|uttapam|appam|pongal|avial|chettinad|bisi bele|pulihora|puliyogare|curd rice|lemon rice|medu vada|upma|kerala|filter coffee/i,"South Indian"],
@@ -2199,6 +2237,9 @@ function ids(l){return l.map(function(o){return o[0]})}function tIds(){return id
 function full(o,l){return !!o&&l.every(function(i){return o[i]})}function restr(o,l){return anyOn(o)&&!full(o,l)}
 function selAll(k){var st=k==="t"?TS:k==="o"?OS:k==="h"?HS:RS,l=k==="t"?tIds():k==="o"?oIds():k==="h"?hIds():rIds();l.forEach(function(i){st[i]=1})}
 function defaults(){selAll("t");selAll("o");selAll("h");selAll("r")}
+// Recognize saved "All" selections created before these filter options existed.
+if(!(_f&&_f.seasonal)&&full(RS,rIds().filter(function(id){return id!=="Sindhi"})))RS.Sindhi=1;
+if(!(_f&&_f.seasonal)&&full(OS,oIds().filter(function(id){return id!=="Christmas"})))OS.Christmas=1;
 function regOK(m){return !restr(RS,rIds())||!!RS[regionOf(m)]}
 function fitsTime(minutes){return !restr(TS,tIds())||TB.some(function(b){return TS[b[0]]&&minutes>b[2]&&minutes<=b[3]})}
 function timeOK(m){return fitsTime(effP(m)+m[3])}
@@ -2207,7 +2248,7 @@ function hvOK(m,wholeMeal){return !restr(HS,hIds())||(wholeMeal&&["Sweet","Side"
 function vratOnly(){return !!OS&&!!OS.Vrat&&Object.keys(OS).length===1}
 function fit(o){var s=0;o.oc.forEach(function(x){if(OS&&restr(OS,oIds())&&OS[x])s++});if(sel[course(o.n)])s++;return s}
 function syncT(){tmax=0;if(!restr(TS,tIds()))return;TB.forEach(function(b){if(TS[b[0]]&&b[3]>tmax)tmax=b[3]})}
-function saveF(){try{localStorage.setItem("rr-filters-v2",JSON.stringify({r:RS,o:OS,h:HS,t:TS}))}catch(e){}}
+function saveF(){try{localStorage.setItem("rr-filters-v2",JSON.stringify({r:RS,o:OS,h:HS,t:TS,seasonal:true}))}catch(e){}}
 document.addEventListener("click",function(e){var tg=e.target.closest?e.target:e.target.parentNode,b=tg.closest&&tg.closest("[data-ff]");
  if(b){var p=b.dataset.ff.split("|"),k=p[0],v=p[1],st=k==="t"?TS:k==="o"?OS:k==="h"?HS:RS;
   if(v==="*")Object.keys(st).forEach(function(x){delete st[x]});else if(v==="#all")selAll(k);else if(st[v])delete st[v];else st[v]=1;
@@ -2355,17 +2396,22 @@ if(typeof INSTAGRAM_RECIPES!=="undefined"){
       groups[group]=(groups[group]||[]).concat(RAJASTHANI_PANTRY[group]);
     });
   }
+  if(typeof SEASONAL_PANTRY!=="undefined"){
+    Object.keys(SEASONAL_PANTRY).forEach(function(group){
+      groups[group]=(groups[group]||[]).concat(SEASONAL_PANTRY[group]);
+    });
+  }
   Object.keys(groups).forEach(function(group){
     var items=groups[group];
     CATS.push([group,items.map(function(i){return [i[0],i[1]]})]);
     items.forEach(function(i){NAME[i[0]]=i[1];HI[i[1]]=i[2]});
   });
-  quick.concat(street,rajasthani).forEach(function(recipe){
+  quick.concat(street,rajasthani,typeof SEASONAL_RECIPES==="undefined"?[]:SEASONAL_RECIPES).forEach(function(recipe){
     var name=recipe.name,c=recipe.course;
-    var occasions=["Daily"];
+    var occasions=recipe.occasion?["Festive",recipe.occasion]:["Daily"];
     if(c==="Sweet")occasions.push("Sweets");
     if(c==="Snack")occasions.push("Snacks");
-    MEALS.push([name,recipe.nonveg?0:1,recipe.prep,recipe.cook,recipe.soak||0,recipe.pantry,recipe.region,0,occasions,""]);
+    MEALS.push([name,recipe.nonveg?0:1,recipe.prep,recipe.cook,recipe.soak||0,recipe.pantry,recipe.region,0,occasions,recipe.occasion||""]);
     COURSEO[name]=c;
     HI[name]=recipe.hindi;
     STEPS[name]=recipe.steps;
@@ -2374,7 +2420,7 @@ if(typeof INSTAGRAM_RECIPES!=="undefined"){
     if(c==="Side"||!recipe.cook)HVO[name]="Light";
   });
 })();
-Object.assign(HI,{"International / National":"अंतरराष्ट्रीय / राष्ट्रीय","Indian regions":"भारतीय क्षेत्र","Other cuisines":"अन्य व्यंजन","Clear regions":"क्षेत्र हटाएँ","Pick one or more":"एक या ज़्यादा चुनें","Pick one or more time ranges":"एक या ज़्यादा समय चुनें","Pick one or more regions — nothing picked shows all":"एक या ज़्यादा क्षेत्र चुनें — कुछ न चुनें तो सब दिखेंगे","✓ All":"✓ सभी","Select all regions":"सभी क्षेत्र चुनें","Summer":"गर्मी","Snacks":"नाश्ता","Up to 20 min":"20 मिनट तक","20–30 min":"20–30 मिनट","30–45 min":"30–45 मिनट","45–60 min":"45–60 मिनट","1–1.5 hr":"1–1.5 घंटा","1.5–2 hr":"1.5–2 घंटे"});
+Object.assign(HI,{"Sindhi":"सिंधी","Christmas":"क्रिसमस","International / National":"अंतरराष्ट्रीय / राष्ट्रीय","Indian regions":"भारतीय क्षेत्र","Other cuisines":"अन्य व्यंजन","Clear regions":"क्षेत्र हटाएँ","Pick one or more":"एक या ज़्यादा चुनें","Pick one or more time ranges":"एक या ज़्यादा समय चुनें","Pick one or more regions — nothing picked shows all":"एक या ज़्यादा क्षेत्र चुनें — कुछ न चुनें तो सब दिखेंगे","✓ All":"✓ सभी","Select all regions":"सभी क्षेत्र चुनें","Summer":"गर्मी","Snacks":"नाश्ता","Up to 20 min":"20 मिनट तक","20–30 min":"20–30 मिनट","30–45 min":"30–45 मिनट","45–60 min":"45–60 मिनट","1–1.5 hr":"1–1.5 घंटा","1.5–2 hr":"1.5–2 घंटे"});
 RX.unshift([/Regions \((\d+) selected\)/g,"क्षेत्र ($1 चुने)"],[/Regions \(all\)/g,"क्षेत्र (सभी)"]);
 KEYS=Object.keys(HI).sort(function(a,b){return b.length-a.length});LOW={};KEYS.forEach(function(k){LOW[k.toLowerCase()]=HI[k]});
 WRX=new RegExp("(?<![A-Za-z])(?:"+KEYS.map(function(x){return x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}).join("|")+")(?![A-Za-z])","gi");
@@ -2432,7 +2478,7 @@ try{if(!localStorage.getItem("rr-allon-v1")){defaults();localStorage.setItem("rr
 document.addEventListener("click",function(e){var tg=e.target.closest?e.target:e.target.parentNode,c=tg.closest&&tg.closest("[data-reset]");if(c){defaults();syncT();saveF();renderCuis();renderResults()}});
 
 /* ===== Mobile sliders (categories + filters), Nykaa-style ===== */
-var EMO_T={t1:"⚡",t2:"⏱️",t3:"🕒",t4:"🕓",t5:"⏳",t6:"🫕"},EMO_O={Daily:"🏠",Festive:"🪔",Vrat:"🙏",Sweets:"🍮"},
+var EMO_T={t1:"⚡",t2:"⏱️",t3:"🕒",t4:"🕓",t5:"⏳",t6:"🫕"},EMO_O={Daily:"🏠",Festive:"🪔",Christmas:"🎄",Vrat:"🙏",Sweets:"🍮"},
 EMO_R={"Punjabi":"🫓","Rajasthani":"🏜️","Gujarati":"🥣","Maharashtrian":"🌶️","Bengali":"🌾","South Indian":"🥥","North Indian":"🍛","Bihari":"🥟","Odia":"🍚","Pahadi":"⛰️","Kashmiri":"🌸","Goan & Konkan":"🌴","Assam & NE":"🍵","Indo-Chinese":"🥡","Italian":"🍝"},
 PAL={cat:["#ffe9d2","#ffc58f"],tm:["#e0f0ff","#a9d2fb"],oc:["#ffe3ee","#ffb3d1"],hv:["#e3f6e3","#b0e0b4"],rg:["#fff1c9","#ffd37a"]};
 var PREF={meal:["chole-bhature","aloo-paratha"],Main:["aloo-gobi","bhindi-masala","chana-masala"],Bread:["aloo-paratha","ajwain-paratha"],Rice:["chana-biryani","bengali-khichuri"],Complete:["bisi-bele-bath","bajre-ki-khichdi"],Sweet:["besan-ladoo","badam-halwa","basundi"],Side:["adrak-chutney","aloo-raita"],Snack:["aloo-tikki","aloo-bonda"],Chaat:["aloo-tikki-chaat","bhel-chaat"],NoCook:["boiled-peanut-chaat","chana-chaat"],Pickle:["amla-pickle","apple-jam"],Baked:["banana-bread","chocolate-cake-eggless"],Drink:["badam-milk","carrot-juice"],all:["chole-bhature","aloo-paratha"]};
@@ -2585,10 +2631,10 @@ document.addEventListener("error",function(e){if(e.target.matches&&e.target.matc
 (function(){
   var groups={"Vegetables":[],"Fruits / Dry fruits":[],"Milk / Bread / Protein":[],"Grains / Pulses":[],"Condiments":[],"Specialty":[]},seen={};
   var veg={onion:1,tomato:1,potato:1,capsicum:1,brinjal:1,okra:1,cabbage:1,carrot:1,cucumber:1,lauki:1,beans:1,mushroom:1,corn:1,arbi:1,cauliflower:1,peas:1,spinach:1,sarson:1,methi:1,mooli:1,beetroot:1,sweetpotato:1,suran:1,pumpkin:1,drumstick:1,rawbanana:1,karela:1,tinda:1,turai:1,coriander:1,mint:1,currylv:1,gchilli:1,bigchilli:1,ginger:1,garlic:1,basil:1,tulsi:1,parsley:1,rosemary:1,thyme:1,sage:1,kasurimethi:1,italianherbs:1,collardgreens:1,lotusstem:1,gonguraleaves:1,mixedvegetables:1,ashgourd:1,pointedgourd:1,garadu:1};
-  var fruit={lemon:1,coconut:1,rawmango:1,mango:1,banana:1,apple:1,amla:1,orange:1,pineapple:1,watermelon:1,pomegranate:1,mosambi:1,coconutmilk:1,tendercoconut:1,tendercoconutmalai:1,lemonzest:1,orangejuice:1,orangezest:1,blueberries:1,strawberries:1,desiccatedcoconut:1,pineapplerings:1,kiwi:1,lemonlimesoda:1,passionfruitpulp:1,lychee:1,peach:1,dates:1,guavajuice:1,cranberryjuice:1,orangeslices:1,gratedcoconut:1,foodgradeslakedlime:1,baelfruitpulp:1,dryfruit:1,cashews:1,almonds:1,walnuts:1,pistachios:1,raisins:1,berries:1,cherries:1};
+  var fruit={applejuice:1,lemon:1,coconut:1,rawmango:1,mango:1,banana:1,apple:1,amla:1,orange:1,pineapple:1,watermelon:1,pomegranate:1,mosambi:1,coconutmilk:1,tendercoconut:1,tendercoconutmalai:1,lemonzest:1,orangejuice:1,orangezest:1,blueberries:1,strawberries:1,desiccatedcoconut:1,pineapplerings:1,kiwi:1,lemonlimesoda:1,passionfruitpulp:1,lychee:1,peach:1,dates:1,guavajuice:1,cranberryjuice:1,orangeslices:1,gratedcoconut:1,foodgradeslakedlime:1,baelfruitpulp:1,dryfruit:1,cashews:1,almonds:1,walnuts:1,pistachios:1,raisins:1,berries:1,cherries:1};
   var protein={tofu:1,paneer:1,curd:1,butter:1,ghee:1,milk:1,cream:1,mawa:1,cheese:1,creamcheese:1,condensedmilk:1,ricottacheese:1,parmesanstylevegetariancheese:1,buttermilk:1,batter:1,bread:1,fermentedricebatter:1,eggs:1,chicken:1,fish:1,mutton:1,prawn:1,soya:1,soyachaap:1,sprouts:1,cookedwhitebeans:1};
   var grains={rice:1,basmatirice:1,arboriorice:1,atta:1,besan:1,suji:1,poha:1,bread:1,bajra:1,makki:1,batter:1,sev:1,kuttu:1,singhara:1,samak:1,makhana:1,vermicelli:1,daliya:1,jowar:1,sabudana:1,chanadal:1,maida:1,pasta:1,noodles:1,oats:1,ragi:1,riceflour:1,cornflour:1,polenta:1,pizzabaseordough:1,cannellonipastatubes:1,jumbopastashells:1};
-  var cond={greenchutney:1,tamarindchutney:1,pavbhajimasala:1,soysauce:1,sesameoil:1,hoisinsauce:1,chillioil:1,currypowder:1,ginger:1,garlic:1,gingergarlicpaste:1,tealeaves:1,greentea:1,mustardoil:1,oliveoil:1,coconutoil:1,blackpepper:1,cumin:1,cuminseeds:1,cardamom:1,cinnamon:1,cloves:1,ajwain:1,garammasala:1,asafoetida:1,wholespices:1,turmeric:1,redchilli:1,dryredchilli:1,redchillipowder:1,mustardseeds:1,mustardseedsormustardpaste:1,mustardpaste:1,corianderpowder:1,corianderseeds:1,fennel:1,fennelpowder:1,fenugreekseeds:1,roastedcuminpowder:1,blacksalt:1,chaatmasala:1,jeeravanmasala:1,cholemasala:1,tandoorimasala:1,picklemasala:1,anardana:1,sesame:1,poppy:1,tamarind:1,jaggery:1,redfoodcolour:1,bakingpowder:1,bakingsoda:1,enofruitsaltorbakingsoda:1,vanillaessence:1,vinegar:1,tomatosauce:1,waterorvegetablestock:1,vegetablestock:1,chickenstock:1,kewrawater:1,rosewater:1,saffron:1,sabjaseeds:1,driedhibiscuspetals:1};
+  var cond={groundginger:1,greenchutney:1,tamarindchutney:1,pavbhajimasala:1,soysauce:1,sesameoil:1,hoisinsauce:1,chillioil:1,currypowder:1,ginger:1,garlic:1,gingergarlicpaste:1,tealeaves:1,greentea:1,mustardoil:1,oliveoil:1,coconutoil:1,blackpepper:1,cumin:1,cuminseeds:1,cardamom:1,cinnamon:1,cloves:1,ajwain:1,garammasala:1,asafoetida:1,wholespices:1,turmeric:1,redchilli:1,dryredchilli:1,redchillipowder:1,mustardseeds:1,mustardseedsormustardpaste:1,mustardpaste:1,corianderpowder:1,corianderseeds:1,fennel:1,fennelpowder:1,fenugreekseeds:1,roastedcuminpowder:1,blacksalt:1,chaatmasala:1,jeeravanmasala:1,cholemasala:1,tandoorimasala:1,picklemasala:1,anardana:1,sesame:1,poppy:1,tamarind:1,jaggery:1,redfoodcolour:1,bakingpowder:1,bakingsoda:1,enofruitsaltorbakingsoda:1,vanillaessence:1,vinegar:1,tomatosauce:1,waterorvegetablestock:1,vegetablestock:1,chickenstock:1,kewrawater:1,rosewater:1,saffron:1,sabjaseeds:1,driedhibiscuspetals:1};
   CATS.forEach(function(c){c[1].forEach(function(item){var id=item[0],k;
     if(seen[id])return;seen[id]=1;
     if(protein[id]||NV.indexOf(id)>-1)k="Milk / Bread / Protein";
@@ -3120,6 +3166,7 @@ body.searching .sh,body.searching [data-shuffle]{display:none!important}
   });
 })();
 </script>
+<script src="./hero-carousel.js"></script>
 <script type="module" src="./auth.js"></script>
 <script>
 // Register the already-bundled offline shell on HTTPS and localhost.

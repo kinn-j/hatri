@@ -1,8 +1,8 @@
 /* Hatri website shell. Increase cache version when shipping changes. */
-const CACHE = 'hatri-v31-unified-dish-details';
-const SHELL = ['./', './index.html', './auth.js', './vrat-recipes.js', './instagram-recipes.js', './quick-north-recipes.js', './street-food-recipes.js', './rajasthani-recipes.js', './ingredient-images.js', './recipe-details.js', './manifest.webmanifest',
+const CACHE = 'hatri-v32-seasonal-recipes';
+const SHELL = ['./', './index.html', './auth.js', './vrat-recipes.js', './instagram-recipes.js', './quick-north-recipes.js', './street-food-recipes.js', './rajasthani-recipes.js', './seasonal-recipes.js', './hero-carousel.js', './ingredient-images.js', './recipe-details.js', './manifest.webmanifest',
   './icons/icon-192x192.png', './icons/icon-512x512.png',
-  './icons/apple-touch-icon.png', './icons/favicon.png', './images/photos.json', './images/hatri-pantry-header.webp'];
+  './icons/apple-touch-icon.png', './icons/favicon.png', './images/photos.json', './images/hatri-pantry-header.webp', './images/hatri-dinner-header.webp', './images/hatri-christmas-header.webp'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
 });
@@ -37,7 +37,7 @@ self.addEventListener('fetch', event => {
   // Keep image files on-device after first visit, without precaching the entire photo library.
   event.respondWith(fetch(req).then(res => {
     if(res.ok && (req.url.includes('/icons/') || req.url.includes('/images/') ||
-      ['/manifest.webmanifest', '/auth.js', '/vrat-recipes.js', '/instagram-recipes.js', '/quick-north-recipes.js', '/street-food-recipes.js', '/rajasthani-recipes.js', '/ingredient-images.js', '/recipe-details.js'].some(path => req.url.endsWith(path)))) {
+      ['/manifest.webmanifest', '/auth.js', '/vrat-recipes.js', '/instagram-recipes.js', '/quick-north-recipes.js', '/street-food-recipes.js', '/rajasthani-recipes.js', '/seasonal-recipes.js', '/hero-carousel.js', '/ingredient-images.js', '/recipe-details.js'].some(path => req.url.endsWith(path)))) {
       const c=res.clone(); caches.open(CACHE).then(cache => cache.put(req,c));
     }
     return res;
