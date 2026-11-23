@@ -122,14 +122,12 @@ test('Clear all time remains cleared across reload; show-more adds a bounded bat
   await context.close();
 });
 
-test('veg pantry and shopping exclude chicken stock; recipe guidance is corrected', async () => {
+test('veg pantry excludes chicken stock; recipe guidance is corrected', async () => {
   const {page, context} = await open();
   await page.evaluate(() => {
     pantryTab = CATS.findIndex(c => c[0] === 'Condiments'); renderPantrySlides();
   });
   assert.equal(await page.locator('#pantrySlides [data-i="chickenstock"]').count(), 0);
-  await page.evaluate(() => { document.querySelector('#shopq').value = 'chicken'; shopRes(); });
-  assert.equal(await page.locator('#shopres [data-oi="chickenstock"]').count(), 0);
   await page.locator('#rq').fill('gajar halwa');
   const text = await page.locator('#results').textContent();
   assert.ok(text.includes('Sugar'));
@@ -306,7 +304,7 @@ test('mobile pantry category and drawer selections keep neighboring controls and
   }
 });
 
-test('shopping selections preserve the open recipe, loaded photos, and neighboring shopping controls', async () => {
+test('the shopping list shows only selected recipe ingredients and a single Blinkit action', async () => {
   const {page, context} = await open({width: 390, height: 844}, {isMobile: true, hasTouch: true});
   try {
     await page.locator('#rq').fill('gajar halwa');
@@ -323,32 +321,18 @@ test('shopping selections preserve the open recipe, loaded photos, and neighbori
     for (const selected of [true, false, true]) {
       await sugar.tap();
       assert.equal(await sugar.getAttribute('aria-pressed'), String(selected));
+      assert.deepEqual(await page.locator('#cart li').allTextContents(), selected ? ['Sugar'] : []);
+      assert.equal(await page.locator('#cart a').count(), selected ? 1 : 0);
       assert.equal(await sugarButton.evaluate(button => button.isConnected), true);
       assert.equal(await cover.evaluate(img => img.isConnected && img.naturalWidth > 0), true);
       assert.equal(await photo.evaluate(img => img.isConnected && img.naturalWidth > 0), true);
     }
     await page.locator('.tabbar [data-view="order"]').tap();
-    await page.locator('#shopq').fill('rice');
-    await page.locator('#shopq').blur();
-    const rice = page.locator('#shopres [data-oi="rice"]');
-    const other = await page.locator('#shopres [data-oi="basmatirice"]').elementHandle();
-    const sugarRow = await page.locator('#cart [data-rm="sugar"]').elementHandle();
-    const cartLinks = await page.locator('#cart a').evaluateAll(links => links.map(link => link.href));
-    assert.deepEqual(cartLinks.map(href => {
-      const link = new URL(href);
-      return [link.origin, link.pathname, link.searchParams.get('q')];
-    }), [
-      ['https://blinkit.com', '/', null],
-      ['https://blinkit.com', '/s/', 'Sugar'],
-    ]);
-    await rice.tap();
-    assert.equal(await page.locator('#cart [data-rm="rice"]').count(), 1);
-    assert.equal(await other.evaluate(button => button.isConnected), true);
-    assert.equal(await sugarRow.evaluate(button => button.isConnected), true);
-    await page.locator('#cart [data-bought="rice"]').tap();
-    assert.equal(await page.locator('#cart [data-rm="rice"]').count(), 0);
-    assert.equal(await page.evaluate(() => !!have.rice), true);
-    assert.equal(await sugarRow.evaluate(button => button.isConnected), true);
+    const order = page.getByRole('link', {name: 'Order from Blinkit'});
+    assert.equal(await order.isVisible(), true);
+    assert.equal(await order.getAttribute('href'), 'https://blinkit.com/');
+    assert.equal(await page.locator('#cart > :last-child').textContent(), 'Order from Blinkit');
+    assert.equal(await page.locator('#cartCard input, #cartCard button:not(.sx), #cartCard li a').count(), 0);
   } finally {
     await context.close();
   }
