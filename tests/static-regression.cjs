@@ -89,26 +89,40 @@ test('cart suggestions prefer recipes that need fewer extra ingredients and use 
     ['One match', true, 10, 0, 0, ['tomato']],
     ['Still missing', true, 5, 0, 0, ['tomato', 'onion', 'paneer']],
     ['Good match', true, 15, 0, 0, ['tomato', 'onion', 'rice', 'garlic?']],
+    ['Similar dish', true, 20, 0, 0, ['onion', 'rice', 'tomato']],
     ['Excluded by filters', false, 1, 0, 0, ['tomato', 'onion']],
     ['No required cart items', true, 1, 0, 0, ['rice', 'tomato?']],
   ];
-  const c = fn('function cartDish()', 'function cartSuggestion(', {
+  const c = fn('function cartDishes(', 'function cartDishCard(', {
     MEALS: recipes, cart: { tomato: 1, onion: 1 }, have: { rice: 1 },
     matchesFilters: recipe => recipe[1], effP: recipe => recipe[2],
   });
-  const match = c.cartDish();
+  const matches = c.cartDishes(4);
+  const match = matches[0];
+  assert.deepEqual(Array.from(matches, dish => dish.name), ['Good match', 'One match', 'Still missing', 'Similar dish']);
   assert.equal(match.name, 'Good match');
   assert.equal(match.missing, 0);
   assert.deepEqual([...match.ingredients], ['tomato', 'onion', 'rice']);
   c.have = {};
-  assert.equal(c.cartDish().name, 'One match');
+  assert.equal(c.cartDishes(4)[0].name, 'One match');
   c.cart = { carrot: 1 };
-  assert.equal(c.cartDish(), undefined);
+  assert.equal(c.cartDishes(4).length, 0);
+});
+
+test('adding all recipe ingredients preserves existing and legacy cart quantities', () => {
+  const c = fn('function toggleRecipeIngredients(', 'function changeCartQuantity(', {
+    cart: { tomato: 3, rice: true }, all: () => {},
+  });
+  assert.equal(c.cartQuantity('rice'), 1);
+  c.toggleRecipeIngredients(['tomato', 'onion']);
+  assert.deepEqual(c.cart, { tomato: 3, rice: true, onion: 1 });
+  c.toggleRecipeIngredients(['tomato', 'onion']);
+  assert.deepEqual(c.cart, { rice: true });
 });
 
 test('PWA registers offline worker and caches the required shell files', () => {
   assert.match(src, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
-  assert.match(sw, /const CACHE = 'hatri-v26-cart-photos'/);
+  assert.match(sw, /const CACHE = 'hatri-v27-cart-quantities'/);
   for (const item of ['auth.js','ingredient-images.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp']) assert.ok(sw.includes(`'./${item}'`));
   new vm.Script(sw);
 });

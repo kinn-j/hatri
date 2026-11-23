@@ -304,7 +304,7 @@ test('mobile pantry category and drawer selections keep neighboring controls and
   }
 });
 
-test('the cart shows selected ingredient photos, a related dish, and a single Blinkit action', async () => {
+test('the compact cart supports quantities and shows multiple related dishes', async () => {
   const {page, context} = await open({width: 390, height: 844}, {isMobile: true, hasTouch: true});
   try {
     await page.locator('#rq').fill('gajar halwa');
@@ -321,7 +321,7 @@ test('the cart shows selected ingredient photos, a related dish, and a single Bl
     for (const selected of [true, false, true]) {
       await sugar.tap();
       assert.equal(await sugar.getAttribute('aria-pressed'), String(selected));
-      assert.deepEqual(await page.locator('.cart-items li > span:last-child').allTextContents(), selected ? ['Sugar'] : []);
+      assert.deepEqual(await page.locator('.cart-items .cart-item-name').allTextContents(), selected ? ['Sugar'] : []);
       assert.equal(await page.locator('#cart a').count(), selected ? 1 : 0);
       assert.equal(await sugarButton.evaluate(button => button.isConnected), true);
       assert.equal(await cover.evaluate(img => img.isConnected && img.naturalWidth > 0), true);
@@ -333,15 +333,38 @@ test('the cart shows selected ingredient photos, a related dish, and a single Bl
     await sugarPhoto.waitFor({state: 'hidden'});
     assert.equal(await page.locator('.cart-items [data-cart-item="sugar"] .cart-thumbnail').isVisible(), true);
     const suggestion = page.locator('.cart-suggestion');
-    assert.equal(await suggestion.locator('h4').isVisible(), true);
-    assert.equal(await suggestion.locator('.cart-needed li').filter({hasText: 'Sugar'}).locator('small').textContent(),
-      'In your cart');
+    const dishes = suggestion.locator('.cart-dish-card');
+    assert.equal(await dishes.count(), 4);
+    for (const dish of await dishes.all()) {
+      assert.equal(await dish.locator('h4').isVisible(), true);
+      assert.equal(await dish.locator('.cart-needed li').filter({hasText: 'Sugar'}).locator('small').textContent(),
+        'In cart');
+    }
+
+    const sugarRow = page.locator('.cart-items [data-cart-item="sugar"]');
+    assert.ok((await sugarRow.boundingBox()).height <= 56);
+    await sugarRow.getByRole('button', {name: 'Increase quantity for Sugar'}).tap();
+    assert.equal(await sugarRow.locator('output').textContent(), '2');
+    assert.equal(await page.locator('#cartCount').textContent(), '· 2 items');
+
+    await page.reload({waitUntil: 'domcontentloaded'});
+    await page.waitForFunction(() => window.MFREADY === true);
+    await page.locator('.tabbar [data-view="order"]').tap();
+    assert.equal(await sugarRow.locator('output').textContent(), '2');
 
     const order = page.getByRole('link', {name: 'Order from Blinkit'});
     assert.equal(await order.isVisible(), true);
     assert.equal(await order.getAttribute('href'), 'https://blinkit.com/');
     assert.equal(await page.locator('#cart > :last-child').textContent(), 'Order from Blinkit');
-    assert.equal(await page.locator('#cartCard input, #cartCard button:not(.sx), #cartCard li a').count(), 0);
+    assert.equal(await page.locator('#cartCard input, #cartCard li a').count(), 0);
+
+    const decrease = sugarRow.getByRole('button', {name: 'Decrease quantity for Sugar'});
+    await decrease.tap();
+    assert.equal(await sugarRow.locator('output').textContent(), '1');
+    await decrease.tap();
+    assert.equal(await sugarRow.count(), 0);
+    assert.equal(await order.count(), 0);
+    assert.equal(await suggestion.count(), 0);
 
     // The built-in lauki photo works with external ingredient images offline.
     await page.evaluate(() => {
@@ -352,13 +375,15 @@ test('the cart shows selected ingredient photos, a related dish, and a single Bl
     const laukiPhoto = page.locator('.cart-items [data-cart-item="lauki"] img');
     await laukiPhoto.evaluate(img => img.decode());
     assert.equal(await laukiPhoto.isVisible(), true);
-    assert.equal(await suggestion.locator('h4').textContent(), 'Lauki ki Sabzi');
-    assert.deepEqual(await suggestion.locator('.cart-needed li').evaluateAll(rows =>
+    const sabzi = dishes.first();
+    assert.equal(await sabzi.locator('h4').textContent(), 'Lauki ki Sabzi');
+    assert.deepEqual(await sabzi.locator('.cart-needed li').evaluateAll(rows =>
       rows.map(row => [...row.children].map(child => child.textContent))), [
-      ['Lauki (bottle gourd)', 'In your cart'],
-      ['Tomato', 'In your pantry'],
+      ['Lauki (bottle gourd)', 'In cart'],
+      ['Tomato', 'In pantry'],
     ]);
-    const dishPhoto = suggestion.locator('img');
+    assert.ok(await dishes.locator('.still-needed').count() > 0);
+    const dishPhoto = sabzi.locator('img');
     await dishPhoto.evaluate(img => img.decode());
     assert.equal(await dishPhoto.isVisible(), true);
   } finally {
