@@ -86,32 +86,31 @@ test('pantry image fallback and accurate grains category exist', () => {
 
 test('cart suggestions prefer recipes that need fewer extra ingredients and use more of the cart', () => {
   const recipes = [
-    ['One match', true, 10, 0, 0, ['tomato']],
+    ['Fully covered', true, 10, 0, 0, ['tomato']],
     ['Still missing', true, 5, 0, 0, ['tomato', 'onion', 'paneer']],
-    ['Good match', true, 15, 0, 0, ['tomato', 'onion', 'rice', 'garlic?']],
-    ['Similar dish', true, 20, 0, 0, ['onion', 'rice', 'tomato']],
+    ['Covered by pantry and cart', true, 15, 0, 0, ['tomato', 'onion', 'rice', 'garlic?']],
+    ['Two more', true, 20, 0, 0, ['paneer', 'lemon']],
     ['Excluded by filters', false, 1, 0, 0, ['tomato', 'onion']],
-    ['No required cart items', true, 1, 0, 0, ['rice', 'tomato?']],
+    ['Optional only', true, 1, 0, 0, ['rice', 'tomato?']],
   ];
-  const c = fn('function cartDishes(', 'function cartDishCard(', {
-    MEALS: recipes, cart: { tomato: 1, onion: 1 }, have: { rice: 1 },
+  const c = fn('function requiredCartIngredients(', 'function cartDishCard(', {
+    MEALS: recipes, cart: { tomato: 1, onion: 1 }, have: { rice: 1 }, cartMeals: [],
     matchesFilters: recipe => recipe[1], effP: recipe => recipe[2],
   });
   const matches = c.cartDishes(4);
   const match = matches[0];
-  assert.deepEqual(Array.from(matches, dish => dish.name), ['Good match', 'One match', 'Still missing', 'Similar dish']);
-  assert.equal(match.name, 'Good match');
-  assert.equal(match.missing, 0);
-  assert.deepEqual([...match.ingredients], ['tomato', 'onion', 'rice']);
+  assert.deepEqual(Array.from(matches, dish => dish.name), ['Still missing', 'Two more']);
+  assert.equal(match.missing, 1);
+  assert.deepEqual([...match.ingredients], ['paneer']);
   c.have = {};
-  assert.equal(c.cartDishes(4)[0].name, 'One match');
+  assert.equal(c.cartDishes(4)[0].name, 'Still missing');
   c.cart = { carrot: 1 };
-  assert.equal(c.cartDishes(4).length, 0);
+  assert.deepEqual(Array.from(c.cartDishes(4), dish => dish.name).sort(), ['Fully covered', 'Optional only', 'Two more']);
 });
 
 test('adding all recipe ingredients preserves existing and legacy cart quantities', () => {
-  const c = fn('function toggleRecipeIngredients(', 'function changeCartQuantity(', {
-    cart: { tomato: 3, rice: true }, all: () => {},
+  const c = fn('function requiredCartIngredients(', 'function changeCartQuantity(', {
+    cart: { tomato: 3, rice: true }, have: {}, cartMeals: [], all: () => {},
   });
   assert.equal(c.cartQuantity('rice'), 1);
   c.toggleRecipeIngredients(['tomato', 'onion']);

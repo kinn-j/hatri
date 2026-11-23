@@ -235,6 +235,7 @@ function clearPreviousAccount() {
   // Prevent the next person using this browser from seeing the previous account's data.
   window.have = {};
   window.cart = {};
+  window.cartMeals = [];
   window.cuis = {};
   (window.CUIS || []).forEach(name => { window.cuis[name] = 1; });
   window.app = {};
