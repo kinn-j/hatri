@@ -105,5 +105,304 @@ const SEASONAL_RECIPES = [
       en: ["Combine the juice, water, orange and spices in a saucepan.", "Bring to a gentle simmer, cover and cook on low for 12–15 min.", "Strain out the spices and serve warm."],
       hi: ["पतीले में सेब रस, पानी, संतरा और मसाले मिलाएँ।", "हल्का उबाल आने पर ढककर धीमी आँच पर 12–15 मिनट पकाएँ।", "मसाले छानें और गरम परोसें।"]
     }
+  },
+  {
+    "name": "Orange & Almond Christmas Cake",
+    "hindi": "संतरा बादाम क्रिसमस केक",
+    "region": "International / National",
+    "course": "Baked",
+    "occasion": "Christmas",
+    "prep": 15,
+    "cook": 35,
+    "serves": 6,
+    "pantry": [
+      "maida",
+      "almonds",
+      "orange",
+      "sugar",
+      "curd",
+      "butter",
+      "bakingpowder"
+    ],
+    "amounts": {
+      "en": [
+        "1 cup flour, ¼ cup ground almonds, 1½ tsp baking powder, ½ cup sugar, ⅓ cup each curd and melted butter, zest and ¼ cup juice of an orange"
+      ],
+      "hi": [
+        "1 कप मैदा, ¼ कप पिसे बादाम, 1½ छोटे चम्मच बेकिंग पाउडर, ½ कप चीनी, ⅓ कप दही, ⅓ कप पिघला मक्खन, एक संतरे का कद्दूकस छिलका और ¼ कप रस"
+      ]
+    },
+    "steps": {
+      "en": [
+        "Heat oven to 175°C. Line an 18 cm round tin. Whisk curd, sugar, butter, juice and zest.",
+        "Fold in flour, almonds and baking powder. Bake for 30–35 minutes until a skewer comes out clean. Cool before slicing."
+      ],
+      "hi": [
+        "ओवन 175°C पर गरम करें। 18 सेमी के टिन में बेकिंग पेपर लगाएँ। दही, चीनी, मक्खन, रस और छिलका फेंटें।",
+        "मैदा, बादाम और बेकिंग पाउडर मिलाएँ। 30–35 मिनट बेक करें। सींक साफ़ निकले तो ठंडा करके काटें।"
+      ]
+    }
+  },
+  {
+    "name": "Chocolate Cinnamon Christmas Cupcakes",
+    "hindi": "चॉकलेट दालचीनी क्रिसमस कपकेक",
+    "region": "International / National",
+    "course": "Baked",
+    "occasion": "Christmas",
+    "prep": 10,
+    "cook": 20,
+    "serves": 6,
+    "pantry": [
+      "maida",
+      "cocoa",
+      "cinnamon",
+      "sugar",
+      "milk",
+      "butter",
+      "bakingpowder"
+    ],
+    "amounts": {
+      "en": [
+        "¾ cup flour, 2 tbsp cocoa, ½ tsp cinnamon, 1 tsp baking powder, ⅓ cup sugar, ½ cup milk and 3 tbsp melted butter"
+      ],
+      "hi": [
+        "¾ कप मैदा, 2 बड़े चम्मच कोको, ½ छोटा चम्मच दालचीनी, 1 छोटा चम्मच बेकिंग पाउडर, ⅓ कप चीनी, ½ कप दूध और 3 बड़े चम्मच पिघला मक्खन"
+      ]
+    },
+    "steps": {
+      "en": [
+        "Line six muffin cups and heat oven to 175°C. Sift flour, cocoa, cinnamon and baking powder together.",
+        "Stir sugar into milk and butter. Fold into dry ingredients, divide between cups and bake 17–20 minutes until a skewer comes out clean."
+      ],
+      "hi": [
+        "छह मफिन कप में लाइनर लगाएँ और ओवन 175°C पर गरम करें। मैदा, कोको, दालचीनी और बेकिंग पाउडर छानें।",
+        "दूध और मक्खन में चीनी मिलाएँ। सूखी सामग्री मिलाकर कप में बाँटें। 17–20 मिनट बेक करें जब तक सींक साफ़ निकले।"
+      ]
+    }
+  },
+  {
+    "name": "Christmas Gingerbread Hot Chocolate",
+    "hindi": "जिंजरब्रेड हॉट चॉकलेट",
+    "region": "International / National",
+    "course": "Drink",
+    "occasion": "Christmas",
+    "prep": 3,
+    "cook": 7,
+    "serves": 2,
+    "pantry": [
+      "milk",
+      "cocoa",
+      "sugar",
+      "groundginger",
+      "cinnamon"
+    ],
+    "amounts": {
+      "en": [
+        "2 cups milk, 2 tbsp cocoa, 2 tbsp sugar and ¼ tsp each ground ginger and cinnamon"
+      ],
+      "hi": [
+        "2 कप दूध, 2 बड़े चम्मच कोको, 2 बड़े चम्मच चीनी, ¼ छोटा चम्मच सोंठ और इतनी ही दालचीनी"
+      ]
+    },
+    "steps": {
+      "en": [
+        "Mix cocoa, sugar and spices with a splash of cold milk until smooth.",
+        "Whisk in the remaining milk. Warm over low heat, stirring until steaming, then pour into mugs."
+      ],
+      "hi": [
+        "कोको, चीनी और मसालों में थोड़ा ठंडा दूध मिलाकर चिकना घोल बनाएँ।",
+        "बचा दूध फेंटकर मिलाएँ। धीमी आँच पर चलाते हुए गरम करें और मग में परोसें।"
+      ]
+    },
+    "appliances": [
+      "I"
+    ]
+  },
+  {
+    "name": "Christmas Orange Mint Cooler",
+    "hindi": "क्रिसमस संतरा पुदीना कूलर",
+    "region": "International / National",
+    "course": "Drink",
+    "occasion": "Christmas",
+    "prep": 8,
+    "cook": 0,
+    "serves": 2,
+    "pantry": [
+      "orange",
+      "lemon",
+      "mint",
+      "sugar"
+    ],
+    "amounts": {
+      "en": [
+        "3 oranges, ½ lemon, 8 mint leaves, 2 tsp sugar and ½ cup chilled water"
+      ],
+      "hi": [
+        "3 संतरे, ½ नींबू, 8 पुदीना पत्ते, 2 छोटे चम्मच चीनी और ½ कप ठंडा पानी"
+      ]
+    },
+    "steps": {
+      "en": [
+        "Gently crush mint with sugar and lemon juice in a jug.",
+        "Squeeze in the oranges, add chilled water and stir until the sugar dissolves. Divide between two glasses."
+      ],
+      "hi": [
+        "जग में पुदीना, चीनी और नींबू का रस हल्के से कूटें।",
+        "संतरों का रस निकालकर मिलाएँ। ठंडा पानी डालकर चीनी घुलने तक चलाएँ। दो गिलास में परोसें।"
+      ]
+    },
+    "appliances": [
+      "N"
+    ]
+  },
+  {
+    "name": "Christmas Tree Toast Pizzas",
+    "hindi": "क्रिसमस ट्री टोस्ट पिज़्ज़ा",
+    "region": "International / National",
+    "course": "Snack",
+    "occasion": "Christmas",
+    "prep": 10,
+    "cook": 10,
+    "serves": 2,
+    "pantry": [
+      "bread",
+      "tomato",
+      "capsicum",
+      "cheese",
+      "butter"
+    ],
+    "amounts": {
+      "en": [
+        "4 bread slices, 1 finely chopped tomato, ½ thinly sliced green capsicum, ½ cup grated cheese and 2 tsp butter"
+      ],
+      "hi": [
+        "4 ब्रेड स्लाइस, 1 बारीक कटा टमाटर, ½ पतली कटी हरी शिमला मिर्च, ½ कप कद्दूकस चीज़ और 2 छोटे चम्मच मक्खन"
+      ]
+    },
+    "steps": {
+      "en": [
+        "Cut bread into large triangles. Butter the undersides and set in a cool skillet.",
+        "Top with cheese. Arrange capsicum strips as tree branches and tomato pieces as ornaments. Cover and cook on low for 6–10 minutes until crisp underneath and melted on top."
+      ],
+      "hi": [
+        "ब्रेड को बड़े तिकोनों में काटें। नीचे मक्खन लगाकर ठंडे तवे पर रखें।",
+        "चीज़ फैलाएँ। शिमला मिर्च से टहनियाँ बनाएँ और टमाटर से सजाएँ। धीमी आँच पर ढककर 6–10 मिनट सेंकें जब तक नीचे कुरकुरा हो और चीज़ पिघल जाए।"
+      ]
+    },
+    "appliances": [
+      "I"
+    ]
+  },
+  {
+    "name": "Christmas Wreath Flatbread Pizza",
+    "hindi": "क्रिसमस रीथ फ्लैटब्रेड पिज़्ज़ा",
+    "region": "International / National",
+    "course": "Main",
+    "occasion": "Christmas",
+    "prep": 15,
+    "cook": 18,
+    "serves": 2,
+    "pantry": [
+      "atta",
+      "curd",
+      "bakingpowder",
+      "tomato",
+      "spinach",
+      "cheese"
+    ],
+    "amounts": {
+      "en": [
+        "1 cup atta, ½ tsp baking powder, ⅓ cup curd, 2 tomatoes grated, ½ cup chopped spinach, ½ cup grated cheese and a pinch of salt"
+      ],
+      "hi": [
+        "1 कप आटा, ½ छोटा चम्मच बेकिंग पाउडर, ⅓ कप दही, 2 कद्दूकस टमाटर, ½ कप कटा पालक, ½ कप कद्दूकस चीज़ और चुटकीभर नमक"
+      ]
+    },
+    "steps": {
+      "en": [
+        "Heat oven to 220°C. Knead flour, baking powder, salt and curd, adding water by teaspoons as needed. Roll into two thin discs on baking paper and cut a hole in each centre.",
+        "Simmer tomatoes until thick. Spread over the rings, scatter with spinach and cheese and bake 12–15 minutes until the edges brown."
+      ],
+      "hi": [
+        "ओवन 220°C पर गरम करें। आटा, बेकिंग पाउडर, नमक और दही गूँधें। ज़रूरत पर थोड़ा पानी डालें। बेकिंग पेपर पर दो पतले गोले बेलकर बीच में छेद काटें।",
+        "टमाटर गाढ़ा होने तक पकाएँ। गोलों पर फैलाकर पालक और चीज़ डालें। किनारे सुनहरे होने तक 12–15 मिनट बेक करें।"
+      ]
+    }
+  },
+  {
+    "name": "Red & Green Christmas Pasta",
+    "hindi": "लाल हरा क्रिसमस पास्ता",
+    "region": "International / National",
+    "course": "Main",
+    "occasion": "Christmas",
+    "prep": 10,
+    "cook": 18,
+    "serves": 2,
+    "pantry": [
+      "pasta",
+      "tomato",
+      "spinach",
+      "garlic",
+      "butter"
+    ],
+    "amounts": {
+      "en": [
+        "160 g short pasta, 3 chopped tomatoes, 2 cups shredded spinach, 3 minced garlic cloves, 1 tbsp butter and salt to taste"
+      ],
+      "hi": [
+        "160 ग्राम पास्ता, 3 कटे टमाटर, 2 कप कटा पालक, 3 कटी लहसुन कलियाँ, 1 बड़ा चम्मच मक्खन और स्वादानुसार नमक"
+      ]
+    },
+    "steps": {
+      "en": [
+        "Boil pasta in salted water until just tender. Reserve half a cup of cooking water before draining.",
+        "Soften garlic in butter, add tomatoes and cook until saucy. Wilt the spinach in the sauce. Toss with pasta and enough cooking water to coat."
+      ],
+      "hi": [
+        "नमकीन पानी में पास्ता नरम होने तक उबालें। छानने से पहले आधा कप पानी बचाएँ।",
+        "मक्खन में लहसुन भूनें। टमाटर डालकर गलाएँ और पालक डालकर नरम करें। पास्ता और थोड़ा बचा पानी मिलाकर परोसें।"
+      ]
+    },
+    "appliances": [
+      "I"
+    ]
+  },
+  {
+    "name": "Christmas Beetroot Cream Pasta",
+    "hindi": "क्रिसमस चुकंदर क्रीम पास्ता",
+    "region": "International / National",
+    "course": "Main",
+    "occasion": "Christmas",
+    "prep": 10,
+    "cook": 25,
+    "serves": 2,
+    "pantry": [
+      "pasta",
+      "beetroot",
+      "cream",
+      "garlic",
+      "butter"
+    ],
+    "amounts": {
+      "en": [
+        "160 g pasta, 1 small peeled and grated beetroot, ¼ cup cream, 2 minced garlic cloves, 1 tbsp butter and salt to taste"
+      ],
+      "hi": [
+        "160 ग्राम पास्ता, 1 छोटा छिला और कद्दूकस चुकंदर, ¼ कप क्रीम, 2 कटी लहसुन कलियाँ, 1 बड़ा चम्मच मक्खन और स्वादानुसार नमक"
+      ]
+    },
+    "steps": {
+      "en": [
+        "Soften garlic in butter. Add beetroot, salt and a splash of water. Cover and cook 12–15 minutes until tender.",
+        "Meanwhile boil pasta, saving half a cup of cooking water. Stir cream into the beetroot over low heat and toss with drained pasta, loosening with the reserved water."
+      ],
+      "hi": [
+        "मक्खन में लहसुन भूनें। चुकंदर, नमक और थोड़ा पानी डालें। ढककर 12–15 मिनट नरम होने तक पकाएँ।",
+        "इस बीच पास्ता उबालें और आधा कप पानी बचाएँ। धीमी आँच पर चुकंदर में क्रीम मिलाएँ। छना पास्ता डालें और बचे पानी से सॉस पतला करें।"
+      ]
+    },
+    "appliances": [
+      "I"
+    ]
   }
 ];

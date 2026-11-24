@@ -535,11 +535,37 @@ test('the home carousel rotates, supports manual navigation and opens Christmas 
     await page.emulateMedia({reducedMotion: 'reduce'});
     await dots.nth(2).tap();
     assert.equal(await dots.nth(2).getAttribute('aria-current'), 'true');
-    await page.getByRole('button', {name: 'See more Christmas dish suggestions'}).tap();
-    assert.equal(await page.locator('#rq').inputValue(), 'Christmas');
-    const results = page.locator('#results');
-    assert.match(await results.textContent(), /Eggless Christmas Plum Cake/);
-    assert.match(await results.textContent(), /Goan Neureos/);
+    await page.locator('.hero-christmas').tap({position:{x:340,y:40}});
+    const collection = page.locator('#christmas-page');
+    await collection.waitFor();
+    assert.equal(new URL(page.url()).hash, '#christmas');
+    const cards = collection.locator('article');
+    assert.deepEqual((await cards.locator('h3').allTextContents()).sort(),
+      await page.evaluate(() => MEALS.filter(m => m[8].includes('Christmas')).map(m => m[0]).sort()));
+    assert.equal(await cards.count(), 12);
+    assert.equal(await page.locator('#planner').isVisible(), false);
+
+    const cooler = cards.filter({hasText:'Christmas Orange Mint Cooler'});
+    await page.evaluate(() => { have.orange = 1; delete have.mint; delete cart.mint; all(); });
+    assert.match(await cooler.locator('p').first().innerText(), /Orange/i);
+    await cooler.getByRole('button', {name:'Add missing ingredients'}).tap();
+    assert.deepEqual(await page.evaluate(() => [cartQuantity('mint'), cartQuantity('orange')]), [1,0]);
+    await cooler.getByRole('button', {name:'View recipe'}).tap();
+    assert.equal(await page.locator('#dish-title').innerText(), 'Christmas Orange Mint Cooler');
+    await page.locator('#dish-detail-close').tap();
+    await collection.getByRole('button', {name:'Shopping list'}).tap();
+    await page.locator('[data-vs="order"][role="dialog"]').waitFor();
+    await page.keyboard.press('Escape');
+    await page.reload();
+    await collection.waitFor();
+    assert.equal(await cooler.getByRole('button', {name:'Added ✓'}).isDisabled(), true);
+    await collection.getByRole('link', {name:'Back to home'}).tap();
+    await collection.waitFor({state:'hidden'});
+    assert.equal(await page.locator('#rq').inputValue(), '');
+    await page.goForward();
+    await collection.waitFor();
+    await page.goBack();
+    await collection.waitFor({state:'hidden'});
 
     const audit = await page.evaluate(() => ({
       missing: SEASONAL_RECIPES.flatMap(recipe => recipe.pantry.filter(id => !NAME[id.replace(/\?$/, '')])),

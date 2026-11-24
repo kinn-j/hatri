@@ -143,6 +143,19 @@ a.btn{display:inline-block;text-decoration:none}
 .hero h1,.hero h2{font-family:Georgia,serif;font-size:clamp(24px,4.2vw,44px);line-height:1.05;font-weight:normal;margin:0;color:#fff}
 .hero p{font-size:14px;line-height:1.4;margin:8px 0 0;color:#eff6ec}
 .hero-cta{margin-top:10px;color:#401f24;background:#fff2db;border-color:transparent}
+.hero-christmas{position:relative}
+.hero-cta{display:inline-block;text-decoration:none}
+.hero-cta::after{content:"";position:absolute;inset:0}
+body.christmas-open :is(.nav,#top,.sect,.fab,.tabbar,.install,#features,#kitchen,.foot),
+body.christmas-open:not(.sh-order) #planner,
+body.christmas-open.sh-order #planner > :not([data-vs="order"]){display:none!important}
+#christmas-page{display:block;max-width:920px;margin:auto;padding:20px 16px 44px}
+#christmas-page[hidden]{display:none}
+#christmas-page h1{font:normal clamp(30px,5vw,46px) Georgia,serif;margin:22px 0 12px}
+.christmas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px}
+.christmas-grid article{display:flex;flex-direction:column;gap:10px}
+.christmas-grid h3,.christmas-grid p{margin:0}
+.christmas-grid .row{margin-top:auto}
 .hero-controls{position:absolute;bottom:3px;left:0;right:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .hero-controls button{
   pointer-events:auto;width:32px;height:32px;padding:0;border:0;border-radius:50%;
@@ -406,7 +419,7 @@ body.sh-plan [data-vs="plan"] #cuis{border-top:0}
     </div></div>
     <div class="hero-slide hero-christmas" inert aria-hidden="true"><div class="hero-in">
       <h2 translate="no"><span class="en">Christmas recipes</span><span class="hi">क्रिसमस रेसिपी</span></h2>
-      <button type="button" class="btn sm hero-cta" translate="no"><span class="en">See more Christmas dish suggestions</span><span class="hi">और क्रिसमस व्यंजन देखें</span></button>
+      <a href="#christmas" class="btn sm hero-cta" translate="no"><span class="en">See more Christmas dish suggestions</span><span class="hi">और क्रिसमस व्यंजन देखें</span></a>
     </div></div>
   </div>
   <div class="hero-controls" role="group" aria-label="Slide controls">
@@ -417,6 +430,12 @@ body.sh-plan [data-vs="plan"] #cuis{border-top:0}
   </div>
 </section>
 <div class="sect"><h2>Plan tonight’s meal</h2><p class="sub">Start with the pantry on the left, then set your occasion and time.</p></div>
+<main id="christmas-page" hidden>
+  <a class="btn sm" id="christmas-back" href="#top"><span class="en">← Back to home</span><span class="hi">← होम पर वापस</span></a>
+  <h1 tabindex="-1"><span class="en">Christmas recipes</span><span class="hi">क्रिसमस रेसिपी</span></h1>
+  <button class="btn sm" data-view="order"><span class="en">Shopping list</span><span class="hi">खरीदारी सूची</span></button>
+  <div id="christmas-recipes" translate="no"></div>
+</main>
 <main id="planner">
   <section class="left" data-vs="pantry">
     <div class="card">
@@ -1154,7 +1173,7 @@ function suggestionGroups(items,meals){
   }).join("");
 }
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-show-more]");if(!b)return;var key=b.dataset.showMore;SHOW_COUNTS[key]=(SHOW_COUNTS[key]||SHOW_BATCH)+SHOW_BATCH;renderResults();var target=document.getElementById("group-"+key);if(target&&key!=="search")target.scrollIntoView({block:"nearest"})});
-function all(){renderModes();renderCuis();renderIngs();renderResults();renderCart();renderKitchen();save()}
+function all(){renderModes();renderCuis();renderIngs();renderResults();renderCart();renderKitchen();if(document.body.classList.contains("christmas-open"))renderChristmasRecipes();save()}
 document.addEventListener("click",function(e){
   var t=e.target.closest("button");if(!t)return;
   if(t.dataset.occ){occ=t.dataset.occ;renderCuis();renderResults()}
