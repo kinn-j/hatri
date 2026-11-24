@@ -609,13 +609,19 @@ test('the home carousel rotates, supports manual navigation and opens Christmas 
   const {page, context} = await open({width: 390, height: 844}, {reducedMotion: 'no-preference', hasTouch: true});
   try {
     const dots = page.locator('.hero-dot');
-    assert.equal(await dots.count(), 3);
+    assert.equal(await dots.count(), 4);
     await page.waitForFunction(() => document.querySelectorAll('.hero-dot')[1].ariaCurrent === 'true');
     await page.waitForFunction(() => document.querySelectorAll('.hero-dot')[2].ariaCurrent === 'true');
     await dots.nth(0).tap();
     assert.equal(await dots.nth(0).getAttribute('aria-current'), 'true');
 
     await page.emulateMedia({reducedMotion: 'reduce'});
+    await dots.nth(3).tap();
+    await page.locator('#winter-link').tap();
+    await page.locator('#winter-recipes article').first().waitFor();
+    await page.locator('#winter-back').tap();
+    await page.locator('#winter-page').waitFor({state:'hidden'});
+    assert.deepEqual(await page.evaluate(() => MEALS.filter(m => m[0] === 'Oats Idli').map(recipeLabels)), [['South Indian', 'Kids Lunchbox']]);
     await dots.nth(2).tap();
     assert.equal(await dots.nth(2).getAttribute('aria-current'), 'true');
     await page.locator('.hero-christmas').tap({position:{x:340,y:40}});
@@ -808,10 +814,15 @@ test('Hindi cart controls remain tappable at 320 and 390 pixels with a failed ph
   }
 });
 
+async function openWinterCollection(page) {
+  await page.getByRole('button', {name: 'Show winter recipes slide'}).click();
+  await page.getByRole('link', {name: 'Winter recipes & soups'}).click();
+}
+
 test('winter collection registers 50 unique recipes with working images and pantry ingredients', async () => {
   const {page, context} = await open();
   try {
-    await page.getByRole('link', {name: 'Winter recipes & soups'}).click();
+    await openWinterCollection(page);
     const winter = page.locator('#winter-page');
     await winter.waitFor();
     assert.equal(new URL(page.url()).hash, '#winter');
@@ -901,7 +912,8 @@ test('activity writes are opt-in, scoped to the signed-in account and omit searc
     await page.getByRole('button', {name: 'Close profile'}).click();
     await page.locator('#rq').fill('test-only search text');
     await page.waitForFunction(() => activityWrites.some(({data}) => data.event === 'recipe_search'));
-    await page.getByRole('link', {name: 'Winter recipes & soups'}).click();
+    await page.locator('#rq').fill('');
+    await openWinterCollection(page);
     await page.locator('#winter-recipes').getByRole('button', {name: 'View recipe'}).first().click();
     const records = await page.evaluate(() => activityWrites);
     assert.deepEqual(records.map(({data}) => [data.event, data.surface, data.detail]), [
@@ -918,7 +930,7 @@ test('activity writes are opt-in, scoped to the signed-in account and omit searc
     await consent.uncheck();
     const beforeOptOut = await page.evaluate(() => activityWrites.length);
     await page.getByRole('button', {name: 'Close profile'}).click();
-    await page.getByRole('link', {name: 'Winter recipes & soups'}).click();
+    await openWinterCollection(page);
     await page.evaluate(() => testAuth('test-two'));
     await page.locator('#winter-back').click();
     await profile.click();

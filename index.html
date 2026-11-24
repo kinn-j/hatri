@@ -145,6 +145,7 @@ a.btn{display:inline-block;text-decoration:none}
 .hero-cta{margin-top:10px;color:#401f24;background:#fff2db;border-color:transparent}
 .hero-christmas{position:relative}
 .hero-cta{display:inline-block;text-decoration:none}
+.hero-cta.winter-title{margin:0;color:inherit;background:transparent}
 .hero-cta::after{content:"";position:absolute;inset:0}
 body.collection-open :is(.nav,#top,.sect,.fab,.tabbar,.install,#features,#kitchen,.foot),
 body.collection-open:not(.sh-order) #planner,
@@ -157,7 +158,7 @@ body.collection-open.sh-order #planner > :not([data-vs="order"]){display:none!im
 .collection-grid h3,.collection-grid p{margin:0}
 .collection-grid .row{margin-top:auto}
 .recipe-collection .collection-grid img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;background:var(--accent-bg)}
-#winter-link{display:inline-block;text-decoration:none;margin:4px 0}
+.hero-winter{position:relative;--hero-color:#382819;--hero-image:url("./images/mushroom-barley-soup.webp")}
 #winter-page .collection-links{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .hero-controls{position:absolute;bottom:3px;left:0;right:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .hero-controls button{
@@ -424,11 +425,15 @@ img.recipe-photo:not([hidden])+.recipe-photo-fallback{display:none}
       <h2 translate="no"><span class="en">Christmas recipes</span><span class="hi">क्रिसमस रेसिपी</span></h2>
       <a href="#christmas" class="btn sm hero-cta" translate="no"><span class="en">See more Christmas dish suggestions</span><span class="hi">और क्रिसमस व्यंजन देखें</span></a>
     </div></div>
+    <div class="hero-slide hero-winter" inert aria-hidden="true"><div class="hero-in">
+      <h2 translate="no"><a href="#winter" id="winter-link" class="hero-cta winter-title"><span class="en">Winter recipes &amp; soups</span><span class="hi">सर्दियों की रेसिपी और सूप</span></a></h2>
+    </div></div>
   </div>
   <div class="hero-controls" role="group" aria-label="Slide controls">
     <button class="hero-dot" type="button" aria-label="Show pantry slide" aria-current="true"></button>
     <button class="hero-dot" type="button" aria-label="Show dinner ideas slide" aria-current="false"></button>
     <button class="hero-dot" type="button" aria-label="Show Christmas slide" aria-current="false"></button>
+    <button class="hero-dot" type="button" aria-label="Show winter recipes slide" aria-current="false"></button>
     <button class="hero-motion" type="button" aria-label="Pause slides"><span aria-hidden="true">Ⅱ</span></button>
   </div>
 </section>
@@ -471,7 +476,7 @@ img.recipe-photo:not([hidden])+.recipe-photo-fallback{display:none}
       <div id="cart"></div>
     </div>
   </section>
-  <section data-vs="recipes"><a class="btn sm" id="winter-link" href="#winter"><span class="en">Winter recipes &amp; soups</span><span class="hi">सर्दियों की रेसिपी और सूप</span></a><div class="mhead"><div class="mstat" id="mstat"></div></div><div class="topbar">
+  <section data-vs="recipes"><div class="mhead"><div class="mstat" id="mstat"></div></div><div class="topbar">
     <div class="hstl" id="hostelSettings" hidden>
       <h2>🎒 Hostel mode — what do you have?</h2>
       <div class="chips">
@@ -1144,7 +1149,7 @@ function renderSearch(r,q){renderHTML($("pick"),"");var tk=q.split(/\s+/).filter
     var reel=RECIPE_REELS[m[0]],video=reel?" instagram reel इंस्टाग्राम रील "+reel.creator:"";
     var ingredients=m[5].map(function(i){var n=NAME[i.replace("?","")]||"";return n+" "+(HI[n]||"")}).join(" ");
     var keywords=(MEASURED_RECIPES[m[0]]||{}).keywords||"";
-    var hay=(nm+" "+m[6]+" "+m[9]+" "+(HI[m[9]]||"")+vrat+video+" "+ingredients+" "+keywords).toLowerCase();
+    var hay=(nm+" "+recipeLabels(m).join(" ")+" "+m[9]+" "+(HI[m[9]]||"")+vrat+video+" "+ingredients+" "+keywords).toLowerCase();
     if(!tk.every(function(t){return hay.indexOf(t)>-1}))return null;
     var dish=dishState(m);
     dish.nm=tk.every(function(t){return nm.indexOf(t)>-1})?1:0;
@@ -2295,7 +2300,7 @@ function migrateWinterOccasion(filters, includesWinter){
   if(!includesWinter&&full(filters,oIds().filter(function(id){return id!=="Winter"})))filters.Winter=1;
 }
 migrateWinterOccasion(OS,_f&&_f.winter);
-function regOK(m){return !restr(RS,rIds())||!!RS[regionOf(m)]}
+function regOK(m){return !restr(RS,rIds())||!!RS[regionOf(m)]||recipeLabels(m).some(label=>isReg(label)&&RS[label])}
 function fitsTime(minutes){return !restr(TS,tIds())||TB.some(function(b){return TS[b[0]]&&minutes>b[2]&&minutes<=b[3]})}
 function timeOK(m){return fitsTime(effP(m)+m[3])}
 function occOK(m){return !restr(OS,oIds())||m[8].some(function(o){return OS[o]})}
@@ -2645,12 +2650,29 @@ NC.forEach(function(r){if(MEALS.some(function(m){return m[0]===r[0]}))return;MEA
 Object.assign(COURSEO,CO);
 try{Object.assign(HI,{"🧊 No-cook":"🧊 बिना पकाए","No-cook":"बिना पकाए"})}catch(e){}})();
 
+// Consolidate after indexed pantry corrections, before building the category indexes.
+function recipeLabels(recipe){return recipe.labels || [recipe[6]]}
+(function consolidateRecipes(){
+  const byName = new Map();
+  MEALS = MEALS.filter(recipe => {
+    const existing = byName.get(recipe[0]);
+    if (!existing) {
+      byName.set(recipe[0], recipe);
+      return true;
+    }
+    existing.labels = [...new Set([...recipeLabels(existing), recipe[6]])];
+    existing[8] = [...new Set([...existing[8], ...recipe[8]])];
+    if (!isVegetarianDish(recipe)) existing[1] = 0;
+    return false;
+  });
+})();
+
 /* ===== Multi-category mapping: one dish can sit in several categories ===== */
 var CATX={},CATC=null,MBY=null;
 var CLX={Main:"🥘 Curry/dal",Bread:"🫓 Bread",Rice:"🍚 Rice",Complete:"🍲 One-pot",Sweet:"🍮 Sweet",Side:"🥣 Side",Snack:"🥪 Snack",Chaat:"🥗 Chaat",NoCook:"🧊 No-cook",Pickle:"🥫 Pickle/jam",Baked:"🍰 Baked",Drink:"🥤 Drink"};
 function catsRaw(m){var n=m[0],l=n.toLowerCase(),a=[course(n)],c=a[0];
   function add(x){if(a.indexOf(x)<0)a.push(x)}
-  if(m[6]==="Street & chaat"||/chaat/i.test(n)){add("Chaat");if(c!=="Main"&&c!=="Complete")add("Snack")}
+  if(recipeLabels(m).includes("Street & chaat")||/chaat/i.test(n)){add("Chaat");if(c!=="Main"&&c!=="Complete")add("Snack")}
   if(c==="Baked"&&!/savory|shepherd|pot pie/.test(l)&&/cake|brownie|cookie|muffin|pudding|doughnut|cinnamon roll|nankhatai|banana bread|\bpie\b|tart|cheesecake|biscuit|truffle/.test(l))add("Sweet");
   if(c==="Baked"&&/naan|kulcha|pav|dinner roll|buns/.test(l))add("Bread");
   if(c==="Baked"&&/garlic bread|pizza|puff|focaccia|breadstick|bites|samosa|roll/.test(l))add("Snack");
