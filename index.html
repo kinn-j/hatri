@@ -1447,10 +1447,10 @@ function recipePanel(m,expanded){
     "<p class='note'>"+T("The method is currently unavailable.","बनाने की विधि अभी उपलब्ध नहीं है।")+"</p>";
   var otherLanguage=LANG==="hi"?"en":"hi";
   var switcher="<button type='button' class='btn sm recipe-language' translate='no' lang='"+otherLanguage+"' data-recipe-language='"+otherLanguage+"'>"+(otherLanguage==="hi"?"हिन्दी":"English")+"</button>";
-  return watch+"<div class='recipe-controls'>"+switcher+"<details class='steps' data-sl='"+sl+"'"+(expanded||openR[sl]?" open":"")+"><summary>📖 Recipe</summary>"+
+  return watch+(expanded?"<div class='recipe-controls'>"+switcher:"")+"<details class='steps' data-sl='"+sl+"'"+(expanded||openR[sl]?" open":"")+"><summary>📖 Recipe</summary>"+
     "<p class='recipe-section'><b>"+ingredientTitle+"</b></p>"+ingredients+fasting+
     "<p class='recipe-section'><b>"+methodTitle+"</b></p>"+steps+
-    (safety?"<p class='note'>"+safety+"</p>":"")+credit+rateRow(m)+"</details></div>";
+    (safety?"<p class='note'>"+safety+"</p>":"")+credit+rateRow(m)+"</details>"+(expanded?"</div>":"");
 }
 function renderKitchen(){var k=$("mykit");if(!k)return;
  if(!ME){k.innerHTML="<p class='sub'>Sign in to keep your ratings and photos.</p>";return}
