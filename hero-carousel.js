@@ -16,7 +16,7 @@
     if (paused || hovered || swipe || reduced.matches || document.hidden ||
         (hero.contains(document.activeElement) && document.activeElement !== motion) ||
         !hero.getClientRects().length) return;
-    timer = setTimeout(() => show(current + 1), 2000);
+    timer = setTimeout(() => show(current + 1), 3000);
   }
 
   function show(index) {
@@ -127,7 +127,7 @@ function renderActiveCollection() {
 
 (function () {
   const collections = {
-    christmas: { page: $("christmas-page"), trigger: document.querySelector(".hero-cta") },
+    christmas: { page: $("christmas-page"), trigger: document.querySelector(".hero-christmas .hero-cta") },
     winter: { page: $("winter-page"), trigger: $("winter-link") }
   };
   const homeTitle = document.title;

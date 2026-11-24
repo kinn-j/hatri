@@ -609,13 +609,19 @@ test('the home carousel rotates, supports manual navigation and opens Christmas 
   const {page, context} = await open({width: 390, height: 844}, {reducedMotion: 'no-preference', hasTouch: true});
   try {
     const dots = page.locator('.hero-dot');
-    assert.equal(await dots.count(), 3);
+    assert.equal(await dots.count(), 4);
     await page.waitForFunction(() => document.querySelectorAll('.hero-dot')[1].ariaCurrent === 'true');
     await page.waitForFunction(() => document.querySelectorAll('.hero-dot')[2].ariaCurrent === 'true');
     await dots.nth(0).tap();
     assert.equal(await dots.nth(0).getAttribute('aria-current'), 'true');
 
     await page.emulateMedia({reducedMotion: 'reduce'});
+    await dots.nth(3).tap();
+    await page.locator('#winter-link').tap();
+    await page.locator('#winter-recipes article').first().waitFor();
+    await page.locator('#winter-back').tap();
+    await page.locator('#winter-page').waitFor({state:'hidden'});
+    assert.deepEqual(await page.evaluate(() => MEALS.filter(m => m[0] === 'Oats Idli').map(recipeLabels)), [['South Indian', 'Kids Lunchbox']]);
     await dots.nth(2).tap();
     assert.equal(await dots.nth(2).getAttribute('aria-current'), 'true');
     await page.locator('.hero-christmas').tap({position:{x:340,y:40}});
