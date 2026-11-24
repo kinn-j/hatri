@@ -814,10 +814,15 @@ test('Hindi cart controls remain tappable at 320 and 390 pixels with a failed ph
   }
 });
 
+async function openWinterCollection(page) {
+  await page.getByRole('button', {name: 'Show winter recipes slide'}).click();
+  await page.getByRole('link', {name: 'Winter recipes & soups'}).click();
+}
+
 test('winter collection registers 50 unique recipes with working images and pantry ingredients', async () => {
   const {page, context} = await open();
   try {
-    await page.getByRole('link', {name: 'Winter recipes & soups'}).click();
+    await openWinterCollection(page);
     const winter = page.locator('#winter-page');
     await winter.waitFor();
     assert.equal(new URL(page.url()).hash, '#winter');
@@ -907,7 +912,7 @@ test('activity writes are opt-in, scoped to the signed-in account and omit searc
     await page.getByRole('button', {name: 'Close profile'}).click();
     await page.locator('#rq').fill('test-only search text');
     await page.waitForFunction(() => activityWrites.some(({data}) => data.event === 'recipe_search'));
-    await page.getByRole('link', {name: 'Winter recipes & soups'}).click();
+    await openWinterCollection(page);
     await page.locator('#winter-recipes').getByRole('button', {name: 'View recipe'}).first().click();
     const records = await page.evaluate(() => activityWrites);
     assert.deepEqual(records.map(({data}) => [data.event, data.surface, data.detail]), [
@@ -924,7 +929,7 @@ test('activity writes are opt-in, scoped to the signed-in account and omit searc
     await consent.uncheck();
     const beforeOptOut = await page.evaluate(() => activityWrites.length);
     await page.getByRole('button', {name: 'Close profile'}).click();
-    await page.getByRole('link', {name: 'Winter recipes & soups'}).click();
+    await openWinterCollection(page);
     await page.evaluate(() => testAuth('test-two'));
     await page.locator('#winter-back').click();
     await profile.click();
