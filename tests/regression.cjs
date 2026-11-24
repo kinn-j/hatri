@@ -196,6 +196,65 @@ test('recipe details cover the entire live catalog and render measured methods i
   }
 });
 
+test('every live recipe has a decodable full-size dish photo', {timeout: 60_000}, async () => {
+  const {page, context} = await open();
+  try {
+    await page.waitForFunction(() => Object.keys(IMG).length > 0);
+    const audit = await page.evaluate(async () => {
+      const missing = [];
+      const invalid = [];
+      const files = new Map();
+      for (const [name] of MEALS) {
+        const photo = IMG[pslug(name)];
+        if (photo) files.set(photoSrc(photo), name);
+        else missing.push(name);
+      }
+      const entries = [...files];
+      for (let batch = 0; batch < entries.length; batch += 24) {
+        await Promise.all(entries.slice(batch, batch + 24).map(async ([src, name]) => {
+          const photo = new Image();
+          photo.src = src;
+          try {
+            await photo.decode();
+            if (Math.min(photo.naturalWidth, photo.naturalHeight) < 200) {
+              invalid.push([name, src, `${photo.naturalWidth}×${photo.naturalHeight}`]);
+            }
+          } catch {
+            invalid.push([name, src, 'could not decode']);
+          }
+        }));
+      }
+      return {missing: [...new Set(missing)], invalid, photoCount: files.size};
+    });
+    assert.deepEqual(audit.missing, []);
+    assert.deepEqual(audit.invalid, []);
+    assert.ok(audit.photoCount > 0);
+  } finally {
+    await context.close();
+  }
+});
+
+test('a failed recipe photo falls back on the recipe card and in the detail dialog', async () => {
+  const {page, context} = await open();
+  try {
+    await page.waitForFunction(() => IMG['bhindi-masala']);
+    await page.evaluate(() => { IMG['bhindi-masala'] = 'images/audit-missing-bhindi-masala.webp'; });
+    await page.locator('#rq').fill('bhindi masala');
+    const card = page.locator('#results [data-recipe="Bhindi%20Masala"] > summary');
+    const thumbnail = card.locator('img');
+    await card.scrollIntoViewIfNeeded();
+    await card.locator('.recipe-photo-fallback').waitFor();
+    assert.equal(await thumbnail.getAttribute('hidden'), '');
+    await card.click();
+    const dialog = page.locator('#dtray[open]');
+    await dialog.locator('.dt-photo .recipe-photo-fallback').waitFor();
+    assert.equal(await dialog.locator('.dt-photo img').getAttribute('hidden'), '');
+    assert.equal(await dialog.locator('#dish-title').innerText(), 'Bhindi Masala');
+  } finally {
+    await context.close();
+  }
+});
+
 test('dish photo and text open the same full recipe on mobile and desktop', async () => {
   for (const width of [390, 1366]) {
     const {page, context} = await open({width, height: 844});
@@ -543,6 +602,8 @@ test('the home carousel rotates, supports manual navigation and opens Christmas 
     assert.deepEqual((await cards.locator('h3').allTextContents()).sort(),
       await page.evaluate(() => MEALS.filter(m => m[8].includes('Christmas')).map(m => m[0]).sort()));
     assert.equal(await cards.count(), 12);
+    await page.waitForFunction(() => document.querySelectorAll('#christmas-recipes .recipe-photo').length === 12);
+    await cards.first().locator('img').evaluate(img => img.decode());
     assert.equal(await page.locator('#planner').isVisible(), false);
 
     const cooler = cards.filter({hasText:'Christmas Orange Mint Cooler'});

@@ -20,7 +20,7 @@ planner’s occasion filters. See the [50 new dishes](WINTER_RECIPES.md).
 - `index.html` — Hatri meal planner, adapted for independent website hosting and bundled photo paths.
 - `images/` — Bundled food images in WebP format, including archived photos and newer generated images.
 - `images/photos.json` — maps recipe slugs to image files. Recipes with matching dishes can share an image.
-- `images/IMAGE_INVENTORY.csv` — records original image name and source ZIP for auditing.
+- `images/IMAGE_INVENTORY.csv` — records image sources and dimensions, including generated additions and replacements.
 - `icons/` — favicon and home-screen icons from original HTML.
 - `manifest.webmanifest` — installable-app configuration.
 - `sw.js` — basic offline caching for site shell and previously visited images.
@@ -48,17 +48,17 @@ Run `python -m http.server 8000` from this folder and visit `http://localhost:80
 - GitHub Pages repositories are public. Do not upload credentials, personal data, or confidential records.
 - Recheck recipes, image accuracy and ingredients before public commercial release.
 
-## Image inventory
+## Original photo archive import
 
 - 28 source photo archives inspected
 - 582 unique images included, with duplicate dish names resolved by preferring newer photo batches
 - 331 duplicate photo names skipped
 - 0 image files skipped due to format/content issues
 
+## Recipe image coverage
 
-## Matching coverage
-
-- All 750 distinct recipe names in `index.html` have an image.
-- `images/MISSING_RECIPE_PHOTOS.csv` contains zero missing recipes.
-- `images/EXTRA_PHOTOS_NOT_CURRENTLY_USED.csv` lists 59 image files that no current recipe uses.
-
+Every dish in the live catalog has a bundled image. The full-catalog browser
+test checks the photo mapping, successful decoding, and a minimum image edge
+of 200 pixels. The [missing-image report](images/MISSING_RECIPE_PHOTOS.csv) is
+empty. The [unused-image inventory](images/EXTRA_PHOTOS_NOT_CURRENTLY_USED.csv)
+lists bundled photos available for future use.

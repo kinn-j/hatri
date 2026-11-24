@@ -102,7 +102,7 @@ function renderActiveCollection() {
     if (!recipe[8].includes(occasion) || (winter && !includeNonVeg && !isVegetarianDish(recipe))) return;
     const dish = dishState(recipe);
     const category = winter && MEASURED_RECIPES[dish.n]?.soup ? "Soup" : course(dish.n);
-    const photo = winter && IMG[pslug(dish.n)];
+    const photo = IMG[pslug(dish.n)];
     if (!groups.has(category)) groups.set(category, []);
     const onList = dish.x.filter(id => cartQuantity(id));
     const missing = dish.x.filter(id => !cartQuantity(id));

@@ -156,7 +156,7 @@ body.collection-open.sh-order #planner > :not([data-vs="order"]){display:none!im
 .collection-grid article{display:flex;flex-direction:column;gap:10px}
 .collection-grid h3,.collection-grid p{margin:0}
 .collection-grid .row{margin-top:auto}
-#winter-page .collection-grid img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:10px;background:var(--accent-bg)}
+.recipe-collection .collection-grid img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;background:var(--accent-bg)}
 #winter-link{display:inline-block;text-decoration:none;margin:4px 0}
 #winter-page .collection-links{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .hero-controls{position:absolute;bottom:3px;left:0;right:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
@@ -383,7 +383,7 @@ body.sh-plan [data-vs="plan"] #cuis{border-top:0}
 .dt-photo{position:relative;display:grid;place-items:center;aspect-ratio:16/9;max-height:44dvh;margin:0 -16px 14px;background:var(--accent-bg);overflow:hidden}
 .dt-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#10231a}
 .dt-photo span{font-size:64px}
-.dt-photo img:not([hidden])+span{display:none}
+img.recipe-photo:not([hidden])+.recipe-photo-fallback{display:none}
 .dt-description{margin:0 0 12px}
 .dish-opener{appearance:none;border:0;background:none;padding:0;color:inherit;text-align:start;cursor:pointer;font:inherit}
 .dish-opener:focus-visible,#dtray .dt-x:focus-visible,.tile>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
@@ -1119,8 +1119,8 @@ function card(m,expanded){
   var ready=m.p+m.c+(m.s&&!isLong(m)&&!m.ov?m.s[0]:0),c=CCOL[m.cu]||CCOL.Everyday;
   var diet=expanded?(m.v?T("Vegetarian","शाकाहारी"):T("Contains non-vegetarian ingredients","मांसाहारी सामग्री"))+" · ":"";
   var sl=pslug(m.n),im=IMG[sl];
-  var thumbnail=im?"<span class='tile photo'>"+recipeImage(im)+"</span>":
-    "<span class='tile' aria-hidden='true' style='background:linear-gradient(135deg,"+c[0]+","+c[1]+")'>"+emo(m.n)+"</span>";
+  var thumbnail="<span class='tile"+(im?" photo":"")+"' aria-hidden='true' style='background:linear-gradient(135deg,"+c[0]+","+c[1]+")'>"+
+    (im?recipeImage(im):"")+"<span class='recipe-photo-fallback'>"+emo(m.n)+"</span></span>";
   var opener=expanded?"":"<button type='button' class='dish-opener meal-dish-opener' data-open-dish='"+MEALS.indexOf(m.recipe)+"' aria-haspopup='dialog' aria-controls='dtray'>"+thumbnail+"<b>"+escapeHTML(dn(m.n))+"</b></button>";
   var link="<a href='https://www.google.com/search?tbm=isch&q="+encodeURIComponent(m.n+" recipe")+"' target='_blank' rel='noopener'>📷 photos</a>";
   return "<div class='meal' data-recipe='"+encodeURIComponent(m.n)+"'><div class='mh'><div>"+opener+"<div class='meta'><span class='dot "+(m.v?"veg":"nv")+"'></span>"+diet+m.cu+" · "+({Light:"🪶 Light",Medium:"⚖️ Medium",Heavy:"🔥 Heavy"})[m.w]+" · Prep "+m.p+" min · "+(m.c?"Cook "+m.c+" min":"No cooking")+" · Ready in ~"+ready+" min"+(m.s&&!isLong(m)&&!m.ov?" incl. soak":"")+(m.ov?" · soak while you chop":"")+(m.f?" · 🎉 "+m.f:"")+(ptag(m)?" · "+ptag(m):"")+" · "+link+(UPL?" · <button class='x' data-up='"+sl+"' style='font-size:12px;color:var(--accent)'>📷 "+(im?"change":"add")+" photo</button>":"")+"</div></div>"+
@@ -1286,7 +1286,7 @@ $("basics").addEventListener("change",function(){toast(this.checked?"Assuming oi
 var IMG={},UPL=false,db=null,assets=null,upSlug=null;
 // Published sites use checked-in photos; Claude artifacts keep their blob URLs.
 function photoSrc(id){return id.indexOf("images/")===0?id:"/_blob/"+id}
-function recipeImage(id,eager){return "<img alt='' "+(eager?"":"loading='lazy' ")+"decoding='async' src='"+escapeHTML(photoSrc(id))+"'>"}
+function recipeImage(id,eager){return "<img class='recipe-photo' alt='' "+(eager?"":"loading='lazy' ")+"decoding='async' src='"+escapeHTML(photoSrc(id))+"'>"}
 (function loadPublishedPhotos(){
   if(window.claude&&claude.use)return;
   fetch("images/photos.json").then(function(r){if(!r.ok)throw Error("Photo index unavailable");return r.json()}).then(function(files){
@@ -1582,7 +1582,7 @@ function buildMeals(){
 function mealTileHTML(c,force){
   var items=c.items,n=Math.min(items.length,4),open=force||!!MOPEN[c.key];
   var ims=items.slice(0,4).map(function(m,i){var im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;
-    return "<span class='mc' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im):"<i>"+emo(m.n)+"</i>")+(i===3&&items.length>4?"<em>+"+(items.length-4)+"</em>":"")+"</span>"}).join("");
+    return "<span class='mc' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im):"")+"<i class='recipe-photo-fallback' aria-hidden='true'>"+emo(m.n)+"</i>"+(i===3&&items.length>4?"<em>+"+(items.length-4)+"</em>":"")+"</span>"}).join("");
   var ok=!c.miss.length,done=cartDishComplete(c.key,items.flatMap(function(m){return m.ing}),c.miss),protein=protBadge(c);
   return "<details class='mtile' data-mk='"+encodeURIComponent(c.key)+"'"+(open?" open":"")+"><summary><div class='mos n"+n+"'>"+ims+
     "<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+c.miss.length+" to buy")+"</span><span class='tm'>⏱ ~"+c.t+" min</span></div>"+
@@ -2216,7 +2216,7 @@ function renderIngsM(){var q=$("q").value.trim().toLowerCase(),vis=CATS.filter(f
   $("count").textContent="· "+Object.keys(have).length+" selected"}
 function tileHTML(m){var ok=!m.x.length,im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;
  return '<details class="tile" data-recipe="'+encodeURIComponent(m.n)+'">'+
-  "<summary data-open-dish='"+MEALS.indexOf(m.recipe)+"' aria-haspopup='dialog' aria-controls='dtray'><div class='ti' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im):"<span class='em'>"+emo(m.n)+"</span>")+"<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+m.x.length+" to buy")+"</span><span class='vg "+(m.v?"v":"n")+"'></span><span class='tm'>⏱ "+(m.p+m.c)+" min"+(isLong(m)?" + "+Math.round(m.s[0]/60)+" h soak":"")+"</span></div><div class='tx'><b>"+dn(m.n)+"</b><small>"+(ok?"Everything is at home":"Need "+m.x.map(function(i){return NAME[i]}).join(", "))+"</small></div></summary>"+card(m)+"</details>"}
+  "<summary data-open-dish='"+MEALS.indexOf(m.recipe)+"' aria-haspopup='dialog' aria-controls='dtray'><div class='ti' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im):"")+"<span class='em recipe-photo-fallback' aria-hidden='true'>"+emo(m.n)+"</span>"+"<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+m.x.length+" to buy")+"</span><span class='vg "+(m.v?"v":"n")+"'></span><span class='tm'>⏱ "+(m.p+m.c)+" min"+(isLong(m)?" + "+Math.round(m.s[0]/60)+" h soak":"")+"</span></div><div class='tx'><b>"+dn(m.n)+"</b><small>"+(ok?"Everything is at home":"Need "+m.x.map(function(i){return NAME[i]}).join(", "))+"</small></div></summary>"+card(m)+"</details>"}
 document.body.dataset.v="recipes";setView("recipes");
 try{var standalone=(window.navigator&&navigator.standalone)||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
  if(standalone||localStorage.getItem("rr-inst"))$("install").classList.add("hide");
@@ -2502,7 +2502,7 @@ function renderDishDetails(){
     "Made with "+ingredients.join(", ")+".",ingredients.join(", ")+" से बना व्यंजन।"))+"</p>":"";
   $("dish-title").textContent=T(dn(name),HI[name]||dn(name));
   renderHTML($("dish-detail-body"),"<div class='dt-photo'>"+(img?recipeImage(img,true):"")+
-    "<span aria-hidden='true'>"+emo(name)+"</span></div>"+description+card(m,true));
+    "<span class='recipe-photo-fallback' aria-hidden='true'>"+emo(name)+"</span></div>"+description+card(m,true));
 }
 function showDishDetails(trigger,recipe){
   if(!dishDialog.open){
@@ -2700,7 +2700,7 @@ function ingredientTileHTML(id,label,on){
     (url?"<img class='pantry-photo-image' src='"+escapeHTML(url)+"' alt='' loading='lazy' decoding='async'>":"")+
     "<b>"+escapeHTML(label)+"</b><span class='pantry-check' aria-hidden='true'>✓</span></button>";
 }
-document.addEventListener("error",function(e){if(e.target.matches&&e.target.matches(".pantry-photo-image,.ic-photo,.cart-thumbnail img,.dt-photo img"))e.target.hidden=true},true);
+document.addEventListener("error",function(e){if(e.target.matches&&e.target.matches(".pantry-photo-image,.ic-photo,.cart-thumbnail img,.recipe-photo"))e.target.hidden=true},true);
 /* ===== Smart pantry groups ===== */
 (function(){
   var groups={"Vegetables":[],"Fruits / Dry fruits":[],"Milk / Bread / Protein":[],"Grains / Pulses":[],"Condiments":[],"Specialty":[]},seen={};
@@ -3004,8 +3004,6 @@ body{padding-top:var(--nav-bottom)}
   .mtile .mos .mc img{
     object-fit:cover;
     object-position:center 42%;
-    transform:scale(1.08);
-    transform-origin:center center;
   }
 }
 </style>
