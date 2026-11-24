@@ -1306,14 +1306,18 @@ var bundledPhotos={},uploadedPhotos={},IMG={},UPL=false,db=null,assets=null,upSl
 // Advance the photo revision with the service worker when replacing bundled images.
 function photoSrc(id){return id.indexOf("images/")===0?id+"?v=38":"/_blob/"+id}
 function recipeImage(id,eager){return "<img class='recipe-photo' alt='' "+(eager?"":"loading='lazy' ")+"decoding='async' src='"+escapeHTML(photoSrc(id))+"'>"}
-(function loadPublishedPhotos(){
-  fetch("images/photos.json").then(function(r){if(!r.ok)throw Error("Photo index unavailable");return r.json()}).then(function(files){
-    Object.keys(files).forEach(function(slug){var name=files[slug];
-      if(typeof name==="string"&&/^[a-z0-9][a-z0-9._-]*\.(webp|png|jpe?g|avif)$/i.test(name))bundledPhotos[slug]="images/"+encodeURIComponent(name)});
-    IMG=Object.assign({},bundledPhotos,uploadedPhotos);
-    if(MFREADY){renderResults();renderPick();renderCart()}
-  }).catch(function(e){console.warn("Recipe photos could not be loaded",e)});
-})();
+// Most bundled photos use the recipe slug. Resolve aliases on the first render too.
+var photoAliases={
+  "masala-chai-kadak": "masala-chai.webp",
+  "mirchi-ka-salan": "mirch-ka-salan.webp",
+  "pinni": "atta-ladoo.webp",
+  "pudina-nimbu-pani": "shikanji-nimbu-pani.webp",
+  "punjabi-chhach": "masala-chaas.webp",
+  "ragi-malt": "karnataka-ragi-malt-sweet.webp",
+  "south-indian-filter-coffee": "filter-coffee.webp",
+  "tandoori-mushroom-tikka": "mushroom-tikka.webp"
+};
+function bundledPhotoPath(slug){return "images/"+(photoAliases[slug]||slug+".webp")}
 function slug(n){return n.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
 function pslug(n){return slug(n).replace(/^air-fryer-/,"")}
 (async function(){
@@ -2759,6 +2763,14 @@ function ingredientTileHTML(id,label,on){
     (url?"<img class='pantry-photo-image' src='"+escapeHTML(url)+"' alt='' loading='lazy' decoding='async'>":"")+
     "<b>"+escapeHTML(label)+"</b><span class='pantry-check' aria-hidden='true'>✓</span></button>";
 }
+function retryVisibleRecipePhotos(){
+  document.querySelectorAll("img.recipe-photo[hidden],.cart-thumbnail img[hidden]").forEach(function(img){
+    img.hidden=false;
+    img.src=img.getAttribute("src");
+  });
+}
+window.addEventListener("online",retryVisibleRecipePhotos);
+window.addEventListener("pageshow",function(event){if(event.persisted)retryVisibleRecipePhotos()});
 document.addEventListener("error",function(e){if(e.target.matches&&e.target.matches(".pantry-photo-image,.ic-photo,.cart-thumbnail img,.recipe-photo"))e.target.hidden=true},true);
 /* ===== Smart pantry groups ===== */
 (function(){
@@ -2831,6 +2843,11 @@ document.addEventListener("click",function(e){var b=e.target.closest&&e.target.c
 var _allWithPantry=all;all=function(){var r=_allWithPantry.apply(this,arguments);try{renderPantrySlides()}catch(e){}return r};
 // Keep badges and other features that read the recipe flag consistent with Veg Mode.
 MEALS.forEach(function(m){if(!isVegetarianDish(m))m[1]=0});
+MEALS.forEach(function(recipe){
+  var key=pslug(recipe[0]);
+  bundledPhotos[key]=bundledPhotoPath(key);
+});
+IMG=Object.assign({},bundledPhotos,uploadedPhotos);
 MFREADY=true;syncT();try{all()}catch(e){try{renderCuis();renderResults()}catch(e2){}}
 </script>
 <style>

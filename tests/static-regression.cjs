@@ -122,9 +122,17 @@ test('adding all recipe ingredients preserves existing and legacy cart quantitie
 
 test('PWA registers offline worker and caches the required shell files', () => {
   assert.match(src, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
-  assert.match(sw, /const CACHE = 'hatri-v42-themed-meals'/);
+  assert.match(sw, /const CACHE = 'hatri-v43-photo-recovery'/);
   for (const item of ['auth.js','ingredient-images.js','recipe-details.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp','seasonal-recipes.js','winter-recipes.js','activity.js','international-recipes.js','hero-carousel.js','images/hatri-dinner-header.webp','images/hatri-christmas-header.webp','images/mushroom-barley-soup.webp']) assert.ok(sw.includes(`'./${item}'`));
   new vm.Script(sw);
+});
+
+test('the first-render recipe photo paths match the published photo index', () => {
+  const catalog = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../images/photos.json')));
+  const ctx = fn('var photoAliases=', 'function slug(n)');
+  for (const [slug, filename] of Object.entries(catalog)) {
+    assert.equal(ctx.bundledPhotoPath(slug), 'images/' + filename);
+  }
 });
 
 test('all mapped recipe photos and local ingredient photos exist', () => {
