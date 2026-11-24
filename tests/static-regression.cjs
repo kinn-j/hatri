@@ -52,6 +52,27 @@ test('meal pairing rules exclude incompatible sauces and cross-cuisine staples',
   assert.equal(c.pairOK({n: 'Sarson da Saag', cu: 'Punjabi'}, {n: 'Makki di Roti', cu: 'Punjabi'}), true);
 });
 
+test('whole meals exhaust distinct courses before reusing any dish', () => {
+  const dishes = [];
+  for (const [role, count] of Object.entries({Main: 8, Bread: 4, Rice: 4, Raita: 2, Sweet: 4, Salad: 1})) {
+    for (let i = 1; i <= count; i++) {
+      dishes.push({n: role + ' ' + i, ing: ['curd'], recipe: {}, x: [], p: 1, c: 1});
+    }
+  }
+  dishes.push({...dishes.find(d => d.n === 'Raita 1'), n: 'RAITA 1'});
+  const c = fn('function mealTime(', 'function mealTileHTML(', {
+    score: () => dishes, course: name => name.split(' ')[0], isLong: () => false,
+    pairOK: () => true, regionOf: () => 'Punjabi', REG: ['Punjabi'], INTL: 'International',
+    tmax: 0, fitsTime: () => true, wProt: false, wSide: true, pslug: n => n.toLowerCase()
+  });
+  const meals = c.buildMeals();
+  assert.equal(meals.length, 2);
+  assert.ok(meals.every(meal => meal.items.length === 6));
+  const keys = meals.flatMap(meal => meal.items.concat(meal.salad || []).map(d => c.pslug(d.n)));
+  assert.equal(keys.length, 13);
+  assert.equal(new Set(keys).size, keys.length);
+});
+
 test('diet, search, pagination and clear-all code guards are present', () => {
   assert.match(src, /NV=\[[^\]]*"chickenstock"/);
   assert.match(src, /return matchesFilters\(m,false\);/);
@@ -122,7 +143,7 @@ test('adding all recipe ingredients preserves existing and legacy cart quantitie
 
 test('PWA registers offline worker and caches the required shell files', () => {
   assert.match(src, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
-  assert.match(sw, /const CACHE = 'hatri-v43-photo-recovery'/);
+  assert.match(sw, /const CACHE = 'hatri-v44-unique-meals'/);
   for (const item of ['auth.js','ingredient-images.js','recipe-details.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp','seasonal-recipes.js','winter-recipes.js','activity.js','international-recipes.js','hero-carousel.js','images/hatri-dinner-header.webp','images/hatri-christmas-header.webp','images/mushroom-barley-soup.webp']) assert.ok(sw.includes(`'./${item}'`));
   new vm.Script(sw);
 });

@@ -1092,7 +1092,7 @@ function decide(){
   var pick=pickSuggestion(options,lastMeal||lastPick,function(m){return m.key||m.n},function(m){return (m.miss||m.x).length});
   lastMeal=pick.key||null;
   lastPick=pick.n||null;
-  renderPick(meals);$("pick").scrollIntoView({behavior:"smooth",block:"start"});
+  renderResults();$("pick").scrollIntoView({behavior:"smooth",block:"start"});
 }
 // Every result has a chance, with fewer missing ingredients still favored.
 function pickSuggestion(options,previous,key,missing){
@@ -1177,16 +1177,17 @@ function renderResults(){
   var title=vrat?T("Vrat dishes","व्रत के व्यंजन"):T("Browse recipes","रेसिपी देखें");
   if(sel.meal&&!(vrat&&crs==="meal")){
     var paired=new Set();
-    meals.forEach(function(meal){meal.items.forEach(function(dish){paired.add(dish.recipe)})});
-    dishes=dishes.filter(function(dish){return !paired.has(dish.recipe)});
+    meals.forEach(function(meal){meal.items.concat(meal.salad||[]).forEach(function(dish){paired.add(pslug(dish.n))})});
+    dishes=dishes.filter(function(dish){return !paired.has(pslug(dish.n))});
     if(!vrat&&crs==="meal")title=meals.length?T("More meal dishes","खाने के और व्यंजन"):T("Meal dishes","खाने के व्यंजन");
   }
   var html="";
   if(!Object.keys(have).length)html="<div class='card' style='display:flex;gap:10px;align-items:center;justify-content:space-between'><span class='sub'>Pick ingredients to see what you can cook right now</span><button class='btn sm primary' data-view='pantry'>Pick ingredients</button></div>";
   if(meals.length){
-    var visible=meals.slice(0,SHOW_COUNTS.meals||MEAL_BATCH);
+    var listed=meals.filter(function(meal){return meal.key!==lastMeal});
+    var visible=listed.slice(0,SHOW_COUNTS.meals||MEAL_BATCH);
     html+="<section class='meal-sets'><h2>"+T("6-dish meals","6 व्यंजन वाली थाली")+"</h2>"+suggestionGroups(visible,true);
-    if(visible.length<meals.length)html+="<button class='btn more-results' data-show-more='meals'>"+T("Show more meals","और थालियाँ दिखाएँ")+" ("+(meals.length-visible.length)+" "+T("remaining","बाक़ी")+")</button>";
+    if(visible.length<listed.length)html+="<button class='btn more-results' data-show-more='meals'>"+T("Show more meals","और थालियाँ दिखाएँ")+" ("+(listed.length-visible.length)+" "+T("remaining","बाक़ी")+")</button>";
     html+="</section>";
   }
   if(dishes.length)html+="<div class='sec'><h2>"+title+"</h2><small>"+dishes.length+" "+T("dishes","व्यंजन")+"</small></div>"+suggestionGroups(dishes,false);
@@ -1221,7 +1222,7 @@ document.addEventListener("click",function(e){
   if(t.dataset.occ){occ=t.dataset.occ;renderCuis();renderResults()}
   else if(t.dataset.tm!==undefined){tmax=+t.dataset.tm;renderCuis();renderResults()}
   else if(t.dataset.decide){setView("recipes");decide()}
-  else if(t.dataset.closepick){lastPick=null;lastMeal=null;renderPick()}
+  else if(t.dataset.closepick){lastPick=null;lastMeal=null;renderResults()}
   else if(t.dataset.cu){cuis[t.dataset.cu]?delete cuis[t.dataset.cu]:cuis[t.dataset.cu]=1;renderCuis();renderResults();save()}
   else if(t.dataset.cuall){cuis={};if(t.dataset.cuall==="1")CUIS.forEach(function(c){cuis[c]=1});renderCuis();renderResults();save()}
   else if(t.dataset.i){have[t.dataset.i]?delete have[t.dataset.i]:have[t.dataset.i]=1;delete cart[t.dataset.i];all()}
@@ -1566,11 +1567,12 @@ function buildMeals(){
     if(pools[role])pools[role].push(dish);
   });
   MEALK={};
-  var seen=new Set(),uses=new Map();
+  var used=new Set();
   function choose(main,items,role,region){
     var missing=new Set(missOf(items)),best=null,bestCost=Infinity;
     for(var dish of pools[role]){
-      if(items.some(function(item){return item.n===dish.n})||!pairOK(main,dish))continue;
+      var key=pslug(dish.n);
+      if(used.has(key)||items.some(function(item){return pslug(item.n)===key})||!pairOK(main,dish))continue;
       var local=regionOf(dish.recipe)===region;
       // Plain staples and everyday accompaniments can round out an Indian thali.
       var staple=REG.includes(region)&&(dish.n==="Chapati (Roti)"||dish.n==="Steamed Rice"||
@@ -1578,7 +1580,7 @@ function buildMeals(){
       if(!local&&!staple)continue;
       if(tmax&&mealTime(items.concat(dish))>tmax)continue;
       var extra=dish.x.filter(function(id){return !missing.has(id)}).length;
-      var cost=extra*10+(local?0:5)+(uses.get(dish.n)||0);
+      var cost=extra*10+(local?0:5);
       if(role==="Main"&&wProt&&sumP(items)<2&&rtype(dish.n)!=="dal")cost+=3;
       if(cost<bestCost){best=dish;bestCost=cost}
     }
@@ -1586,7 +1588,7 @@ function buildMeals(){
   }
   for(var main of pools.Main){
     var region=regionOf(main.recipe);
-    if(region===INTL)continue;
+    if(region===INTL||used.has(pslug(main.n)))continue;
     var items=[main];
     for(var role of ["Main","Bread","Rice","Curd","Sweet"]){
       var dish=choose(main,items,role,region);
@@ -1594,13 +1596,13 @@ function buildMeals(){
       items.push(dish);
     }
     if(items.length!==6)continue;
-    var time=mealTime(items),signature=items.map(function(m){return m.n}).sort().join(" + ");
-    if(!fitsTime(time)||seen.has(signature))continue;
-    seen.add(signature);
+    var time=mealTime(items);
+    if(!fitsTime(time))continue;
     var key=items.map(function(m){return m.n}).join(" + ");
     var meal={items:items,theme:region,miss:missOf(items),t:time,key:key};
     if(wSide)meal.salad=choose(main,items,"Salad",region);
-    items.forEach(function(m){uses.set(m.n,(uses.get(m.n)||0)+1)});
+    items.forEach(function(m){used.add(pslug(m.n))});
+    if(meal.salad)used.add(pslug(meal.salad.n));
     MEALK[key]=meal;meals.push(meal);
   }
   meals.sort(function(a,b){return a.miss.length-b.miss.length||a.t-b.t});
