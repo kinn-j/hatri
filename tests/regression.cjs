@@ -205,14 +205,18 @@ test('whole meals paginate unique themed six-dish sets', async () => {
       const cards = section.locator('details.mtile');
       await section.locator('summary img').first().waitFor();
       assert.deepEqual(await section.locator(':scope > h2').allTextContents(), ['6-dish meals']);
-      assert.equal(await cards.count(), 25);
+      const total = await page.evaluate(() => Object.keys(MEALK).length);
+      assert.ok(total >= 2);
+      assert.equal(await cards.count(), Math.min(total, 25));
+      // Exercise pagination even when a required course runs out before 25 meals.
+      await page.evaluate(() => { MEAL_BATCH = 1; renderResults(); });
       const keys = () => cards.evaluateAll(nodes => nodes.map(el => el.dataset.mk));
       const first = await keys();
       const more = section.locator('[data-show-more="meals"]');
       await more.click();
       const next = await keys();
-      assert.ok(next.length > 25 && next.length <= 50);
-      assert.deepEqual(next.slice(0, 25), first);
+      assert.equal(next.length, 2);
+      assert.deepEqual(next.slice(0, 1), first);
       assert.equal(new Set(next).size, next.length);
       const audit = await page.evaluate(() => Object.values(MEALK).every(({items,theme}) =>
         items.length === 6 && new Set(items.map(d => d.n)).size === 6 &&
@@ -220,6 +224,9 @@ test('whole meals paginate unique themed six-dish sets', async () => {
         course(items[2].n) === 'Bread' && course(items[3].n) === 'Rice' &&
         items[4].ing.includes('curd') && course(items[5].n) === 'Sweet'));
       assert.equal(audit, true);
+      const allDishKeys = await page.evaluate(() => Object.values(MEALK).flatMap(meal =>
+        meal.items.concat(meal.salad || []).map(dish => pslug(dish.n))));
+      assert.equal(new Set(allDishKeys).size, allDishKeys.length);
       const grid = cards.first().locator('summary .mos');
       const photos = grid.locator('.mc img');
       assert.equal(await photos.count(), 6);
