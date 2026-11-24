@@ -118,7 +118,7 @@ test('Clear all time remains cleared across reload; show-more adds a bounded bat
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(() => window.MFREADY === true);
   assert.equal(await page.evaluate(() => Object.keys(TS).length), 0);
-  const first = page.locator('#results [data-show-more]').first();
+  const first = page.locator('#results [data-show-more^="dish-"]').first();
   assert.ok(await first.count() > 0);
   const groupId = await first.evaluate(button => button.parentElement.id);
   const cards = page.locator(`#${groupId} > .tgrid > details`);
@@ -196,29 +196,40 @@ test('recipe details cover the entire live catalog and render measured methods i
   }
 });
 
-test('whole meals show six named photos before four-dish sets', async () => {
+test('whole meals paginate unique themed six-dish sets', async () => {
   for (const width of [320, 1024]) {
     const {page, context} = await open({width, height: 844});
     try {
       await page.evaluate(() => setView('recipes'));
-      const groups = page.locator('#results .meal-sets');
-      await groups.first().locator('img').first().waitFor();
-      assert.deepEqual(await groups.locator(':scope > h2').allTextContents(), ['6-dish meals', '4-dish meals']);
-      for (const [i, size] of [6, 4].entries()) {
-        const grid = groups.nth(i).locator('summary .mos').first();
-        const photos = grid.locator('.mc img');
-        assert.equal(await photos.count(), size);
-        await photos.evaluateAll(images => Promise.all(images.map(image => image.decode())));
-        const labels = await grid.locator('.meal-caption').allTextContents();
-        assert.equal(new Set(labels).size, size);
-        assert.equal(await grid.evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length), size / 2);
-        const courses = await page.evaluate(names => names.map(course), labels);
-        assert.deepEqual(courses.slice(0, 4), ['Main', 'Main', 'Bread', 'Rice']);
-        if (size === 6) {
-          assert.match(labels[4], /raita/i);
-          assert.equal(courses[5], 'Sweet');
-        }
-      }
+      const section = page.locator('#results .meal-sets');
+      const cards = section.locator('details.mtile');
+      await section.locator('summary img').first().waitFor();
+      assert.deepEqual(await section.locator(':scope > h2').allTextContents(), ['6-dish meals']);
+      assert.equal(await cards.count(), 25);
+      const keys = () => cards.evaluateAll(nodes => nodes.map(el => el.dataset.mk));
+      const first = await keys();
+      const more = section.locator('[data-show-more="meals"]');
+      await more.click();
+      const next = await keys();
+      assert.ok(next.length > 25 && next.length <= 50);
+      assert.deepEqual(next.slice(0, 25), first);
+      assert.equal(new Set(next).size, next.length);
+      const audit = await page.evaluate(() => Object.values(MEALK).every(({items,theme}) =>
+        items.length === 6 && new Set(items.map(d => d.n)).size === 6 &&
+        items.slice(0, 2).every(d => regionOf(d.recipe) === theme && course(d.n) === 'Main') &&
+        course(items[2].n) === 'Bread' && course(items[3].n) === 'Rice' &&
+        items[4].ing.includes('curd') && course(items[5].n) === 'Sweet'));
+      assert.equal(audit, true);
+      const grid = cards.first().locator('summary .mos');
+      const photos = grid.locator('.mc img');
+      assert.equal(await photos.count(), 6);
+      await photos.evaluateAll(images => Promise.all(images.map(image => image.decode())));
+      assert.equal(new Set(await grid.locator('.meal-caption').allTextContents()).size, 6);
+      assert.equal(await grid.evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length), 3);
+      await cards.first().locator('summary').first().click();
+      const dishes = cards.first().locator('.mbody details.tile');
+      await dishes.first().waitFor();
+      assert.equal(await dishes.count(), 6);
     } finally {
       await context.close();
     }
