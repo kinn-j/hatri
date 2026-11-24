@@ -10,10 +10,15 @@ GitHub Actions runs these checks on pull requests and pushes to main. The web an
 
 Static HTML/CSS/JavaScript website with an installable Progressive Web App (PWA) manifest and bundled food photos. Updated using the latest supplied Claude HTML (`Raman Rasoi — Pantry-first meal planner 2.html`).
 
+## Winter recipes
+
+Open **Winter recipes & soups** from Cook, or select **Winter** under the
+planner’s occasion filters. See the [50 new dishes](WINTER_RECIPES.md).
+
 ## Included
 
 - `index.html` — Hatri meal planner, adapted for independent website hosting and bundled photo paths.
-- `images/` — **793 food images** in WebP format, including archived photos and newer generated images.
+- `images/` — Bundled food images in WebP format, including archived photos and newer generated images.
 - `images/photos.json` — maps recipe slugs to image files. Recipes with matching dishes can share an image.
 - `images/IMAGE_INVENTORY.csv` — records original image name and source ZIP for auditing.
 - `icons/` — favicon and home-screen icons from original HTML.
@@ -36,7 +41,7 @@ Run `python -m http.server 8000` from this folder and visit `http://localhost:80
 
 ## Known limitations
 
-- Claude cloud storage and account authentication are **not available** on the independent website. Local pantry and list settings persist per browser/device.
+- The site supports Google sign-in and private preference sync through Firebase. See [Firebase setup](AUTH_SETUP.md) for sign-in, cloud saving, and opt-in activity sharing. Local pantry and list settings also persist per browser.
 - Photos stored only in Claude cloud storage require a separate export.
 - Photos have been optimized to WebP (not pixel-identical originals); original JPEGs remain in the existing archive ZIPs in your ChatGPT Library.
 - A PWA is not a signed Android `.apk` or iOS `.ipa` package.

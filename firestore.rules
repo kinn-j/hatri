@@ -16,6 +16,33 @@ service cloud.firestore {
         && request.resource.data.choices is map
         && request.resource.data.ratings is map;
     }
-    // All other paths are denied unless you explicitly add rules for them.
+    // Activity is append-only through the website. Project members with IAM
+    // access can query it via the Firebase Console or an Admin SDK.
+    match /users/{userId}/activityEvents/{eventId} {
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+          'sessionId', 'sequence', 'event', 'surface', 'detail', 'createdAt', 'expiresAt'
+        ])
+        && request.resource.data.sessionId is string
+        && request.resource.data.sessionId.matches('^[a-f0-9-]{36}$')
+        && request.resource.data.sequence is int
+        && request.resource.data.sequence >= 1 && request.resource.data.sequence <= 150
+        && request.resource.data.surface in ['recipes', 'pantry', 'plan', 'order', 'kitchen', 'winter', 'christmas']
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt <= request.time + duration.value(91, 'd')
+        && (
+          (request.resource.data.event == 'recipe_open'
+            && request.resource.data.detail is string
+            && request.resource.data.detail.matches('^[a-z0-9-]{1,110}$'))
+          || (request.resource.data.event in [
+            'page_view', 'recipe_search', 'profile_open', 'filters_open', 'filters_apply',
+            'category_select', 'pantry_browse', 'pantry_edit', 'cart_add', 'cart_edit', 'decide', 'mode_change'
+          ] && request.resource.data.detail == '')
+        );
+    }
+    // All other paths are denied.
+
   }
 }

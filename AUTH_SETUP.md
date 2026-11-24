@@ -68,3 +68,28 @@ Firebase documentation:
 - https://firebase.google.com/docs/auth/web/google-signin
 - https://firebase.google.com/docs/firestore/security/get-started
 - https://firebase.google.com/pricing/
+
+## 5. Enable activity sharing
+
+Before enabling collection, add a Firestore time-to-live policy for the
+`activityEvents` collection group on the `expiresAt` field. Publish the
+updated `firestore.rules` once the policy is active. GitHub Pages deploys
+the website independently of Firebase.
+
+A signed-in user can opt in under **Profile → Settings → Share activity to
+help improve Hatri**. The choice is off by default and applies to that
+account on the current browser. Turning it off stops new events. Existing
+events are scheduled for deletion after 90 days.
+
+Each event is stored under `users/{uid}/activityEvents/{eventId}`. A project
+member with Firestore access can open that collection in Firebase Console,
+group by `sessionId`, and sort by `sequence` to reconstruct a visit.
+`createdAt` is the server timestamp. `event` and `surface` identify the
+interaction and screen. For recipe opens, `detail` contains the public
+recipe slug. Search text, pantry items, shopping-list items, and profile
+details are excluded from this collection.
+
+After publishing, opt in with a test account, open **Winter recipes & soups**
+and a recipe, then verify `page_view` and `recipe_open` under the test
+account's UID. Turn sharing off, navigate again, and confirm no new events
+appear. Check the policy in **Firestore → Time-to-live**.

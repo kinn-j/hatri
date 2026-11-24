@@ -7,8 +7,9 @@ import {
   GoogleAuthProvider, signInWithPopup, signOut
 } from 'https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js';
 import {
-  getFirestore, doc, getDoc, setDoc, serverTimestamp
+  getFirestore, doc, getDoc, setDoc, serverTimestamp, Timestamp
 } from 'https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js';
+import { createActivityTracker } from './activity.js';
 
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyAWl1eHaT9tbHqGWvfve4OkoVYJFEo2Se4',
@@ -151,7 +152,7 @@ renderAccount();
 function localSnapshot() {
   const payload = {
     core: window.stateObj(),
-    filters: { r: window.RS, o: window.OS, h: window.HS, t: window.TS },
+    filters: { r: window.RS, o: window.OS, h: window.HS, t: window.TS, winter: true },
     choices: {
       sel: window.sel, crs: window.crs,
       sweet: window.wSweet, side: window.wSide, protein: window.wProt,
@@ -168,6 +169,7 @@ function applyCloud(data) {
   if (data.filters && typeof data.filters === 'object') {
     window.RS = data.filters.r || {};
     window.OS = data.filters.o || {};
+    window.migrateWinterOccasion(window.OS, data.filters.winter);
     window.HS = data.filters.h || {};
     window.TS = data.filters.t || {};
   }
@@ -297,8 +299,18 @@ if (!isClaude && configured) {
     const app = initializeApp(FIREBASE_CONFIG);
     auth = getAuth(app);
     database = getFirestore(app);
+    const activity = createActivityTracker(async (uid, event) => {
+      if (auth.currentUser?.uid !== uid) return;
+      const ref = doc(database, 'users', uid, 'activityEvents', event.sessionId + '-' + event.sequence);
+      await setDoc(ref, {
+        ...event,
+        createdAt: serverTimestamp(),
+        expiresAt: Timestamp.fromMillis(Date.now() + 90 * 24 * 60 * 60 * 1000)
+      });
+    });
     await setPersistence(auth, browserLocalPersistence);
     onAuthStateChanged(auth, async newUser => {
+      activity.setUser(newUser?.uid ?? null);
       // Refreshing the same user must not overwrite in-progress local edits.
       if (newUser && loadedUid === newUser.uid && syncReady) {
         currentUser = newUser;

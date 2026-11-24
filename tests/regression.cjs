@@ -722,3 +722,124 @@ test('Hindi cart controls remain tappable at 320 and 390 pixels with a failed ph
     } finally { await context.close(); }
   }
 });
+
+test('winter collection registers 50 unique recipes with working images and pantry ingredients', async () => {
+  const {page, context} = await open();
+  try {
+    await page.getByRole('link', {name: 'Winter recipes & soups'}).click();
+    const winter = page.locator('#winter-page');
+    await winter.waitFor();
+    assert.equal(new URL(page.url()).hash, '#winter');
+    assert.equal(await winter.locator('article').count(), 45);
+    assert.equal(await winter.getByRole('heading', {name: 'Soups', exact: true}).count(), 1);
+    await winter.getByLabel('Include meat and egg recipes').check();
+    assert.equal(await winter.locator('article').count(), 50);
+
+    await page.waitForFunction(() => WINTER_RECIPES.every(recipe => IMG[pslug(recipe.name)]));
+    const audit = await page.evaluate(async () => {
+      const groups = WINTER_RECIPES.map(recipe => MEALS.filter(m => m[0] === recipe.name));
+      const missing = WINTER_RECIPES.flatMap(recipe => recipe.pantry.filter(id => !NAME[id.replace(/\?$/, '')]));
+      const filenames = WINTER_RECIPES.map(recipe => photoSrc(IMG[pslug(recipe.name)]));
+      const pictures = await Promise.all(filenames.map(async filename => {
+        const photo = new Image();
+        photo.src = filename;
+        await photo.decode();
+        return [photo.naturalWidth, photo.naturalHeight];
+      }));
+      return {
+        counts: groups.map(group => group.length),
+        missing,
+        tagged: groups.every(group => group[0]?.[8].includes('Winter')),
+        soups: WINTER_RECIPES.filter(recipe => recipe.soup).length,
+        images: new Set(filenames).size,
+        dimensions: pictures.every(([width, height]) => width >= 500 && height >= 500)
+      };
+    });
+    assert.deepEqual(audit, {counts: Array(50).fill(1), missing: [], tagged: true,
+      soups: 24, images: 50, dimensions: true});
+    const soup = winter.locator('article').filter({has: page.getByRole('heading', {name: 'Carrot Ginger Soup', exact: true})});
+    await soup.getByRole('button', {name: 'View recipe'}).click();
+    await page.locator('#dtray[open]').waitFor();
+    assert.match(await page.locator('#dish-detail-body').innerText(), /500 g carrots/);
+    assert.match(await page.locator('#dish-detail-body').innerText(), /Simmer covered/);
+    await page.locator('#dish-detail-close').click();
+    await soup.getByRole('button', {name: 'Add missing ingredients'}).click();
+    assert.equal(await soup.getByRole('button', {name: 'Added ✓'}).isDisabled(), true);
+    await winter.getByRole('link', {name: 'Back to home'}).click();
+    await winter.waitFor({state: 'hidden'});
+    await page.goForward();
+    await winter.waitFor();
+  } finally {
+    await context.close();
+  }
+});
+
+test('activity writes are opt-in, scoped to the signed-in account and omit search text', async () => {
+  const {page, context} = await open();
+  try {
+    // Exercise auth.js and activity.js together with a local Firebase transport.
+    const modules = {
+      'firebase-app.js': 'export const initializeApp = () => ({});',
+      'firebase-auth.js': `
+        const auth = { currentUser: { uid: "test-one" } };
+        export const getAuth = () => auth, browserLocalPersistence = {}, setPersistence = async () => {};
+        export const GoogleAuthProvider = class {}, signInWithPopup = async () => {};
+        export function onAuthStateChanged(auth, callback) {
+          window.testAuth = uid => { auth.currentUser = uid ? { uid } : null; return callback(auth.currentUser); };
+          window.testAuth(auth.currentUser.uid);
+        }
+        export const signOut = () => window.testAuth(null);
+      `,
+      'firebase-firestore.js': `
+        window.activityWrites = [];
+        export const getFirestore = () => ({}), doc = (db, ...path) => path;
+        export const getDoc = async () => ({exists: () => false});
+        export const serverTimestamp = () => "server-time", Timestamp = { fromMillis: millis => millis };
+        export const setDoc = async (path, data) => {
+          if (path[2] === "activityEvents") window.activityWrites.push({path, data});
+        };
+      `
+    };
+    await context.route('https://www.gstatic.com/firebasejs/**', route => {
+      const filename = new URL(route.request().url()).pathname.split('/').at(-1);
+      return route.fulfill({contentType: 'text/javascript', headers: {'Access-Control-Allow-Origin': '*'}, body: modules[filename]});
+    });
+    await page.reload({waitUntil: 'domcontentloaded'});
+    await page.waitForFunction(() => typeof window.testAuth === 'function');
+
+    const profile = page.locator('[data-rr-profile-open]');
+    const consent = page.getByLabel('Share activity to help improve Hatri');
+    await profile.click();
+    assert.equal(await consent.isChecked(), false);
+    assert.deepEqual(await page.evaluate(() => activityWrites), []);
+    await consent.check();
+    await page.getByRole('button', {name: 'Close profile'}).click();
+    await page.locator('#rq').fill('test-only search text');
+    await page.waitForFunction(() => activityWrites.some(({data}) => data.event === 'recipe_search'));
+    await page.getByRole('link', {name: 'Winter recipes & soups'}).click();
+    await page.locator('#winter-recipes').getByRole('button', {name: 'View recipe'}).first().click();
+    const records = await page.evaluate(() => activityWrites);
+    assert.deepEqual(records.map(({data}) => [data.event, data.surface, data.detail]), [
+      ['page_view', 'recipes', ''], ['recipe_search', 'recipes', ''],
+      ['page_view', 'winter', ''], ['recipe_open', 'winter', 'roasted-cauliflower-soup']
+    ]);
+    assert.ok(records.every(({path, data}, index) =>
+      path.join('/') === `users/test-one/activityEvents/${records[0].data.sessionId}-${index + 1}`
+      && data.createdAt === 'server-time' && data.expiresAt > Date.now()
+    ));
+    await page.locator('#dish-detail-close').click();
+    await page.locator('#winter-back').click();
+    await profile.click();
+    await consent.uncheck();
+    const beforeOptOut = await page.evaluate(() => activityWrites.length);
+    await page.getByRole('button', {name: 'Close profile'}).click();
+    await page.getByRole('link', {name: 'Winter recipes & soups'}).click();
+    await page.evaluate(() => testAuth('test-two'));
+    await page.locator('#winter-back').click();
+    await profile.click();
+    assert.equal(await consent.isChecked(), false);
+    assert.equal(await page.evaluate(() => activityWrites.length), beforeOptOut);
+  } finally {
+    await context.close();
+  }
+});
