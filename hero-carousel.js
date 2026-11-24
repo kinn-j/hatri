@@ -75,15 +75,6 @@
     schedule();
   });
 
-  hero.querySelector(".hero-cta").addEventListener("click", () => {
-    const search = document.getElementById("rq");
-    search.value = T("Christmas", "क्रिसमस");
-    search.dispatchEvent(new Event("input", {bubbles: true}));
-    const heading = document.querySelector("#results h2");
-    heading.tabIndex = -1;
-    heading.focus();
-  });
-
   function syncMotion() {
     if (reduced.matches && document.activeElement === motion) dots[current].focus();
     motion.hidden = reduced.matches;
@@ -94,4 +85,70 @@
   document.addEventListener("visibilitychange", schedule);
   new ResizeObserver(schedule).observe(hero);
   syncMotion();
+})();
+
+function renderChristmasRecipes() {
+  const groups = new Map();
+  const label = (en, hi) => escapeHTML(T(en, hi));
+  const titles = {Baked: ["Cakes & baking", "केक और बेकिंग"], Drink: ["Drinks", "पेय"], Sweet: ["Sweets", "मिठाइयाँ"], Snack: ["Snacks", "नाश्ता"], Main: ["Mains", "मुख्य व्यंजन"]};
+  const ingredients = ids => ids.map(id => escapeHTML(nmx(id))).join(", ") || T("None", "कोई नहीं");
+
+  MEALS.forEach((recipe, index) => {
+    if (!recipe[8].includes("Christmas")) return;
+    const dish = dishState(recipe);
+    const category = course(dish.n);
+    if (!groups.has(category)) groups.set(category, []);
+    const onList = dish.x.filter(id => cartQuantity(id));
+    const missing = dish.x.filter(id => !cartQuantity(id));
+    const optional = dish.oh.concat(dish.ox);
+    const added = cartDishComplete(dish.n, dish.ing, dish.x);
+    groups.get(category).push(`<article class="card">
+      <h3>${label(dish.n, HI[dish.n] || dish.n)}</h3>
+      <p><b>${label("In your pantry", "पैंट्री में")}</b> · ${ingredients(dish.h)}</p>
+      <p><b>${label("Still to add", "जोड़ना बाकी")}</b> · ${ingredients(missing)}</p>
+      ${onList.length ? '<p><b>'+label("On shopping list", "खरीदारी सूची में")+'</b> · '+ingredients(onList)+'</p>' : ''}
+      ${optional.length ? '<p class="sub">'+label("Optional", "वैकल्पिक")+' · '+ingredients(optional)+'</p>' : ''}
+      <div class="row"><button class="btn sm" data-open-dish="${index}">${label("View recipe", "रेसिपी देखें")}</button>
+      ${dish.x.length ? `<button class="btn primary sm" data-cart-add-dish="${index}" ${added ? "disabled" : ""}>${added ? label("Added ✓", "जोड़ा गया ✓") : missing.length ? label("Add missing ingredients", "बाकी सामग्री जोड़ें") : label("Add dish to cart", "व्यंजन कार्ट में जोड़ें")}</button>` : '<span class="chip have">'+label("Ready to cook", "बनाने के लिए तैयार")+'</span>'}</div>
+    </article>`);
+  });
+  renderHTML($("christmas-recipes"), Array.from(groups, ([category, cards]) =>
+    '<h2>'+label(...(titles[category] || [category, HI[category] || category]))+'</h2><div class="christmas-grid">'+cards.join("")+'</div>'
+  ).join(""));
+}
+
+(function () {
+  const page = $("christmas-page");
+  const trigger = document.querySelector(".hero-cta");
+  const homeTitle = document.title;
+  function route() {
+    const active = location.hash === "#christmas";
+    if (active === !page.hidden) return;
+    if (document.querySelector("dialog[open]")) document.querySelector("dialog[open]").close();
+    setView("recipes");
+    document.body.classList.toggle("christmas-open", active);
+    page.hidden = !active;
+    document.title = active ? T("Christmas recipes", "क्रिसमस रेसिपी") + " · Hatri" : homeTitle;
+    if (active) {
+      renderChristmasRecipes();
+      page.querySelector("h1").focus({preventScroll:true});
+    } else {
+      trigger.focus({preventScroll:true});
+    }
+    window.scrollTo(0, 0);
+  }
+  trigger.addEventListener("click", event => {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    history.pushState({christmasFromHome:true}, "", trigger.hash);
+    route();
+  });
+  $("christmas-back").addEventListener("click", event => {
+    if (history.state && history.state.christmasFromHome) {
+      event.preventDefault();
+      history.back();
+    }
+  });
+  window.addEventListener("hashchange", route);
+  route();
 })();
