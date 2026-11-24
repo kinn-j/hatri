@@ -41,7 +41,7 @@ test('Veg Mode excludes egg dishes even when the catalog marks them vegetarian',
 });
 
 test('dish images leave activation to their enclosing recipe control', () => {
-  const c = isolate('function recipeImage(', '(function loadPublishedPhotos(', {
+  const c = isolate('function recipeImage(', 'var photoAliases=', {
     photoSrc: value => value,
     escapeHTML: value => String(value).replace(/&/g, '&amp;').replace(/'/g, '&#39;')
   });
