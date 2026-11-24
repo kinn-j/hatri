@@ -196,6 +196,35 @@ test('recipe details cover the entire live catalog and render measured methods i
   }
 });
 
+test('whole meals show six named photos before four-dish sets', async () => {
+  for (const width of [320, 1024]) {
+    const {page, context} = await open({width, height: 844});
+    try {
+      await page.evaluate(() => setView('recipes'));
+      const groups = page.locator('#results .meal-sets');
+      await groups.first().locator('img').first().waitFor();
+      assert.deepEqual(await groups.locator(':scope > h2').allTextContents(), ['6-dish meals', '4-dish meals']);
+      for (const [i, size] of [6, 4].entries()) {
+        const grid = groups.nth(i).locator('summary .mos').first();
+        const photos = grid.locator('.mc img');
+        assert.equal(await photos.count(), size);
+        await photos.evaluateAll(images => Promise.all(images.map(image => image.decode())));
+        const labels = await grid.locator('.meal-caption').allTextContents();
+        assert.equal(new Set(labels).size, size);
+        assert.equal(await grid.evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length), size / 2);
+        const courses = await page.evaluate(names => names.map(course), labels);
+        assert.deepEqual(courses.slice(0, 4), ['Main', 'Main', 'Bread', 'Rice']);
+        if (size === 6) {
+          assert.match(labels[4], /raita/i);
+          assert.equal(courses[5], 'Sweet');
+        }
+      }
+    } finally {
+      await context.close();
+    }
+  }
+});
+
 test('every live recipe has a decodable full-size dish photo', {timeout: 60_000}, async () => {
   const {page, context} = await open();
   try {
