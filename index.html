@@ -233,6 +233,16 @@ html[lang="hi"] .en{display:none}html:not([lang="hi"]) .hi{display:none}
  .toast{bottom:calc(150px + env(safe-area-inset-bottom,0px))}
  .band{padding:16px 12px}
 }
+
+.recipe-controls{position:relative}
+.recipe-controls .steps>summary{padding:10px 80px 10px 0;min-height:40px}
+.recipe-language{position:absolute;right:0;top:0;min-height:40px;z-index:1}
+#christmas-recipes .tgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#christmas-recipes .tile{display:flex;flex-direction:column}
+.christmas-opener{width:100%;padding:0;border:0;color:inherit;text-align:start;background:transparent;cursor:pointer;font:inherit}
+.christmas-opener h3{font-size:1rem;line-height:1.25;margin:0;overflow-wrap:anywhere}
+#christmas-recipes .christmas-pantry{padding:0 10px 12px;display:grid;gap:6px;font-size:13px;overflow-wrap:anywhere}
+.christmas-pantry p{margin:0}
 </style>
 <style>
 .topbar,.sx{display:none}
@@ -1435,10 +1445,12 @@ function recipePanel(m,expanded){
   var safety=recipeSafety(m);
   var steps=st.length?"<div lang='"+lang+"' translate='no'>"+recipeList("ol",st)+"</div>":
     "<p class='note'>"+T("The method is currently unavailable.","बनाने की विधि अभी उपलब्ध नहीं है।")+"</p>";
-  return watch+"<details class='steps' data-sl='"+sl+"'"+(expanded||openR[sl]?" open":"")+"><summary>📖 Recipe</summary>"+
+  var otherLanguage=LANG==="hi"?"en":"hi";
+  var switcher="<button type='button' class='btn sm recipe-language' translate='no' lang='"+otherLanguage+"' data-recipe-language='"+otherLanguage+"'>"+(otherLanguage==="hi"?"हिन्दी":"English")+"</button>";
+  return watch+(expanded?"<div class='recipe-controls'>"+switcher:"")+"<details class='steps' data-sl='"+sl+"'"+(expanded||openR[sl]?" open":"")+"><summary>📖 Recipe</summary>"+
     "<p class='recipe-section'><b>"+ingredientTitle+"</b></p>"+ingredients+fasting+
     "<p class='recipe-section'><b>"+methodTitle+"</b></p>"+steps+
-    (safety?"<p class='note'>"+safety+"</p>":"")+credit+rateRow(m)+"</details>";
+    (safety?"<p class='note'>"+safety+"</p>":"")+credit+rateRow(m)+"</details>"+(expanded?"</div>":"");
 }
 function renderKitchen(){var k=$("mykit");if(!k)return;
  if(!ME){k.innerHTML="<p class='sub'>Sign in to keep your ratings and photos.</p>";return}
@@ -2129,6 +2141,16 @@ function setLang(l){
   document.title=l==="hi"?"Hatri — पहले रसोई का सामान, फिर खाना":"Hatri — Pantry-first meal planner";
   try{all()}catch(e){}trNode(document.body);
 }
+document.addEventListener("click",function(event){
+  var button=event.target.closest("[data-recipe-language]");
+  if(!button)return;
+  var panel=button.parentElement.querySelector(".steps"),wasOpen=panel.open;
+  var scope=button.closest("dialog")||button.closest("[data-recipe]")||document;
+  var name=panel.dataset.sl;
+  setLang(button.dataset.recipeLanguage);
+  var next=scope.querySelector(".steps[data-sl='"+CSS.escape(name)+"']");
+  if(next){next.open=wasOpen;next.parentElement.querySelector(".recipe-language").focus({preventScroll:true})}
+});
 $("langBtn").addEventListener("click",function(){setLang(LANG==="hi"?"en":"hi")});
 (function(){
   var drawer=$("rr-profile-drawer"),theme=$("rr-theme"),language=$("rr-language");
@@ -2219,9 +2241,11 @@ function renderIngsM(){var q=$("q").value.trim().toLowerCase(),vis=CATS.filter(f
   el.dataset.pantryList=key;
   if(changedList)el.querySelector(".pgrid").scrollLeft=0;
   $("count").textContent="· "+Object.keys(have).length+" selected"}
-function tileHTML(m){var ok=!m.x.length,im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;
+function dishTilePhoto(m){var ok=!m.x.length,im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;
+ return "<div class='ti' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im):"")+"<span class='em recipe-photo-fallback' aria-hidden='true'>"+emo(m.n)+"</span>"+"<span class='st "+(ok?"ok":"wn")+"'>"+(ok?T("✓ Ready","✓ तैयार"):T("+"+m.x.length+" to buy",m.x.length+" खरीदें"))+"</span><span class='vg "+(m.v?"v":"n")+"'></span><span class='tm'>⏱ "+(m.p+m.c)+" min"+(isLong(m)?" + "+Math.round(m.s[0]/60)+" h soak":"")+"</span></div>";}
+function tileHTML(m){var ok=!m.x.length;
  return '<details class="tile" data-recipe="'+encodeURIComponent(m.n)+'">'+
-  "<summary data-open-dish='"+MEALS.indexOf(m.recipe)+"' aria-haspopup='dialog' aria-controls='dtray'><div class='ti' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im):"")+"<span class='em recipe-photo-fallback' aria-hidden='true'>"+emo(m.n)+"</span>"+"<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+m.x.length+" to buy")+"</span><span class='vg "+(m.v?"v":"n")+"'></span><span class='tm'>⏱ "+(m.p+m.c)+" min"+(isLong(m)?" + "+Math.round(m.s[0]/60)+" h soak":"")+"</span></div><div class='tx'><b>"+dn(m.n)+"</b><small>"+(ok?"Everything is at home":"Need "+m.x.map(function(i){return NAME[i]}).join(", "))+"</small></div></summary>"+card(m)+"</details>"}
+  "<summary data-open-dish='"+MEALS.indexOf(m.recipe)+"' aria-haspopup='dialog' aria-controls='dtray'>"+dishTilePhoto(m)+"<div class='tx'><b>"+dn(m.n)+"</b><small>"+(ok?"Everything is at home":"Need "+m.x.map(function(i){return NAME[i]}).join(", "))+"</small></div></summary>"+card(m)+"</details>"}
 document.body.dataset.v="recipes";setView("recipes");
 try{var standalone=(window.navigator&&navigator.standalone)||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
  if(standalone||localStorage.getItem("rr-inst"))$("install").classList.add("hide");
