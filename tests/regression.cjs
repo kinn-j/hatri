@@ -118,7 +118,7 @@ test('Clear all time remains cleared across reload; show-more adds a bounded bat
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(() => window.MFREADY === true);
   assert.equal(await page.evaluate(() => Object.keys(TS).length), 0);
-  const first = page.locator('#results [data-show-more]').first();
+  const first = page.locator('#results [data-show-more^="dish-"]').first();
   assert.ok(await first.count() > 0);
   const groupId = await first.evaluate(button => button.parentElement.id);
   const cards = page.locator(`#${groupId} > .tgrid > details`);
@@ -227,7 +227,9 @@ test('whole meals paginate unique themed six-dish sets', async () => {
       assert.equal(new Set(await grid.locator('.meal-caption').allTextContents()).size, 6);
       assert.equal(await grid.evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length), 3);
       await cards.first().locator('summary').first().click();
-      assert.equal(await cards.first().locator('.mbody details.tile').count(), 6);
+      const dishes = cards.first().locator('.mbody details.tile');
+      await dishes.first().waitFor();
+      assert.equal(await dishes.count(), 6);
     } finally {
       await context.close();
     }
