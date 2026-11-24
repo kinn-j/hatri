@@ -632,6 +632,9 @@ test('the home carousel rotates, supports manual navigation and opens Christmas 
     assert.deepEqual((await cards.locator('h3').allTextContents()).sort(),
       await page.evaluate(() => MEALS.filter(m => m[8].includes('Christmas')).map(m => m[0]).sort()));
     assert.equal(await cards.count(), 12);
+    const boxes = await cards.evaluateAll(nodes => nodes.slice(0,3).map(n => ({x:n.offsetLeft,y:n.offsetTop})));
+    assert.equal(boxes[0].y, boxes[1].y);
+    assert.ok(boxes[1].x > boxes[0].x && boxes[2].y > boxes[0].y);
     await page.waitForFunction(() => document.querySelectorAll('#christmas-recipes .recipe-photo').length === 12);
     await cards.first().locator('img').evaluate(img => img.decode());
     assert.equal(await page.locator('#planner').isVisible(), false);
@@ -643,6 +646,11 @@ test('the home carousel rotates, supports manual navigation and opens Christmas 
     assert.deepEqual(await page.evaluate(() => [cartQuantity('mint'), cartQuantity('orange')]), [1,0]);
     await cooler.getByRole('button', {name:'View recipe'}).tap();
     assert.equal(await page.locator('#dish-title').innerText(), 'Christmas Orange Mint Cooler');
+    const modal = page.locator('#dtray');
+    await modal.getByRole('button', {name:'हिन्दी', exact:true}).tap();
+    assert.match(await modal.locator('.steps ol').innerText(), /[अ-ह]/);
+    await modal.getByRole('button', {name:'English', exact:true}).tap();
+    assert.equal(await modal.locator('.steps ol').locator('..').getAttribute('lang'), 'en');
     await page.locator('#dish-detail-close').tap();
     await collection.getByRole('button', {name:'Shopping list'}).tap();
     await page.locator('[data-vs="order"][role="dialog"]').waitFor();
