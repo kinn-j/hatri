@@ -206,3 +206,21 @@ test('inline scripts remain syntactically valid', () => {
     if (match[1].trim()) new vm.Script(match[1]);
   }
 });
+
+test('selecting a fully supplied recipe or meal preserves another dish’s purchases', () => {
+  const {context, click} = setup();
+  context.cart = {milk: 3};
+  context.have = {oats: 1};
+  context.cartMeals = [{name: 'Breakfast', ingredients: ['milk'], added: ['milk']}];
+  const ingredients = context.MEALS[2][5];
+  assert.equal(context.cartDishComplete('Simple Porridge', ingredients, ['milk']), false);
+  click({add: 'Simple Porridge'});
+  assert.equal(context.cartDishComplete('Simple Porridge', ingredients, ['milk']), true);
+  assert.deepEqual(Array.from(context.cartMeals[1].added), []);
+  click({add: 'Simple Porridge'});
+  context.MEALK = {combo: {key:'combo', miss:['milk'], items:[{ing:ingredients}]}};
+  click({addm: 'combo'});
+  click({addm: 'combo'});
+  assert.equal(context.cartQuantity('milk'), 3);
+  assert.deepEqual(Array.from(context.cartMeals, group => group.name), ['Breakfast']);
+});

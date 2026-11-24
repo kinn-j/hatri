@@ -1072,7 +1072,9 @@ function shoppingIngredient(i){
     nmx(i)+" <span class='shop-mark' aria-hidden='true'>"+(added?"✓":"+")+"</span></button>";
 }
 function card(m,expanded){
-  var pct=m.tot?Math.round(m.h.length/m.tot*100):100,all=m.x.every(function(i){return cart[i]});
+  var pct=m.tot?Math.round(m.h.length/m.tot*100):100,all=cartDishComplete(m.n,m.ing,m.x);
+  var pending=m.x.filter(function(id){return !cartQuantity(id)}).length;
+  var cartLabel=all?T("Added ✓","जोड़ा गया ✓"):pending?T("Add "+pending+" to order",pending+" सामग्री जोड़ें"):T("Add dish to cart","व्यंजन कार्ट में जोड़ें");
   var ready=m.p+m.c+(m.s&&!isLong(m)&&!m.ov?m.s[0]:0),c=CCOL[m.cu]||CCOL.Everyday;
   var diet=expanded?(m.v?T("Vegetarian","शाकाहारी"):T("Contains non-vegetarian ingredients","मांसाहारी सामग्री"))+" · ":"";
   var sl=pslug(m.n),im=IMG[sl];
@@ -1081,7 +1083,7 @@ function card(m,expanded){
   var opener=expanded?"":"<button type='button' class='dish-opener meal-dish-opener' data-open-dish='"+MEALS.indexOf(m.recipe)+"' aria-haspopup='dialog' aria-controls='dtray'>"+thumbnail+"<b>"+escapeHTML(dn(m.n))+"</b></button>";
   var link="<a href='https://www.google.com/search?tbm=isch&q="+encodeURIComponent(m.n+" recipe")+"' target='_blank' rel='noopener'>📷 photos</a>";
   return "<div class='meal' data-recipe='"+encodeURIComponent(m.n)+"'><div class='mh'><div>"+opener+"<div class='meta'><span class='dot "+(m.v?"veg":"nv")+"'></span>"+diet+m.cu+" · "+({Light:"🪶 Light",Medium:"⚖️ Medium",Heavy:"🔥 Heavy"})[m.w]+" · Prep "+m.p+" min · "+(m.c?"Cook "+m.c+" min":"No cooking")+" · Ready in ~"+ready+" min"+(m.s&&!isLong(m)&&!m.ov?" incl. soak":"")+(m.ov?" · soak while you chop":"")+(m.f?" · 🎉 "+m.f:"")+(ptag(m)?" · "+ptag(m):"")+" · "+link+(UPL?" · <button class='x' data-up='"+sl+"' style='font-size:12px;color:var(--accent)'>📷 "+(im?"change":"add")+" photo</button>":"")+"</div></div>"+
-   (m.x.length?"<button class='btn sm"+(all?"":" primary")+"' data-add='"+m.n+"'>"+(all?"Added ✓":"Add "+m.x.length+" to order")+"</button>":"<span class='chip have'>Ready to cook</span>")+"</div>"+
+   (m.x.length?"<button class='btn sm"+(all?"":" primary")+"' data-add='"+escapeHTML(m.n)+"'>"+cartLabel+"</button>":"<span class='chip have'>Ready to cook</span>")+"</div>"+
    (m.s?"<div class='soak'>💧 "+soakTxt(m)+"</div>":"")+(m.oc.indexOf("Vrat")>-1?"<div class='soak' style='border-color:#e8590c'>🙏 Vrat-friendly — use sendha namak; no onion or garlic</div>":"")+extra(m,expanded)+
    "<div class='bar'><i style='width:"+pct+"%'></i></div><div class='chips'>"+
    m.h.map(function(i){return "<span class='chip have'>"+NAME[i]+"</span>"}).join("")+
@@ -1540,11 +1542,11 @@ function mealTileHTML(c,force){
   var items=c.items,n=Math.min(items.length,4),open=force||!!MOPEN[c.key];
   var ims=items.slice(0,4).map(function(m,i){var im=IMG[pslug(m.n)],g=CCOL[m.cu]||CCOL.Everyday;
     return "<span class='mc' style='background:linear-gradient(135deg,"+g[0]+","+g[1]+")'>"+(im?recipeImage(im):"<i>"+emo(m.n)+"</i>")+(i===3&&items.length>4?"<em>+"+(items.length-4)+"</em>":"")+"</span>"}).join("");
-  var ok=!c.miss.length,done=c.miss.length&&c.miss.every(function(i){return cart[i]}),protein=protBadge(c);
+  var ok=!c.miss.length,done=cartDishComplete(c.key,items.flatMap(function(m){return m.ing}),c.miss),protein=protBadge(c);
   return "<details class='mtile' data-mk='"+encodeURIComponent(c.key)+"'"+(open?" open":"")+"><summary><div class='mos n"+n+"'>"+ims+
     "<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+c.miss.length+" to buy")+"</span><span class='tm'>⏱ ~"+c.t+" min</span></div>"+
     "<div class='mtx'><b>"+items.map(function(m){return dn(m.n)}).join(" + ")+"</b><small>"+items.length+" dishes · "+(ok?"Everything is at home":"Need "+c.miss.map(function(i){return NAME[i]}).join(", "))+"</small><span class='hint'>See the dishes</span></div></summary>"+
-    "<div class='mbody'><div class='mrow'>"+(protein?"<small>"+protein+"</small>":"")+(c.miss.length?"<button class='btn sm"+(done?"":" primary")+"' data-addm='"+encodeURIComponent(c.key)+"'>"+(done?"Added ✓":"Add missing")+"</button>":"<span class='chip have'>Ready to cook</span>")+"</div>"+
+    "<div class='mbody'><div class='mrow'>"+(protein?"<small>"+protein+"</small>":"")+(c.miss.length?"<button class='btn sm"+(done?"":" primary")+"' data-addm='"+encodeURIComponent(c.key)+"'>"+(done?"Added ✓":c.miss.every(function(i){return cartQuantity(i)})?T("Add meal to cart","भोजन कार्ट में जोड़ें"):"Add missing")+"</button>":"<span class='chip have'>Ready to cook</span>")+"</div>"+
     "<div class='tgrid'>"+items.map(tileHTML).join("")+"</div></div></details>";
 }
 document.addEventListener("toggle",function(e){
@@ -1882,9 +1884,16 @@ function requiredCartIngredients(ingredients){
   return Array.from(new Set((ingredients||[]).filter(function(id){return typeof id==="string"&&id&&!id.endsWith("?")})));
 }
 function cartDishKey(name,ingredients){return name+"|"+requiredCartIngredients(ingredients).sort().join("|")}
+function cartDishIndex(name,ingredients){
+  var key=cartDishKey(name,ingredients);
+  return cartMeals.findIndex(function(d){return cartDishKey(d.name,d.ingredients)===key});
+}
+function cartDishComplete(name,ingredients,missing){
+  return missing.length>0&&cartDishIndex(name,ingredients)>=0&&missing.every(function(id){return cartQuantity(id)>0});
+}
 function trackCartDish(name,ingredients){
-  var required=requiredCartIngredients(ingredients),key=cartDishKey(name,required);
-  var group=cartMeals.find(function(d){return cartDishKey(d.name,d.ingredients)===key});
+  var required=requiredCartIngredients(ingredients);
+  var group=cartMeals[cartDishIndex(name,required)];
   if(!group){group={name:name,ingredients:required,added:[]};cartMeals.push(group)}
   if(!Array.isArray(group.added))group.added=[];
   return group;
@@ -1908,8 +1917,8 @@ function removeCartDish(index){
 function toggleRecipeIngredients(ingredients,name,allIngredients){
   var ids=requiredCartIngredients(ingredients).filter(function(id){return !have[id]});
   if(!ids.length)return;
-  var existing=name&&cartMeals.findIndex(function(d){return cartDishKey(d.name,d.ingredients)===cartDishKey(name,allIngredients||ingredients)});
-  if(ids.every(function(id){return cartQuantity(id)>0})){
+  var existing=name?cartDishIndex(name,allIngredients||ingredients):-1;
+  if((!name||existing>=0)&&ids.every(function(id){return cartQuantity(id)>0})){
     if(existing>=0&&name){removeCartDish(existing);return}
     ids.forEach(function(id){delete cart[id]});
   }else{

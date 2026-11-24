@@ -1,5 +1,5 @@
 /* Hatri website shell. Increase cache version when shipping changes. */
-const CACHE = 'hatri-v33-international-recipes';
+const CACHE = 'hatri-v34-cart-ownership';
 const SHELL = ['./', './index.html', './auth.js', './vrat-recipes.js', './instagram-recipes.js', './quick-north-recipes.js', './street-food-recipes.js', './rajasthani-recipes.js', './seasonal-recipes.js', './international-recipes.js', './hero-carousel.js', './ingredient-images.js', './recipe-details.js', './manifest.webmanifest',
   './icons/icon-192x192.png', './icons/icon-512x512.png',
   './icons/apple-touch-icon.png', './icons/favicon.png', './images/photos.json', './images/hatri-pantry-header.webp', './images/hatri-dinner-header.webp', './images/hatri-christmas-header.webp'];
@@ -7,7 +7,7 @@ self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(names => Promise.all(names.filter(n => n !== CACHE).map(n => caches.delete(n)))).then(() => self.clients.claim()));
+  event.waitUntil(caches.keys().then(names => Promise.all(names.filter(n => n.startsWith('hatri-v') && n !== CACHE).map(n => caches.delete(n)))).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', event => {
   const req=event.request;

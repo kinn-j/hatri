@@ -6,7 +6,11 @@ const assert = require('node:assert/strict');
 const http = require('node:http');
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const { chromium } = require('playwright');
+const { chromium, webkit } = require('playwright');
+const {execFile} = require('node:child_process');
+const git = require('node:util').promisify(execFile);
+const previousRelease = 'fde94edb12e763c367ea64e937eb7e77f496de21';
+let servePreviousRelease = false;
 
 const root = path.resolve(__dirname, '..');
 let server, browser, url;
@@ -18,13 +22,16 @@ test.before(async () => {
     const filename = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     if (!filename.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
     try {
-      const data = await fs.readFile(filename);
+      const data = servePreviousRelease
+        ? (await git('git', ['show', previousRelease + ':' + path.relative(root, filename)], {cwd: root, encoding: 'buffer', maxBuffer: 8 * 1024 * 1024})).stdout
+        : await fs.readFile(filename);
       res.writeHead(200, { 'Content-Type': mime[path.extname(filename)] || 'application/octet-stream' }).end(data);
     } catch { res.writeHead(404).end(); }
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   url = `http://127.0.0.1:${server.address().port}/`;
-  browser = await chromium.launch({ headless: true, executablePath: '/usr/bin/chromium', args: ['--no-sandbox'] });
+  const engine = process.env.HATRI_BROWSER === 'webkit' ? webkit : chromium;
+  browser = await engine.launch({headless: true, executablePath: process.env.HATRI_BROWSER_PATH || undefined});
 });
 test.after(async () => { await browser?.close(); await new Promise(resolve => server?.close(resolve)); });
 
@@ -454,7 +461,8 @@ test('the cart rotates 1–2 missing-ingredient dishes in a two-column mobile gr
     await dishes.first().locator('.cart-add-dish').tap();
     const after = await dishes.locator('.cart-dish-name').allTextContents();
     assert.equal(after.includes(before[0]), false, 'selected dish disappears');
-    assert.equal(after.length, 6, 'another eligible dish replaces it');
+    assert.equal(new Set(after).size, 6);
+    assert.ok(after.some(name => !before.includes(name)), 'a new eligible dish appears');
     assert.equal(await page.locator('.cart-group').filter({hasText: before[0]}).count(), 1);
     assert.deepEqual(await page.evaluate(ids => ids.map(id => cartQuantity(id)), firstNeeded),
       firstNeeded.map(() => 1));
@@ -474,10 +482,25 @@ test('the cart rotates 1–2 missing-ingredient dishes in a two-column mobile gr
     await milkRow.getByRole('button', {name: 'Increase quantity for Milk'}).tap();
     assert.equal(await milkRow.locator('output').textContent(), '2');
 
+    const snapshot = () => page.locator('.cart-group').evaluateAll(groups => groups.map(group => ({
+      name: group.querySelector('.cart-dish-name').textContent,
+      rows: [...group.querySelectorAll('li')].map(row => [
+        row.dataset.cartItem || row.querySelector('[data-cart-add-listed]').dataset.cartAddListed,
+        Number(row.querySelector('output')?.textContent || 0)
+      ])
+    })));
+    const saved = await snapshot();
+    const pending = await partialGroup.locator('[data-cart-add-listed]').getAttribute('data-cart-add-listed');
     await page.reload({waitUntil: 'domcontentloaded'});
     await page.waitForFunction(() => window.MFREADY === true);
     await page.locator('.tabbar [data-view="order"]').tap();
-    assert.equal(await page.locator('.cart-group').count(), 2);
+    assert.deepEqual(await snapshot(), saved);
+    const total = Number(await page.locator('#cbadge').textContent());
+    await partialGroup.locator('[data-cart-add-listed]').tap();
+    assert.equal(await partialGroup.locator('[data-cart-item="' + pending + '"] output').textContent(), '1');
+    const rowCount = await partialGroup.locator('li').count();
+    assert.equal(await partialGroup.locator('.cart-group-heading small').textContent(), rowCount+' of '+rowCount+' ingredients in cart');
+    assert.equal(Number(await page.locator('#cbadge').textContent()), total + 1);
     assert.equal(await page.locator('.cart-items [data-cart-item="milk"]').first().locator('output').textContent(), '2');
 
     const order = page.getByRole('link', {name: 'Order from Blinkit'});
@@ -486,7 +509,12 @@ test('the cart rotates 1–2 missing-ingredient dishes in a two-column mobile gr
     assert.equal(await page.locator('#cart > :last-child').textContent(), 'Order from Blinkit');
     assert.equal(await page.locator('#cartCard input, #cartCard li a').count(), 0);
 
-    await page.evaluate(() => {cart = {};cartMeals = [];renderCart()});
+    while (await page.locator('[data-cart-remove-dish]').count())
+      await page.locator('[data-cart-remove-dish]').first().tap();
+    const decrease = page.locator('[data-cart-quantity="-1"]');
+    while (await decrease.count()) await decrease.first().tap();
+    assert.equal(await page.locator('#cbadge').textContent(), '');
+    assert.equal(await page.locator('#cartCount').textContent(), '');
     assert.equal(await order.count(), 0);
     assert.equal(await dishes.count(), 6, 'an empty cart offers new shopping suggestions');
   } finally {
@@ -522,5 +550,149 @@ test('the home carousel rotates, supports manual navigation and opens Christmas 
     assert.ok(audit.sindhi.includes('Sai Bhaji'));
   } finally {
     await context.close();
+  }
+});
+
+test('recipe selection preserves shared milk and decrementing to zero survives reload', async () => {
+  const {page, context} = await open();
+  try {
+    await page.evaluate(() => {
+      const halwa = MEALS.find(m => m[0] === 'Gajar Halwa');
+      have = Object.fromEntries(requiredCartIngredients(halwa[5]).filter(id => id !== 'milk').map(id => [id, 1]));
+      cart = {milk: 3};
+      cartMeals = [{name: 'Milk for breakfast', ingredients: ['milk'], added: ['milk']}];
+      all();
+    });
+    await page.locator('#rq').fill('gajar halwa');
+    await page.locator('#results [data-recipe="Gajar%20Halwa"] > summary').first().click();
+    const toggle = page.locator('#dtray [data-add="Gajar Halwa"]');
+    assert.equal(await toggle.textContent(), 'Add dish to cart');
+    await toggle.click();
+    assert.equal(await toggle.textContent(), 'Added ✓');
+    await toggle.click();
+    await page.reload();
+    await page.locator('.tabbar [data-view="order"]').click();
+    const group = page.locator('.cart-group');
+    assert.equal(await group.locator('.cart-dish-name').textContent(), 'Milk for breakfast');
+    const decrease = group.locator('[data-cart-quantity="-1"]');
+    for (const n of [3, 2, 1]) {
+      assert.equal(await group.locator('output').textContent(), String(n));
+      assert.equal(await page.locator('#cbadge').textContent(), String(n));
+      await decrease.click();
+    }
+    await page.reload();
+    await page.locator('.tabbar [data-view="order"]').click();
+    assert.equal(await group.locator('[data-cart-add-listed]').getAttribute('data-cart-add-listed'), 'milk');
+    assert.equal(await page.locator('#cartCount').textContent(), '');
+    assert.equal(await page.locator('#cbadge').textContent(), '');
+    assert.equal(await page.locator('.order-blinkit').count(), 0);
+  } finally { await context.close(); }
+});
+
+test('cart recomputes exact alternatives under vegetarian and Christmas filters', async () => {
+  const {page, context} = await open();
+  try {
+    await page.evaluate(() => {
+      const dish = (name, ids, occasion = 'Christmas') => [name, 1, 5, 0, 0, ids, 'Everyday', 0, [occasion], ''];
+      MEALS = [
+        dish('Carrot dish', ['carrot', 'milk']), dish('Milk dish', ['milk']),
+        dish('Holiday rice', ['milk', 'rice', 'peas']), dish('Egg curry', ['eggs']),
+        dish('Daily oats', ['oats'], 'Daily')
+      ];
+      nonveg = false; OS = {Christmas: 1}; TS = {}; RS = {}; HS = {};
+      have = {carrot: 1}; cart = {}; cartMeals = [];
+      setView('order');
+    });
+    const cards = page.locator('.cart-dish-card');
+    const choices = () => cards.evaluateAll(nodes => nodes.map(card => [
+      card.querySelector('.cart-dish-name').textContent,
+      [...card.querySelectorAll('[data-cart-add-ingredient]')].map(button => button.dataset.cartAddIngredient)
+    ]));
+    assert.deepEqual(await choices(), [['Carrot dish', ['milk']], ['Milk dish', ['milk']]]);
+    await cards.first().locator('.cart-add-dish').click();
+    assert.deepEqual(await choices(), [['Holiday rice', ['rice', 'peas']]]);
+    await cards.first().locator('.cart-add-dish').click();
+    assert.deepEqual(await choices(), []);
+    assert.equal(await page.locator('.cart-group').count(), 2);
+  } finally { await context.close(); }
+});
+
+test('v28 installed cart upgrades and can finish a saved dish offline', async () => {
+  servePreviousRelease = true;
+  let context;
+  try {
+    const opened = await open(); context = opened.context;
+    const page = opened.page;
+    await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
+    await page.evaluate(() => caches.open('other-app-cache').then(() => true));
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+    assert.ok((await page.evaluate(() => caches.keys())).includes('hatri-v28-dynamic-cart-dishes'));
+    await page.evaluate(() => {
+      have = {carrot: 1}; cart = {milk: 2, ghee: 1};
+      const recipe = MEALS.find(m => m[0] === 'Gajar Halwa');
+      cartMeals = [{name: recipe[0], ingredients: requiredCartIngredients(recipe[5]), added: ['milk','ghee']}];
+      all();
+    });
+    servePreviousRelease = false;
+    await page.evaluate(async () => {
+      const changed = new Promise(resolve => navigator.serviceWorker.addEventListener('controllerchange', resolve, {once:true}));
+      await (await navigator.serviceWorker.ready).update();
+      await changed;
+      const worker = navigator.serviceWorker.controller;
+      await new Promise(resolve => {
+        const activated = () => { if (worker.state === 'activated') resolve(); };
+        worker.addEventListener('statechange', activated);
+        activated();
+      });
+    });
+    const upgraded = await page.evaluate(() => caches.keys());
+    assert.ok(upgraded.includes('other-app-cache'));
+    assert.equal(upgraded.includes('hatri-v28-dynamic-cart-dishes'), false);
+    await context.setOffline(true);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(() => window.MFREADY === true);
+    await page.locator('.tabbar [data-view="order"]').click();
+    const group = page.locator('.cart-group');
+    assert.equal(await group.locator('.cart-dish-name').textContent(), 'Gajar Halwa');
+    await group.locator('[data-cart-add-listed="sugar"]').click();
+    assert.equal(await group.locator('[data-cart-item="milk"] output').textContent(), '2');
+    assert.equal(await group.locator('[data-cart-item="sugar"] output').textContent(), '1');
+    await group.locator('.dish-opener').click();
+    assert.equal(await page.locator('#dtray h2').textContent(), 'Gajar Halwa');
+    assert.ok(await page.locator('#dtray .steps ol li').count() > 0);
+  } finally { servePreviousRelease = false; await context?.close(); }
+});
+
+test('Hindi cart controls remain tappable at 320 and 390 pixels with a failed photo', async () => {
+  for (const width of [320, 390]) {
+    const {page, context} = await open({width, height: 844}, {isMobile: true, hasTouch: true});
+    try {
+      await page.evaluate(() => {
+        const recipe = MEALS.find(m => m[0] === 'Gajar Halwa');
+        MEALS = [recipe];
+        TS = {}; OS = {}; RS = {}; HS = {};
+        have = {carrot: 1, sugar: 1}; cart = {}; cartMeals = [];
+        HI[recipe[0]] = 'गाजर और दूध से बना पारंपरिक भारतीय हलवा';
+        IMG[pslug(recipe[0])] = 'missing-cart-regression.webp';
+        setLang('hi'); setView('order');
+      });
+      const card = page.locator('.cart-dish-card');
+      const photo = card.locator('.cart-thumbnail img');
+      await card.scrollIntoViewIfNeeded();
+      assert.equal(await photo.count(), 1);
+      await photo.waitFor({state:'hidden'});
+      assert.equal(await card.locator('.cart-thumbnail').isVisible(), true);
+      assert.match(await card.locator('.cart-dish-name').textContent(), /हलवा/);
+      const buttons = card.locator('button');
+      assert.equal(await buttons.count(), 4);
+      for (const button of await buttons.all()) {
+        await button.tap({trial:true});
+        const rect = await button.boundingBox(), outer = await card.boundingBox();
+        assert.ok(rect.x >= outer.x - 1 && rect.x + rect.width <= Math.min(width, outer.x + outer.width) + 1);
+      }
+      await card.locator('[data-cart-add-ingredient]').first().tap();
+      await page.locator('.cart-group [data-cart-add-listed]').tap();
+      assert.equal(await page.locator('.cart-group output').count(), 2);
+    } finally { await context.close(); }
   }
 });

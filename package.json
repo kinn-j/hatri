@@ -1,0 +1,11 @@
+{
+  "name": "hatri",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.cjs",
+    "test:webkit": "HATRI_BROWSER=webkit node --test --test-name-pattern='cart rotates|recipe selection preserves|cart recomputes|Hindi cart controls' tests/regression.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}
