@@ -4,15 +4,9 @@ https://kinn-j.github.io/hatri/
 
 ## Testing
 
-Run source-level regression checks with `node --test tests/static-regression.cjs`.
-For real Chromium desktop/mobile viewport interaction checks, run
-`node --test tests/regression.cjs` on a machine where Chromium is installed
-and permitted to launch (`/usr/bin/chromium`). The browser suite covers
-responsive layout, search/filtering, Hindi, vegetarian-only mode, pagination,
-pantry selection, image fallback and PWA installation. The static-hosted app
-does **not** contain separate Android or iOS native projects; verify the
-installed PWA on actual Android Chrome and iOS Safari devices before release.
+Install the test dependencies with `npm ci`, then run `npx playwright install --with-deps chromium webkit`. Run `npm test` for all source and Chromium tests, and `npm run test:webkit` for WebKit cart interactions. Set `HATRI_BROWSER_PATH` to use a compatible system browser. The PWA upgrade test serves the November 23 v28 commit from Git history and switches the same origin to the working tree. Use a full clone for this test.
 
+GitHub Actions runs these checks on pull requests and pushes to main. The web and installed mobile apps share the same PWA. Actual Android and iOS installation and standalone display still need device verification.
 
 Static HTML/CSS/JavaScript website with an installable Progressive Web App (PWA) manifest and bundled food photos. Updated using the latest supplied Claude HTML (`Raman Rasoi — Pantry-first meal planner 2.html`).
 
