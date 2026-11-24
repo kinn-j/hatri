@@ -236,6 +236,27 @@ test('whole meals paginate unique themed six-dish sets', async () => {
   }
 });
 
+test('meal photos and expanded dishes work without a photo index on mobile', async () => {
+  const context = await browser.newContext({viewport:{width:390,height:844}});
+  try {
+    await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, route => route.abort());
+    await context.route('**/images/photos.json', route => route.fulfill({status:503,body:'Unavailable'}));
+    const page = await context.newPage();
+    await page.goto(url, {waitUntil:'domcontentloaded'});
+    await page.waitForFunction(() => window.MFREADY === true);
+    await page.evaluate(() => setView('recipes'));
+    const meal = page.locator('#results .mtile').first();
+    const photos = meal.locator('summary .mc img');
+    assert.equal(await photos.count(), 6);
+    await photos.evaluateAll(images => Promise.all(images.map(image => image.decode())));
+    await meal.locator('summary').first().click();
+    const firstDish = meal.locator('.mbody details.tile > summary').first();
+    await firstDish.click();
+    await page.locator('#dtray[open] .dt-photo img').evaluate(image => image.decode());
+    assert.ok(await page.locator('#dtray .steps ol li').count() > 0);
+  } finally { await context.close(); }
+});
+
 test('every live recipe has a decodable full-size dish photo', {timeout: 60_000}, async () => {
   const {page, context} = await open();
   try {
@@ -798,6 +819,12 @@ test('v28 installed cart upgrades and can finish a saved dish offline', async ()
       cartMeals = [{name: recipe[0], ingredients: requiredCartIngredients(recipe[5]), added: ['milk','ghee']}];
       all();
     });
+    // Prior releases stored viewed recipe photos alongside the app shell.
+    await page.evaluate(async () => {
+      const photo = 'images/gajar-halwa.webp?v=38';
+      const oldShell = await caches.open('hatri-v28-dynamic-cart-dishes');
+      await oldShell.put(photo, await fetch(photo));
+    });
     servePreviousRelease = false;
     await page.evaluate(async () => {
       const changed = new Promise(resolve => navigator.serviceWorker.addEventListener('controllerchange', resolve, {once:true}));
@@ -824,6 +851,7 @@ test('v28 installed cart upgrades and can finish a saved dish offline', async ()
     assert.equal(await group.locator('[data-cart-item="sugar"] output').textContent(), '1');
     await group.locator('.dish-opener').click();
     assert.equal(await page.locator('#dtray h2').textContent(), 'Gajar Halwa');
+    await page.locator('#dtray[open] .dt-photo img').evaluate(image => image.decode());
     assert.ok(await page.locator('#dtray .steps ol li').count() > 0);
   } finally { servePreviousRelease = false; await context?.close(); }
 });
