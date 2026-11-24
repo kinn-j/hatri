@@ -4,7 +4,7 @@ https://kinn-j.github.io/hatri/
 
 ## Testing
 
-Install the test dependencies with `npm ci`, then run `npx playwright install --with-deps chromium webkit`. Run `npm test` for all source and Chromium tests, and `npm run test:webkit` for WebKit cart interactions. Set `HATRI_BROWSER_PATH` to use a compatible system browser. The PWA upgrade test serves the November 23 v28 commit from Git history and switches the same origin to the working tree. Use a full clone for this test.
+Install the test dependencies with `npm ci`, then run `npx playwright install --with-deps chromium webkit`. Run `npm test` for all source and Chromium tests, and `npm run test:webkit` for WebKit cart and recipe photo checks. Set `HATRI_BROWSER_PATH` to use a compatible system browser. The PWA upgrade test serves the November 23 v28 commit from Git history and switches the same origin to the working tree. Use a full clone for this test.
 
 GitHub Actions runs these checks on pull requests and pushes to main. The web and installed mobile apps share the same PWA. Actual Android and iOS installation and standalone display still need device verification.
 
@@ -59,6 +59,6 @@ Run `python -m http.server 8000` from this folder and visit `http://localhost:80
 
 Every dish in the live catalog has a bundled image. The full-catalog browser
 test checks the photo mapping, successful decoding, and a minimum image edge
-of 200 pixels. The [missing-image report](images/MISSING_RECIPE_PHOTOS.csv) is
+of 300 pixels. The [missing-image report](images/MISSING_RECIPE_PHOTOS.csv) is
 empty. The [unused-image inventory](images/EXTRA_PHOTOS_NOT_CURRENTLY_USED.csv)
 lists bundled photos available for future use.

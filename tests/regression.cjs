@@ -216,7 +216,7 @@ test('every live recipe has a decodable full-size dish photo', {timeout: 60_000}
           photo.src = src;
           try {
             await photo.decode();
-            if (Math.min(photo.naturalWidth, photo.naturalHeight) < 200) {
+            if (Math.min(photo.naturalWidth, photo.naturalHeight) < 300) {
               invalid.push([name, src, `${photo.naturalWidth}×${photo.naturalHeight}`]);
             }
           } catch {
@@ -229,6 +229,30 @@ test('every live recipe has a decodable full-size dish photo', {timeout: 60_000}
     assert.deepEqual(audit.missing, []);
     assert.deepEqual(audit.invalid, []);
     assert.ok(audit.photoCount > 0);
+  } finally {
+    await context.close();
+  }
+});
+
+test('Dahi ke Kebab uses its updated full-resolution photo in search and recipe details', async () => {
+  const {page, context} = await open();
+  try {
+    await page.waitForFunction(() => IMG['dahi-ke-kebab']);
+    await page.locator('#rq').fill('dahi ke kebab');
+    const photo = page.locator('#results [data-recipe="Dahi%20ke%20Kebab"] > summary img');
+    await photo.evaluate(img => img.decode());
+    const source = await photo.getAttribute('src');
+    assert.match(source, /^images\/dahi-ke-kebab[.]webp[?]v=\d+$/);
+    await photo.click();
+    const detail = page.locator('#dtray[open] .dt-photo img');
+    const displayed = await detail.evaluate(async img => {
+      await img.decode();
+      return {width: img.naturalWidth, height: img.naturalHeight, fit: getComputedStyle(img).objectFit};
+    });
+    assert.equal(await detail.getAttribute('src'), source);
+    assert.ok(displayed.width >= 800);
+    assert.equal(displayed.height, displayed.width);
+    assert.equal(displayed.fit, 'contain');
   } finally {
     await context.close();
   }

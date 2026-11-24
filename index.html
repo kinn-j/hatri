@@ -380,7 +380,7 @@ body.sh-plan [data-vs="plan"] #cuis{border-top:0}
 .dt-x{flex:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:19px;cursor:pointer}
 .dt-b{padding:0 16px 18px}
 .dt-b>.meal{margin:0;padding:0;border:0}
-.dt-photo{position:relative;display:grid;place-items:center;aspect-ratio:16/9;max-height:44dvh;margin:0 -16px 14px;background:var(--accent-bg);overflow:hidden}
+.dt-photo{position:relative;display:grid;place-items:center;aspect-ratio:4/3;max-height:44dvh;margin:0 -16px 14px;background:var(--accent-bg);overflow:hidden}
 .dt-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#10231a}
 .dt-photo span{font-size:64px}
 img.recipe-photo:not([hidden])+.recipe-photo-fallback{display:none}
@@ -1284,8 +1284,8 @@ document.addEventListener("click",function(e){
 $("q").addEventListener("input",renderIngs);
 $("basics").addEventListener("change",function(){toast(this.checked?"Assuming oil, salt & masalas are at home":"Basics not assumed (demo)")});
 var IMG={},UPL=false,db=null,assets=null,upSlug=null;
-// Published sites use checked-in photos; Claude artifacts keep their blob URLs.
-function photoSrc(id){return id.indexOf("images/")===0?id:"/_blob/"+id}
+// Advance the photo revision with the service worker when replacing bundled images.
+function photoSrc(id){return id.indexOf("images/")===0?id+"?v=38":"/_blob/"+id}
 function recipeImage(id,eager){return "<img class='recipe-photo' alt='' "+(eager?"":"loading='lazy' ")+"decoding='async' src='"+escapeHTML(photoSrc(id))+"'>"}
 (function loadPublishedPhotos(){
   if(window.claude&&claude.use)return;
