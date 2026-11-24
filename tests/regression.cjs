@@ -912,6 +912,7 @@ test('activity writes are opt-in, scoped to the signed-in account and omit searc
     await page.getByRole('button', {name: 'Close profile'}).click();
     await page.locator('#rq').fill('test-only search text');
     await page.waitForFunction(() => activityWrites.some(({data}) => data.event === 'recipe_search'));
+    await page.locator('#rq').fill('');
     await openWinterCollection(page);
     await page.locator('#winter-recipes').getByRole('button', {name: 'View recipe'}).first().click();
     const records = await page.evaluate(() => activityWrites);
