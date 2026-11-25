@@ -4,10 +4,10 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.3.0/firebase-app.js';
 import {
   getAuth, browserLocalPersistence, setPersistence, onAuthStateChanged,
-  GoogleAuthProvider, signInWithPopup, signOut
+  GoogleAuthProvider, signInWithPopup, signOut, connectAuthEmulator
 } from 'https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js';
 import {
-  getFirestore, doc, getDoc, setDoc, serverTimestamp, Timestamp
+  getFirestore, doc, getDoc, setDoc, serverTimestamp, Timestamp, connectFirestoreEmulator
 } from 'https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js';
 import { createActivityTracker } from './activity.js';
 
@@ -299,6 +299,10 @@ if (!isClaude && configured) {
     const app = initializeApp(FIREBASE_CONFIG);
     auth = getAuth(app);
     database = getFirestore(app);
+    if (location.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(location.hostname)) {
+      connectAuthEmulator(auth, `http://${location.hostname}:9099`, { disableWarnings: true });
+      connectFirestoreEmulator(database, location.hostname, 8080);
+    }
     const activity = createActivityTracker(async (uid, event) => {
       if (auth.currentUser?.uid !== uid) return;
       const ref = doc(database, 'users', uid, 'activityEvents', event.sessionId + '-' + event.sequence);

@@ -151,9 +151,26 @@ test('adding all recipe ingredients preserves existing and legacy cart quantitie
 
 test('PWA registers offline worker and caches the required shell files', () => {
   assert.match(src, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
-  assert.match(sw, /const CACHE = 'hatri-v48-desi-recipes'/);
-  for (const item of ['auth.js','ingredient-images.js','recipe-details.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp','seasonal-recipes.js','winter-recipes.js','desi-recipes.js','activity.js','international-recipes.js','hero-carousel.js','images/hatri-dinner-header.webp','images/hatri-christmas-header.webp','images/mushroom-barley-soup.webp']) assert.ok(sw.includes(`'./${item}'`));
+  assert.match(sw, /const CACHE = 'hatri-v49-desi-recipes'/);
+  for (const item of ['auth.js','recipe-reels.js','ingredient-images.js','recipe-details.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp','seasonal-recipes.js','winter-recipes.js','desi-recipes.js','activity.js','international-recipes.js','hero-carousel.js','images/hatri-dinner-header.webp','images/hatri-christmas-header.webp','images/mushroom-barley-soup.webp']) assert.ok(sw.includes(`'./${item}'`));
   new vm.Script(sw);
+});
+
+test('community video feed keeps media out of Firestore and enforces its upload contract', () => {
+  const reels = fs.readFileSync(path.resolve(__dirname, '../recipe-reels.js'), 'utf8');
+  const rules = fs.readFileSync(path.resolve(__dirname, '../firestore.rules'), 'utf8');
+  const storage = fs.readFileSync(path.resolve(__dirname, '../storage.rules'), 'utf8');
+  assert.match(src, /id="reels-page"/);
+  assert.match(reels, /collection\(db, 'publicRecipeVideos'\)/);
+  assert.match(reels, /communityVideos\/\$\{signedInUser\.uid\}\/\$\{post\.id\}/);
+  assert.match(reels, /MAX_BYTES = 100 \* 1024 \* 1024/);
+  assert.match(reels, /connectStorageEmulator\(storage, location\.hostname, 9199\)/);
+  const auth = fs.readFileSync(path.resolve(__dirname, '../auth.js'), 'utf8');
+  assert.match(auth, /connectAuthEmulator\(auth, `http:\/\/\$\{location\.hostname\}:9099`/);
+  assert.match(auth, /connectFirestoreEmulator\(database, location\.hostname, 8080\)/);
+  assert.match(rules, /match \/publicRecipeVideos\/{videoId}/);
+  assert.match(storage, /match \/communityVideos\/{userId}\/{videoId}/);
+  assert.match(storage, /request\.resource\.size <= 104857600/);
 });
 
 test('the first-render recipe photo paths match the published photo index', () => {

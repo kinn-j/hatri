@@ -42,6 +42,32 @@ service cloud.firestore {
           ] && request.resource.data.detail == '')
         );
     }
+    // Public recipe videos: metadata is readable by everyone, but only the
+    // authenticated owner may create or update their own post.
+    match /publicRecipeVideos/{videoId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'ownerUid', 'creatorName', 'title', 'caption', 'status', 'createdAt'
+        ])
+        && request.resource.data.status == 'uploading'
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 1
+        && request.resource.data.title.size() <= 80;
+      allow update: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'videoUrl', 'status', 'sizeBytes', 'contentType'
+        ])
+        && request.resource.data.status == 'published'
+        && request.resource.data.videoUrl is string
+        && request.resource.data.contentType in ['video/mp4', 'video/webm', 'video/quicktime']
+        && request.resource.data.sizeBytes is int
+        && request.resource.data.sizeBytes <= 104857600;
+      allow delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+    }
     // All other paths are denied.
 
   }

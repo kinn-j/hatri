@@ -9,3 +9,7 @@ Use the same recipe identity across categories and languages. Reserve dishes onl
 ## Suggestion limits
 
 Show up to 50 complete six-dish meal sets for the Meals filter, including the featured meal. For individual dishes, show up to 100 matching dishes per filter selection across all readiness groups combined. Apply the same dish limit to search and cart suggestions. Rank eligible matches before applying either limit. Show all qualifying matches when fewer are available.
+
+## Community recipe videos
+
+Community recipe videos are public once published. A signed-in user may upload an MP4, WebM, or MOV video up to 100 MB, with the binary stored in Firebase Storage and only its metadata stored in Firestore. Anonymous users may browse public videos but may not upload, edit, or delete posts. The feed shows one video per viewport, advances by vertical scroll, and loads at most 30 newest posts per initial query.
