@@ -206,26 +206,28 @@ test('whole meals paginate unique themed six-dish sets', async () => {
       await section.locator('summary img').first().waitFor();
       assert.deepEqual(await section.locator(':scope > h2').allTextContents(), ['6-dish meals']);
       const total = await page.evaluate(() => Object.keys(MEALK).length);
-      assert.ok(total >= 2);
-      assert.equal(await cards.count(), Math.min(total, 25));
-      // Exercise pagination even when a required course runs out before 25 meals.
-      await page.evaluate(() => { MEAL_BATCH = 1; renderResults(); });
+      assert.ok(total > 25, `Expected more than one page of meals, got ${total}`);
       const keys = () => cards.evaluateAll(nodes => nodes.map(el => el.dataset.mk));
-      const first = await keys();
+      let visible = await keys();
+      assert.equal(visible.length, 25);
       const more = section.locator('[data-show-more="meals"]');
-      await more.click();
-      const next = await keys();
-      assert.equal(next.length, 2);
-      assert.deepEqual(next.slice(0, 1), first);
-      assert.equal(new Set(next).size, next.length);
+      while (visible.length < total) {
+        await more.click();
+        const next = await keys();
+        assert.equal(next.length, Math.min(visible.length + 25, total));
+        assert.deepEqual(new Set(next.filter(key => visible.includes(key))), new Set(visible));
+        assert.equal(new Set(next).size, next.length);
+        visible = next;
+      }
+      assert.equal(await more.count(), 0);
       const audit = await page.evaluate(() => Object.values(MEALK).every(({items,theme}) =>
         items.length === 6 && new Set(items.map(d => d.n)).size === 6 &&
         items.slice(0, 2).every(d => regionOf(d.recipe) === theme && course(d.n) === 'Main') &&
-        course(items[2].n) === 'Bread' && course(items[3].n) === 'Rice' &&
+        course(items[2].n) === 'Bread' && mealRole(items[3]) === 'Rice' &&
         items[4].ing.includes('curd') && course(items[5].n) === 'Sweet'));
       assert.equal(audit, true);
       const allDishKeys = await page.evaluate(() => Object.values(MEALK).flatMap(meal =>
-        meal.items.concat(meal.salad || []).map(dish => pslug(dish.n))));
+        meal.items.concat(meal.salad || []).map(dish => mealDishKey(dish.n))));
       assert.equal(new Set(allDishKeys).size, allDishKeys.length);
       const grid = cards.first().locator('summary .mos');
       const photos = grid.locator('.mc img');

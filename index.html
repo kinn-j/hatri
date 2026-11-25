@@ -1177,8 +1177,8 @@ function renderResults(){
   var title=vrat?T("Vrat dishes","व्रत के व्यंजन"):T("Browse recipes","रेसिपी देखें");
   if(sel.meal&&!(vrat&&crs==="meal")){
     var paired=new Set();
-    meals.forEach(function(meal){meal.items.concat(meal.salad||[]).forEach(function(dish){paired.add(pslug(dish.n))})});
-    dishes=dishes.filter(function(dish){return !paired.has(pslug(dish.n))});
+    meals.forEach(function(meal){meal.items.concat(meal.salad||[]).forEach(function(dish){paired.add(mealDishKey(dish.n))})});
+    dishes=dishes.filter(function(dish){return !paired.has(mealDishKey(dish.n))});
     if(!vrat&&crs==="meal")title=meals.length?T("More meal dishes","खाने के और व्यंजन"):T("Meal dishes","खाने के व्यंजन");
   }
   var html="";
@@ -2545,11 +2545,11 @@ function course(n){if(typeof COURSEO!=="undefined"&&COURSEO[n])return COURSEO[n]
  if(t==="dal"||t==="curry"||t==="kadhi")return"Main";return"Snack"}
 function isV(m){return m.oc.indexOf("Vrat")>-1}
 function onlyV(m){return isV(m)&&m.oc.indexOf("Daily")<0}
-function pairOK(a,b){var cb=course(b.n);
+function pairOK(a,b,role){var cb=course(b.n);
  if((onlyV(a)&&!isV(b))||(onlyV(b)&&!isV(a)))return false;
  if(/raita/i.test(b.n)&&b.ing&&b.ing.includes("curd"))return true;
  if(cb==="Side"&&/sauce|soup|pesto|marinara|dressing|dip|spread/i.test(b.n))return false;
- if(cb==="Sweet")return a.cu===b.cu||b.cu==="Everyday";
+
  if(b.n==="Makki di Roti")return a.n==="Sarson da Saag";
  if(a.n==="Sarson da Saag"&&cb==="Bread")return b.n==="Makki di Roti"||b.n==="Chapati (Roti)";
  if(b.n==="Bajra Roti with Lahsun Chutney")return["Rajasthani","Gujarati","Maharashtrian"].indexOf(a.cu)>-1;
@@ -2557,22 +2557,36 @@ function pairOK(a,b){var cb=course(b.n);
  if(b.n==="Coconut Chutney")return a.cu==="South Indian";
  if(b.n==="Lahsun Chutney")return a.cu==="Rajasthani";
  if(b.n==="Chapati (Roti)"||b.n==="Steamed Rice")return true;
- if(cb==="Bread"&&a.cu==="South Indian")return b.cu==="South Indian";
- if(cb==="Bread"&&a.cu==="Bengali")return b.n==="Chapati (Roti)";
- if(["Bread","Rice","Side"].indexOf(cb)>-1&&a.cu!==b.cu){
-   var north=["Everyday","North Indian","Punjabi","Rajasthani","Gujarati","Maharashtrian","Bihari","Pahadi"];
-   if(north.indexOf(a.cu)<0||north.indexOf(b.cu)<0)return false;
- }
+ // Regional mains can be served with other Indian thali accompaniments.
+ if(role==="Curd")return true;
+ if(role==="Rice")return !/risotto|fried rice/i.test(b.n)||a.cu===b.cu;
+ if(a.cu!==b.cu&&["Bread","Rice","Sweet","Side"].includes(cb))
+   return b.cu==="Everyday"||REG.includes(b.cu)||REG.includes(regionOf(b.recipe));
  return true}
 function mealTime(it){var p=0,cs=it.map(function(m){p+=m.p;return m.c}),mx=Math.max.apply(null,cs),rest=cs.reduce(function(a,b){return a+b},0)-mx;return Math.max(5,Math.round((p+mx+rest*0.4)/5)*5)}
 function missOf(it){var u={};it.forEach(function(m){m.x.forEach(function(i){u[i]=1})});return Object.keys(u)}
+function mealRole(dish){
+  var name=dish.n,role=course(name);
+  if(name==="Ragi Mudde")return "Complete";
+  if(dish.ing.includes("curd")&&/raita|chaas|chhach|buttermilk|lassi|kadhi|mor kuzhambu|dahi (?:tikhari|arbi|aloo|ke kebab)|shrikhand|mishti doi|fruit & curd cup/i.test(name))return "Curd";
+  if(role==="Complete"&&dish.ing.some(id=>["rice","basmatirice","samak"].includes(id))&&
+    /pulao|biryani|khichdi|khichuri|pongal|bisi bele|pakhala|curd rice|rice cooker/i.test(name))return "Rice";
+  if(/salad/i.test(name))return "Salad";
+  return role;
+}
+// Catalog spellings for the same dish share a place in whole-meal results.
+var mealAliases={"mirchi-ka-salan":"mirch-ka-salan","til-gud-chikki":"til-chikki",
+  "atte-ka-halwa":"atta-halwa","matar-ka-paratha":"matar-paratha",
+  "mini-gulab-jamun":"gulab-jamun","plain-paratha":"paratha"};
+function mealDishKey(name){
+  var key=pslug(name);
+  return mealAliases[key]||key;
+}
 function buildMeals(){
   var pools={Main:[],Bread:[],Rice:[],Curd:[],Sweet:[],Salad:[]},meals=[];
   score().forEach(function(dish){
     if(isLong(dish))return;
-    var role=course(dish.n);
-    if(/raita/i.test(dish.n)&&dish.ing.includes("curd"))role="Curd";
-    else if(/salad/i.test(dish.n))role="Salad";
+    var role=mealRole(dish);
     if(role==="Sweet"&&/spread|sauce|dressing/i.test(dish.n))return;
     if(pools[role])pools[role].push(dish);
   });
@@ -2581,13 +2595,10 @@ function buildMeals(){
   function choose(main,items,role,region){
     var missing=new Set(missOf(items)),best=null,bestCost=Infinity;
     for(var dish of pools[role]){
-      var key=pslug(dish.n);
-      if(used.has(key)||items.some(function(item){return pslug(item.n)===key})||!pairOK(main,dish))continue;
+      var key=mealDishKey(dish.n);
+      if(used.has(key)||items.some(function(item){return mealDishKey(item.n)===key})||!pairOK(main,dish,role))continue;
       var local=regionOf(dish.recipe)===region;
-      // Plain staples and everyday accompaniments can round out an Indian thali.
-      var staple=REG.includes(region)&&(dish.n==="Chapati (Roti)"||dish.n==="Steamed Rice"||
-        (role==="Curd"||role==="Sweet"||role==="Salad")&&dish.cu==="Everyday");
-      if(!local&&!staple)continue;
+      if(!local&&(role==="Main"||!REG.includes(region)))continue;
       if(tmax&&mealTime(items.concat(dish))>tmax)continue;
       var extra=dish.x.filter(function(id){return !missing.has(id)}).length;
       var cost=extra*10+(local?0:5);
@@ -2598,7 +2609,7 @@ function buildMeals(){
   }
   for(var main of pools.Main){
     var region=regionOf(main.recipe);
-    if(region===INTL||used.has(pslug(main.n)))continue;
+    if(region===INTL||used.has(mealDishKey(main.n)))continue;
     var items=[main];
     for(var role of ["Main","Bread","Rice","Curd","Sweet"]){
       var dish=choose(main,items,role,region);
@@ -2611,8 +2622,8 @@ function buildMeals(){
     var key=items.map(function(m){return m.n}).join(" + ");
     var meal={items:items,theme:region,miss:missOf(items),t:time,key:key};
     if(wSide)meal.salad=choose(main,items,"Salad",region);
-    items.forEach(function(m){used.add(pslug(m.n))});
-    if(meal.salad)used.add(pslug(meal.salad.n));
+    items.forEach(function(m){used.add(mealDishKey(m.n))});
+    if(meal.salad)used.add(mealDishKey(meal.salad.n));
     MEALK[key]=meal;meals.push(meal);
   }
   meals.sort(function(a,b){return a.miss.length-b.miss.length||a.t-b.t});

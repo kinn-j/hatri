@@ -43,7 +43,7 @@ test('Hindi translation skips CSS text and still translates visible text', () =>
 test('meal pairing rules exclude incompatible sauces and cross-cuisine staples', () => {
   const c = fn('function pairOK(', 'function mealTime(', {
     course: n => /Roti|Chapati|Bread/.test(n) ? 'Bread' : /Sauce|Soup/.test(n) ? 'Side' : 'Main',
-    onlyV: () => false,
+    REG: ['Rajasthani','Punjabi'], regionOf: () => 'Italian', onlyV: () => false,
     isV: () => false
   });
   const main = { n: 'Kurkuri Bhindi', cu: 'Rajasthani' };
@@ -143,7 +143,7 @@ test('adding all recipe ingredients preserves existing and legacy cart quantitie
 
 test('PWA registers offline worker and caches the required shell files', () => {
   assert.match(src, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
-  assert.match(sw, /const CACHE = 'hatri-v45-photo-recovery'/);
+  assert.match(sw, /const CACHE = 'hatri-v46-whole-meals'/);
   for (const item of ['auth.js','ingredient-images.js','recipe-details.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp','seasonal-recipes.js','winter-recipes.js','activity.js','international-recipes.js','hero-carousel.js','images/hatri-dinner-header.webp','images/hatri-christmas-header.webp','images/mushroom-barley-soup.webp']) assert.ok(sw.includes(`'./${item}'`));
   new vm.Script(sw);
 });
