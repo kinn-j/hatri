@@ -6,9 +6,9 @@ const vm = require('node:vm');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const cartStart = html.indexOf('function requiredCartIngredients(ingredients){');
-const cartEnd = html.indexOf('Object.assign(STEPS,{"Gulab Jamun":', cartStart);
-const clickStart = html.indexOf('document.addEventListener("click",function(e){\n  var t=e.target.closest("button")');
-const clickEnd = html.indexOf('$("q").addEventListener("input",renderIngs);', clickStart);
+const cartEnd = html.indexOf('\nObject.assign(STEPS,', cartStart);
+const clickStart = html.indexOf('document.addEventListener("click",function(e){');
+const clickEnd = html.indexOf('\n$("q").addEventListener("input",renderIngs);', clickStart);
 assert.ok(cartStart >= 0 && cartEnd > cartStart && clickStart >= 0 && clickEnd > clickStart);
 
 function setup() {

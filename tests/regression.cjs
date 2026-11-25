@@ -14,6 +14,7 @@ let servePreviousRelease = false;
 
 const root = path.resolve(__dirname, '..');
 let server, browser, url;
+const previousReleaseFiles = new Map();
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.webp': 'image/webp', '.png': 'image/png', '.ico': 'image/x-icon' };
 
 test.before(async () => {
@@ -22,9 +23,16 @@ test.before(async () => {
     const filename = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     if (!filename.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
     try {
-      const data = servePreviousRelease
-        ? (await git('git', ['show', previousRelease + ':' + path.relative(root, filename)], {cwd: root, encoding: 'buffer', maxBuffer: 8 * 1024 * 1024})).stdout
-        : await fs.readFile(filename);
+      let data;
+      if (servePreviousRelease) {
+        const relative = path.relative(root, filename).split(path.sep).join('/');
+        if (!previousReleaseFiles.has(relative)) {
+          previousReleaseFiles.set(relative, git('git', ['show', previousRelease + ':' + relative], {
+            cwd: root, encoding: 'buffer', maxBuffer: 8 * 1024 * 1024
+          }).then(result => result.stdout));
+        }
+        data = await previousReleaseFiles.get(relative);
+      } else data = await fs.readFile(filename);
       res.writeHead(200, { 'Content-Type': mime[path.extname(filename)] || 'application/octet-stream' }).end(data);
     } catch { res.writeHead(404).end(); }
   });
@@ -849,6 +857,7 @@ test('v28 installed cart upgrades and can finish a saved dish offline', async ()
   try {
     const opened = await open(); context = opened.context;
     const page = opened.page;
+    await page.evaluate(() => navigator.serviceWorker.register('./sw.js'));
     await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
     await page.evaluate(() => caches.open('other-app-cache').then(() => true));
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
