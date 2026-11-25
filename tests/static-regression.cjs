@@ -61,7 +61,7 @@ test('whole meals exhaust distinct courses before reusing any dish', () => {
   }
   dishes.push({...dishes.find(d => d.n === 'Raita 1'), n: 'RAITA 1'});
   const c = fn('function mealTime(', 'function mealTileHTML(', {
-    score: () => dishes, course: name => name.split(' ')[0], isLong: () => false,
+    MEAL_LIMIT: 50, score: () => dishes, course: name => name.split(' ')[0], isLong: () => false,
     pairOK: () => true, regionOf: () => 'Punjabi', REG: ['Punjabi'], INTL: 'International',
     tmax: 0, fitsTime: () => true, wProt: false, wSide: true, pslug: n => n.toLowerCase()
   });
@@ -71,13 +71,21 @@ test('whole meals exhaust distinct courses before reusing any dish', () => {
   const keys = meals.flatMap(meal => meal.items.concat(meal.salad || []).map(d => c.pslug(d.n)));
   assert.equal(keys.length, 13);
   assert.equal(new Set(keys).size, keys.length);
+
+  for (const role of ['Main', 'Bread', 'Rice', 'Raita', 'Sweet']) {
+    const count = role === 'Main' ? 104 : 52;
+    for (let i = 0; i < count; i++) {
+      dishes.push({n: role + ' extra ' + i, ing: ['curd'], recipe: {}, x: [], p: 1, c: 1});
+    }
+  }
+  assert.equal(c.buildMeals().length, 50);
 });
 
-test('diet, search, pagination and clear-all code guards are present', () => {
+test('diet, search, suggestion limits and clear-all code guards are present', () => {
   assert.match(src, /NV=\[[^\]]*"chickenstock"/);
   assert.match(src, /return matchesFilters\(m,false\);/);
   assert.match(src, /body\.classList\.toggle\("searching",!!rq\)/);
-  assert.match(src, /group\[2\]\.slice\(0,limit\)/);
+  assert.match(src, /cartDishes\(DISH_LIMIT\)/);
   assert.match(src, /L\.slice\(0,visible\)/);
   assert.match(src, /else if\(v==="#none"\)Object\.keys\(st\)/);
   assert.doesNotMatch(src, /if\(!anyOn\(st\)\)selAll\(k\)\}\}\}catch/);
@@ -143,7 +151,7 @@ test('adding all recipe ingredients preserves existing and legacy cart quantitie
 
 test('PWA registers offline worker and caches the required shell files', () => {
   assert.match(src, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
-  assert.match(sw, /const CACHE = 'hatri-v46-whole-meals'/);
+  assert.match(sw, /const CACHE = 'hatri-v47-suggestion-limits'/);
   for (const item of ['auth.js','ingredient-images.js','recipe-details.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp','seasonal-recipes.js','winter-recipes.js','activity.js','international-recipes.js','hero-carousel.js','images/hatri-dinner-header.webp','images/hatri-christmas-header.webp','images/mushroom-barley-soup.webp']) assert.ok(sw.includes(`'./${item}'`));
   new vm.Script(sw);
 });

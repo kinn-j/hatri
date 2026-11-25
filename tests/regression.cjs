@@ -111,21 +111,17 @@ test('search appears immediately and respects active region, time and diet', asy
   await context.close();
 });
 
-test('Clear all time remains cleared across reload; show-more adds a bounded batch', async () => {
+test('Clear all time remains cleared across reload; individual suggestions share one 100-dish limit', async () => {
   const {page, context} = await open();
   await page.evaluate(() => document.querySelector('[data-sf="t|#none"]').click());
   assert.equal(await page.evaluate(() => Object.keys(TS).length), 0);
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(() => window.MFREADY === true);
   assert.equal(await page.evaluate(() => Object.keys(TS).length), 0);
-  const first = page.locator('#results [data-show-more^="dish-"]').first();
-  assert.ok(await first.count() > 0);
-  const groupId = await first.evaluate(button => button.parentElement.id);
-  const cards = page.locator(`#${groupId} > .tgrid > details`);
-  const before = await cards.count();
-  await first.click();
-  const after = await cards.count();
-  assert.ok(after > before && after - before <= 24, `before ${before}, after ${after}`);
+  await page.evaluate(() => { sel = {all:1}; renderResults(); });
+  assert.equal(await page.locator('#results .suggestion-block > .tgrid > details.tile').count(), 100);
+  await page.locator('#rq').fill('a');
+  assert.equal(await page.locator('#results details.tile').count(), 100);
   await context.close();
 });
 
@@ -196,7 +192,7 @@ test('recipe details cover the entire live catalog and render measured methods i
   }
 });
 
-test('whole meals paginate unique themed six-dish sets', async () => {
+test('whole meals show up to 50 unique themed six-dish sets', async () => {
   for (const width of [320, 1024]) {
     const {page, context} = await open({width, height: 844});
     try {
@@ -206,20 +202,8 @@ test('whole meals paginate unique themed six-dish sets', async () => {
       await section.locator('summary img').first().waitFor();
       assert.deepEqual(await section.locator(':scope > h2').allTextContents(), ['6-dish meals']);
       const total = await page.evaluate(() => Object.keys(MEALK).length);
-      assert.ok(total > 25, `Expected more than one page of meals, got ${total}`);
-      const keys = () => cards.evaluateAll(nodes => nodes.map(el => el.dataset.mk));
-      let visible = await keys();
-      assert.equal(visible.length, 25);
-      const more = section.locator('[data-show-more="meals"]');
-      while (visible.length < total) {
-        await more.click();
-        const next = await keys();
-        assert.equal(next.length, Math.min(visible.length + 25, total));
-        assert.deepEqual(new Set(next.filter(key => visible.includes(key))), new Set(visible));
-        assert.equal(new Set(next).size, next.length);
-        visible = next;
-      }
-      assert.equal(await more.count(), 0);
+      assert.ok(total >= 25);
+      assert.equal(await cards.count(), Math.min(total, 50));
       const audit = await page.evaluate(() => Object.values(MEALK).every(({items,theme}) =>
         items.length === 6 && new Set(items.map(d => d.n)).size === 6 &&
         items.slice(0, 2).every(d => regionOf(d.recipe) === theme && course(d.n) === 'Main') &&
@@ -627,7 +611,7 @@ test('the cart rotates 1–2 missing-ingredient dishes in a two-column mobile gr
     });
     const suggestion = page.locator('.cart-suggestion');
     const dishes = suggestion.locator('.cart-dish-card');
-    assert.equal(await dishes.count(), 6);
+    assert.equal(await dishes.count(), Math.min(100, await page.evaluate(() => cartDishes(Infinity).length)));
     const firstTwo = await dishes.evaluateAll(cards => cards.slice(0, 2).map(el => ({
       x: Math.round(el.getBoundingClientRect().left),
       y: Math.round(el.getBoundingClientRect().top),
@@ -661,7 +645,7 @@ test('the cart rotates 1–2 missing-ingredient dishes in a two-column mobile gr
     await dishes.first().locator('.cart-add-dish').tap();
     const after = await dishes.locator('.cart-dish-name').allTextContents();
     assert.equal(after.includes(before[0]), false, 'selected dish disappears');
-    assert.equal(new Set(after).size, 6);
+    assert.equal(new Set(after).size, Math.min(100, await page.evaluate(() => cartDishes(Infinity).length)));
     assert.ok(after.some(name => !before.includes(name)), 'a new eligible dish appears');
     assert.equal(await page.locator('.cart-group').filter({hasText: before[0]}).count(), 1);
     assert.deepEqual(await page.evaluate(ids => ids.map(id => cartQuantity(id)), firstNeeded),
@@ -716,7 +700,7 @@ test('the cart rotates 1–2 missing-ingredient dishes in a two-column mobile gr
     assert.equal(await page.locator('#cbadge').textContent(), '');
     assert.equal(await page.locator('#cartCount').textContent(), '');
     assert.equal(await order.count(), 0);
-    assert.equal(await dishes.count(), 6, 'an empty cart offers new shopping suggestions');
+    assert.equal(await dishes.count(), Math.min(100, await page.evaluate(() => cartDishes(Infinity).length)), 'an empty cart offers new shopping suggestions');
   } finally {
     await context.close();
   }
