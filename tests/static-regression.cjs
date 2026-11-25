@@ -151,8 +151,8 @@ test('adding all recipe ingredients preserves existing and legacy cart quantitie
 
 test('PWA registers offline worker and caches the required shell files', () => {
   assert.match(src, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
-  assert.match(sw, /const CACHE = 'hatri-v47-suggestion-limits'/);
-  for (const item of ['auth.js','ingredient-images.js','recipe-details.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp','seasonal-recipes.js','winter-recipes.js','activity.js','international-recipes.js','hero-carousel.js','images/hatri-dinner-header.webp','images/hatri-christmas-header.webp','images/mushroom-barley-soup.webp']) assert.ok(sw.includes(`'./${item}'`));
+  assert.match(sw, /const CACHE = 'hatri-v48-desi-recipes'/);
+  for (const item of ['auth.js','ingredient-images.js','recipe-details.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp','seasonal-recipes.js','winter-recipes.js','desi-recipes.js','activity.js','international-recipes.js','hero-carousel.js','images/hatri-dinner-header.webp','images/hatri-christmas-header.webp','images/mushroom-barley-soup.webp']) assert.ok(sw.includes(`'./${item}'`));
   new vm.Script(sw);
 });
 
