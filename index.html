@@ -2422,6 +2422,44 @@ function rateRow(m){var sl=slug(m.n),my=MY[sl]||{},r=my.rating||0,ph=my.photos||
 function recipeList(tag,items){
   return "<"+tag+">"+items.map(function(item){return "<li>"+escapeHTML(item)+"</li>"}).join("")+"</"+tag+">";
 }
+var RECIPE_HI_TERMS={
+  "Blanch":"हल्का उबालें", "florets":"फूलगोभी के टुकड़े", "drain":"छानें", "pat dry":"थपथपाकर सुखाएँ",
+  "Whisk":"फेंटें", "flours":"आटे", "seasonings":"मसाले", "batter":"घोल", "Dip":"डुबोएँ",
+  "each":"हर", "fry":"तलें", "in batches":"बैच में", "turning":"पलटते हुए", "until crisp and golden":"कुरकुरा और सुनहरा होने तक",
+  "Split one to check":"एक काटकर जाँचें", "stem is tender":"डंठल नरम है", "before serving":"परोसने से पहले",
+  "Mix":"मिलाएँ", "Add":"डालें", "Cook":"पकाएँ", "Heat":"गरम करें", "Boil":"उबालें", "Wash":"धोएँ",
+  "Soak":"भिगोएँ", "Knead":"गूँथें", "Roll":"बेलें", "Shape":"आकार दें", "Steam":"भाप में पकाएँ",
+  "Blend":"पीसें", "Grind":"पीसें", "Chop":"काटें", "Slice":"टुकड़े करें", "Stir":"चलाएँ",
+  "Sauté":"भूनें", "Roast":"भूनें", "Simmer":"धीमी आँच पर पकाएँ", "Serve":"परोसें", "rest":"रखें",
+  "with":"के साथ", "and":"और", "or":"या", "until":"तक", "then":"फिर", "for":"के लिए",
+  "in":"में", "on":"पर", "at":"पर", "to":"के लिए", "from":"से", "the":"", "a":"एक", "an":"एक",
+  "enough water":"पर्याप्त पानी", "that coats a spoon":"जो चम्मच पर टिके", "water":"पानी", "salt":"नमक",
+  "oil":"तेल", "frying oil":"तलने का तेल", "flour":"आटा", "rice flour":"चावल का आटा", "small":"छोटे",
+  "about":"लगभग", "minute":"मिनट", "minutes":"मिनट", "cup":"कप", "tbsp":"बड़े चम्मच", "tsp":"छोटे चम्मच",
+  "cauliflower":"फूलगोभी", "floret":"फूलगोभी का टुकड़ा", "florets":"फूलगोभी के टुकड़े",
+  "turmeric":"हल्दी", "chilli powder":"लाल मिर्च", "pepper":"काली मिर्च", "batches":"बैच"
+};
+function recipeHindiText(text){
+  var out=String(text);
+  var exact={
+    "Blanch the florets for 2 min, drain and pat dry.":"फूलगोभी के टुकड़ों को 2 मिनट हल्का उबालें, छानकर थपथपाते हुए सुखाएँ।",
+    "Whisk flours, seasonings and enough water for a batter that coats a spoon.":"आटे, मसालों और पर्याप्त पानी को फेंटकर ऐसा घोल बनाएँ जो चम्मच पर टिके।",
+    "Dip each floret in batter and fry at 170–175°C in batches for 4–6 min, turning until crisp and golden.":"हर फूलगोभी के टुकड़े को घोल में डुबोकर 170–175°C पर 4–6 मिनट बैच में तलें। कुरकुरा और सुनहरा होने तक पलटते रहें।",
+    "Drain. Split one to check the stem is tender before serving.":"छानें। परोसने से पहले एक टुकड़ा काटकर जाँचें कि डंठल नरम है।"
+  };
+  if(exact[out])return exact[out];
+  Object.keys(exact).forEach(function(phrase){out=out.replace(phrase,exact[phrase])});
+  function quote(term){return term.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}
+  Object.keys(RECIPE_HI_TERMS).sort(function(a,b){return b.length-a.length}).forEach(function(term){
+    out=out.replace(new RegExp("\\b"+quote(term)+"\\b","gi"),RECIPE_HI_TERMS[term]);
+  });
+  Object.keys(HI).sort(function(a,b){return b.length-a.length}).forEach(function(term){
+    if(/[A-Za-z]/.test(term)&&HI[term]&&/\p{Script=Devanagari}/u.test(HI[term]))
+      out=out.replace(new RegExp("\\b"+quote(term)+"\\b","gi"),HI[term]);
+  });
+  return out.replace(/\s{2,}/g," ").replace(/।+/g,"।").trim().replace(/[.]?$/,"।");
+}
+function recipeHindiSteps(steps){return (steps||[]).map(recipeHindiText)}
 function recipeSafety(m){
   var raw=m.ing.filter(function(id){return !id.endsWith("?")});
   if(!m.c)return "";
@@ -2439,8 +2477,8 @@ function recipePanel(m,expanded){
   var oldHindi=original&&original.hi&&/\p{Script=Devanagari}/u.test(original.hi.join(" "));
   var useOriginalHindi=LANG==="hi"&&oldHindi&&revised&&!revised.hi;
   var method=revised&&!useOriginalHindi?revised:original;
-  var lang=LANG==="hi"&&method&&method.hi&&/\p{Script=Devanagari}/u.test(method.hi.join(" "))?"hi":"en";
-  var st=method&&method[lang]||[];
+  var lang=LANG==="hi"?"hi":"en";
+  var st=method&&(lang==="hi"?(method.hi&&/\p{Script=Devanagari}/u.test(method.hi.join(" "))?method.hi:recipeHindiSteps(method.en)):method.en)||[];
   if(st.length===1)st=st[0].split(/(?<=[.!?।])\s+(?=[A-Zअ-ह])/u);
   var reel=RECIPE_REELS[name];
   var credit=MEASURED_RECIPES[name]&&IMG[pslug(name)]?"<p class='note'>"+T("AI-generated dish image","एआई से बनाई गई व्यंजन की तस्वीर")+"</p>":"";
@@ -2450,8 +2488,10 @@ function recipePanel(m,expanded){
     credit+='<p class="note">'+reel.creator+' · <a href="'+reel.written+'" target="_blank" rel="noopener">'+T("Written recipe","लिखित रेसिपी")+"</a></p>";
   }
   var amLang=measured&&measured.amounts[LANG]?LANG:"en";
+  var amounts=measured&&measured.amounts[amLang];
+  if(measured&&LANG==="hi"&&amLang!=="hi"){amLang="hi";amounts=recipeHindiSteps(measured.amounts.en)}
   var ingredients=measured?"<p>"+T("Serves "+measured.serves,measured.serves+" लोगों के लिए")+"</p>"+
-    "<div lang='"+amLang+"' translate='no'>"+recipeList("ul",measured.amounts[amLang])+"</div>":
+    "<div lang='"+amLang+"' translate='no'>"+recipeList("ul",amounts)+"</div>":
     recipeList("ul",m.ing.map(function(id){return nmx(id.replace(/\?$/,""))}));
   if(measured&&measured.source&&!reel){
     credit+="<p class='note'><a href='"+escapeHTML(measured.source[1])+"' target='_blank' rel='noopener'>"+

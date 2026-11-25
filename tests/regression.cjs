@@ -183,16 +183,21 @@ test('recipe details cover the entire live catalog and render measured methods i
 
     await page.locator('#rq').fill('gobi pakora');
     const recipe = page.locator('#results .steps').first();
-    await expectRecipe(recipe);
+    await expectRecipe(recipe, false);
     await page.locator('#langBtn').click();
-    await expectRecipe(page.locator('#results .steps').first());
-    assert.equal(await page.locator('#results .steps ol').first().locator('..').getAttribute('lang'), 'en');
+    await expectRecipe(page.locator('#results .steps').first(), true);
+    assert.equal(await page.locator('#results .steps ol').first().locator('..').getAttribute('lang'), 'hi');
     await page.locator('#rq').fill('gajar halwa');
     assert.match(await page.locator('#results .steps ul').first().textContent(), /500 ग्राम गाजर/);
 
-    async function expectRecipe(recipe) {
-      assert.match(await recipe.textContent(), /250 g small cauliflower florets/);
-      assert.match(await recipe.textContent(), /170–175°C/);
+    async function expectRecipe(recipe, hindi) {
+      if (hindi) {
+        assert.match(await recipe.textContent(), /फूलगोभी/);
+        assert.doesNotMatch(await recipe.textContent(), /Blanch the florets/);
+      } else {
+        assert.match(await recipe.textContent(), /250 g small cauliflower florets/);
+        assert.match(await recipe.textContent(), /170–175°C/);
+      }
       assert.equal(await recipe.locator("ol li").count(), 3);
     }
   } finally {
