@@ -264,6 +264,53 @@ test('meal photos and expanded dishes work without a photo index on mobile', asy
   } finally { await context.close(); }
 });
 
+test('meal photos are visible on first render with all full-size photos blocked', async () => {
+  const context = await browser.newContext({viewport:{width:390,height:844}, serviceWorkers:'block'});
+  try {
+    await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, route => route.abort());
+    await context.route('**/images/*.webp*', route => route.abort());
+    const page = await context.newPage();
+    await page.goto(url, {waitUntil:'domcontentloaded'});
+    const cells = page.locator('#results .mtile').first().locator('summary .mc');
+    await cells.first().waitFor();
+    assert.equal(await cells.count(), 6);
+    const widths = await cells.evaluateAll(elements => Promise.all(elements.map(async el => {
+      const css = getComputedStyle(el).backgroundImage;
+      const data = css.match(/data:image\/webp;base64,[a-z0-9+/=]+/i);
+      if (!data || el.querySelector('.recipe-photo-fallback')) return 0;
+      const preview = new Image();
+      preview.src = data[0];
+      await preview.decode();
+      return preview.naturalWidth;
+    })));
+    assert.deepEqual(widths, Array(6).fill(72));
+  } finally { await context.close(); }
+});
+
+test('a visible meal photo recovers from an interrupted request while still online', async () => {
+  const context = await browser.newContext({viewport:{width:390,height:844}, serviceWorkers:'block'});
+  try {
+    await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, route => route.abort());
+    const page = await context.newPage();
+    await page.goto(url, {waitUntil:'domcontentloaded'});
+    await page.waitForFunction(() => window.MFREADY === true);
+    const photo = page.locator('#results .mtile summary .mc img').first();
+    const target = new URL(await photo.getAttribute('src'), url);
+    target.searchParams.set('recovery-test', '1');
+    let requests = 0;
+    await page.route(url => url.pathname === target.pathname && url.searchParams.has('recovery-test'), route => ++requests === 1 ? route.abort() : route.continue());
+    await photo.scrollIntoViewIfNeeded();
+    await photo.evaluate((img, src) => { img.src = src; }, target.href);
+    await page.waitForFunction(src => {
+      const img = document.querySelector('#results .mtile summary .mc img');
+      const retry = new URL(src);
+      retry.searchParams.set('photo-retry', '1');
+      return img.src === retry.href && img.complete && img.naturalWidth > 0 && !img.hidden;
+    }, target.href);
+    assert.equal(requests, 2);
+  } finally { await context.close(); }
+});
+
 test('every live recipe has a decodable full-size dish photo', {timeout: 60_000}, async () => {
   const {page, context} = await open();
   try {

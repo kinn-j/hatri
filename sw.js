@@ -1,5 +1,5 @@
 /* Hatri website shell. Increase cache version when shipping changes. */
-const CACHE = 'hatri-v44-unique-meals';
+const CACHE = 'hatri-v45-photo-recovery';
 // Recipe photos retain their versioned URLs across app-shell releases.
 const PHOTO_CACHE = 'hatri-recipe-photos';
 function isBundledPhoto(url) {
@@ -47,14 +47,23 @@ self.addEventListener('fetch', event => {
   if(url.origin !== self.location.origin) return;
   if (isBundledPhoto(url)) {
     event.respondWith((async () => {
-      const cache = await caches.open(PHOTO_CACHE);
-      const saved = await cache.match(req) || await caches.match(req, {cacheName: CACHE});
+      const retry = url.searchParams.get('photo-retry') === '1';
+      url.searchParams.delete('photo-retry');
+      const cacheKey = url.href;
+      let cache, saved;
       try {
-        const response = await fetch(req);
+        cache = await caches.open(PHOTO_CACHE);
+        if (!retry) saved = await cache.match(cacheKey) || await caches.match(cacheKey, {cacheName: CACHE});
+      } catch { /* Photos can still load when device storage is unavailable. */ }
+      if (saved && url.searchParams.has('v')) return saved;
+      try {
+        const response = await fetch(req, retry ? {cache: 'reload'} : undefined);
         if (!response.ok || !/^image\//i.test(response.headers.get('content-type') || '')) {
           return saved || response;
         }
-        try { await cache.put(req, response.clone()); } catch { /* Storage may be full. */ }
+        if (cache) {
+          try { await cache.put(cacheKey, response.clone()); } catch { /* Storage may be full. */ }
+        }
         return response;
       } catch (error) {
         if (saved) return saved;

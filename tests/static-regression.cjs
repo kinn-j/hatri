@@ -143,7 +143,7 @@ test('adding all recipe ingredients preserves existing and legacy cart quantitie
 
 test('PWA registers offline worker and caches the required shell files', () => {
   assert.match(src, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
-  assert.match(sw, /const CACHE = 'hatri-v44-unique-meals'/);
+  assert.match(sw, /const CACHE = 'hatri-v45-photo-recovery'/);
   for (const item of ['auth.js','ingredient-images.js','recipe-details.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp','seasonal-recipes.js','winter-recipes.js','activity.js','international-recipes.js','hero-carousel.js','images/hatri-dinner-header.webp','images/hatri-christmas-header.webp','images/mushroom-barley-soup.webp']) assert.ok(sw.includes(`'./${item}'`));
   new vm.Script(sw);
 });
@@ -172,4 +172,42 @@ test('all mapped recipe photos and local ingredient photos exist', () => {
     count++;
   }
   assert.ok(count > 500);
+});
+
+test('a failed photo decode can replace a bad cached image and reuse the repaired copy', async () => {
+  const scope = 'https://example.org/hatri/';
+  const src = scope + 'images/paneer-pulao.webp?v=38';
+  const entries = new Map([[src, new Response('old')]]), handlers = {};
+  const cache = {match: async key => entries.get(key)?.clone(), put: async (key, response) => entries.set(key, response)};
+  let downloads = 0;
+  vm.runInNewContext(sw, {
+    URL, self: {registration: {scope}, location: new URL(scope), addEventListener: (name, cb) => { handlers[name] = cb; }},
+    caches: {open: async () => cache, match: async () => undefined},
+    fetch: async (req, options) => {
+      downloads++;
+      assert.equal(options.cache, 'reload');
+      return new Response('fresh', {headers: {'Content-Type':'image/webp'}});
+    }
+  });
+  function request(url) {
+    let result;
+    handlers.fetch({request: new Request(url), respondWith: value => { result = value; }});
+    return result;
+  }
+  assert.equal(await (await request(src)).text(), 'old');
+  assert.equal(await (await request(src + '&photo-retry=1')).text(), 'fresh');
+  assert.equal(await (await request(src)).text(), 'fresh');
+  assert.equal(downloads, 1);
+});
+
+test('every catalog image has a first-render WebP preview embedded in the page', () => {
+  const previews = fn('var mealPhotoPreviews=', 'var bundledPhotos=').mealPhotoPreviews;
+  const catalog = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../images/photos.json')));
+  const paths = new Set(Object.values(catalog).map(filename => 'images/' + filename));
+  assert.deepEqual(new Set(Object.keys(previews)), paths);
+  for (const [filename, encoded] of Object.entries(previews)) {
+    const data = Buffer.from(encoded, 'base64');
+    assert.equal(data.toString('ascii', 8, 12), 'WEBP', filename);
+    assert.equal(data.readUInt32LE(4) + 8, data.length, filename);
+  }
 });

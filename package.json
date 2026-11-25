@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "test": "node --test tests/*.cjs",
-    "test:webkit": "HATRI_BROWSER=webkit node --test --test-name-pattern='home carousel|cart rotates|recipe selection preserves|cart recomputes|Hindi cart controls|Dahi ke Kebab|meal photos and expanded dishes' tests/regression.cjs"
+    "test:webkit": "HATRI_BROWSER=webkit node --test --test-name-pattern='home carousel|cart rotates|recipe selection preserves|cart recomputes|Hindi cart controls|Dahi ke Kebab|meal photos and expanded dishes|meal photos are visible|interrupted request' tests/regression.cjs"
   },
   "devDependencies": {
     "playwright": "1.56.1"
