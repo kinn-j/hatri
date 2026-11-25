@@ -1,5 +1,5 @@
 /* Hatri website shell. Increase cache version when shipping changes. */
-const CACHE = 'hatri-v46-whole-meals';
+const CACHE = 'hatri-v47-suggestion-limits';
 // Recipe photos retain their versioned URLs across app-shell releases.
 const PHOTO_CACHE = 'hatri-recipe-photos';
 function isBundledPhoto(url) {

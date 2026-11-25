@@ -22,6 +22,7 @@ function setup() {
     ],
     have: { onion: 1 },
     cart: { tomato: 2 },
+    DISH_LIMIT: 100,
     cartMeals: [],
     nonveg: false,
     NV: [],

@@ -1147,7 +1147,7 @@ function card(m,expanded){
    m.oh.map(function(i){return "<span class='chip have' style='background:transparent;border:1px solid var(--ok)'>"+NAME[i]+" · optional</span>"}).join("")+
    m.ox.map(function(i){return "<button class='chip opt' data-oi='"+i+"'>"+(cart[i]?"✓ ":"+ ")+NAME[i]+" · optional</button>"}).join("")+"</div></div>";
 }
-var SHOW_COUNTS={},SHOW_BATCH=24,MEAL_BATCH=25;
+var DISH_LIMIT=100,MEAL_LIMIT=50;
 function renderSearch(r,q){renderHTML($("pick"),"");var tk=q.split(/\s+/).filter(Boolean);
   var vratMatches=vratOnly()?new Set(score(true).map(function(m){return m.recipe})):null;
   var L=MEALS.filter(function(m){
@@ -1166,8 +1166,8 @@ function renderSearch(r,q){renderHTML($("pick"),"");var tk=q.split(/\s+/).filter
     return dish;
   }).filter(Boolean);
   L.sort(function(a,b){return (b.nm-a.nm)||(a.x.length-b.x.length)});var tot=L.length;
-  var visible=Math.min(tot,SHOW_COUNTS.search||SHOW_BATCH);
-  renderHTML(r,"<div class='sec'><h2>"+T("Search results","खोज परिणाम")+"</h2><small>"+tot+" "+T("found","मिले")+" · "+T("Your active filters apply","चुने हुए फ़िल्टर लागू हैं")+"</small></div>"+(L.length?("<div class='tgrid'>"+L.slice(0,visible).map(tileHTML).join("")+"</div>"+(visible<tot?"<button class='btn more-results' data-show-more='search' aria-label='Show more recipes'>"+T("Show more recipes","और रेसिपी दिखाएँ")+" ("+(tot-visible)+" "+T("remaining","बाक़ी")+")</button>":"")):"<div class='card empty'>"+T("No recipes match your search and filters. Try another name or reset filters.","आपकी खोज और फ़िल्टर से कोई रेसिपी नहीं मिली। नाम बदलें या फ़िल्टर रीसेट करें।")+"</div>"))}
+  var visible=Math.min(tot,DISH_LIMIT);
+  renderHTML(r,"<div class='sec'><h2>"+T("Search results","खोज परिणाम")+"</h2><small>"+tot+" "+T("found","मिले")+" · "+T("Your active filters apply","चुने हुए फ़िल्टर लागू हैं")+"</small></div>"+(L.length?("<div class='tgrid'>"+L.slice(0,visible).map(tileHTML).join("")+"</div>"):"<div class='card empty'>"+T("No recipes match your search and filters. Try another name or reset filters.","आपकी खोज और फ़िल्टर से कोई रेसिपी नहीं मिली। नाम बदलें या फ़िल्टर रीसेट करें।")+"</div>"))}
 function renderResults(){
   renderTop();
   var r=$("results"),rq=($("rq")&&$("rq").value||"").trim().toLowerCase();
@@ -1175,6 +1175,7 @@ function renderResults(){
   if(rq){renderSearch(r,rq);return}
   var vrat=vratOnly(),dishes=score(true),meals=sel.meal?buildMeals():[];
   var title=vrat?T("Vrat dishes","व्रत के व्यंजन"):T("Browse recipes","रेसिपी देखें");
+  var featuredDish=lastPick&&dishes.some(function(dish){return dish.n===lastPick});
   if(sel.meal&&!(vrat&&crs==="meal")){
     var paired=new Set();
     meals.forEach(function(meal){meal.items.concat(meal.salad||[]).forEach(function(dish){paired.add(mealDishKey(dish.n))})});
@@ -1185,13 +1186,12 @@ function renderResults(){
   if(!Object.keys(have).length)html="<div class='card' style='display:flex;gap:10px;align-items:center;justify-content:space-between'><span class='sub'>Pick ingredients to see what you can cook right now</span><button class='btn sm primary' data-view='pantry'>Pick ingredients</button></div>";
   if(meals.length){
     var listed=meals.filter(function(meal){return meal.key!==lastMeal});
-    var visible=listed.slice(0,SHOW_COUNTS.meals||MEAL_BATCH);
-    html+="<section class='meal-sets'><h2>"+T("6-dish meals","6 व्यंजन वाली थाली")+"</h2>"+suggestionGroups(visible,true);
-    if(visible.length<listed.length)html+="<button class='btn more-results' data-show-more='meals'>"+T("Show more meals","और थालियाँ दिखाएँ")+" ("+(listed.length-visible.length)+" "+T("remaining","बाक़ी")+")</button>";
+    html+="<section class='meal-sets'><h2>"+T("6-dish meals","6 व्यंजन वाली थाली")+"</h2>"+suggestionGroups(listed,true);
     html+="</section>";
   }
+  dishes=dishes.filter(function(dish){return dish.n!==lastPick}).slice(0,DISH_LIMIT-(featuredDish?1:0));
   if(dishes.length)html+="<div class='sec'><h2>"+title+"</h2><small>"+dishes.length+" "+T("dishes","व्यंजन")+"</small></div>"+suggestionGroups(dishes,false);
-  else if(!meals.length)html+="<p class='card empty'>"+(vrat?T("No vrat dishes match these filters.","इन फ़िल्टर में कोई व्रत व्यंजन नहीं मिला।"):T("No dishes match these filters.","इन फ़िल्टर में कोई व्यंजन नहीं मिला।"))+"</p>";
+  else if(!meals.length&&!featuredDish)html+="<p class='card empty'>"+(vrat?T("No vrat dishes match these filters.","इन फ़िल्टर में कोई व्रत व्यंजन नहीं मिला।"):T("No dishes match these filters.","इन फ़िल्टर में कोई व्यंजन नहीं मिला।"))+"</p>";
   renderHTML(r,html);renderPick(meals);
 }
 function suggestionGroups(items,meals){
@@ -1211,11 +1211,10 @@ function suggestionGroups(items,meals){
   ];
   var tile=meals?mealTileHTML:tileHTML,grid=meals?"tgrid mealgrid":"tgrid";
   return groups.filter(function(group){return group[2].length}).map(function(group,i){
-    var key=(meals?"meal-":"dish-")+group[0].toLowerCase().replace(/[^a-z0-9]+/g,"-"),limit=meals?group[2].length:Math.min(group[2].length,SHOW_COUNTS[key]||SHOW_BATCH);
-    return "<div class='suggestion-block' id='group-"+key+"'><div class='sec'><h2>"+T(group[0],HI[group[0]]||group[0])+"</h2><small>"+group[1]+" · "+group[2].length+"</small></div><div class='"+grid+"'>"+group[2].slice(0,limit).map(function(item){return tile(item)}).join("")+"</div>"+(limit<group[2].length?"<button class='btn more-results' data-show-more='"+key+"'>"+T("Show more recipes","और रेसिपी दिखाएँ")+" ("+(group[2].length-limit)+" "+T("remaining","बाक़ी")+")</button>":"")+"</div>";
+    var key=(meals?"meal-":"dish-")+group[0].toLowerCase().replace(/[^a-z0-9]+/g,"-");
+    return "<div class='suggestion-block' id='group-"+key+"'><div class='sec'><h2>"+T(group[0],HI[group[0]]||group[0])+"</h2><small>"+group[1]+" · "+group[2].length+"</small></div><div class='"+grid+"'>"+group[2].map(function(item){return tile(item)}).join("")+"</div></div>";
   }).join("");
 }
-document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-show-more]");if(!b)return;var key=b.dataset.showMore;var batch=key==="meals"?MEAL_BATCH:SHOW_BATCH;SHOW_COUNTS[key]=(SHOW_COUNTS[key]||batch)+batch;renderResults();var target=document.getElementById("group-"+key);if(target&&key!=="search")target.scrollIntoView({block:"nearest"})});
 function all(){renderModes();renderCuis();renderIngs();renderResults();renderCart();renderKitchen();save()}
 document.addEventListener("click",function(e){
   var t=e.target.closest("button");if(!t)return;
@@ -2627,7 +2626,7 @@ function buildMeals(){
     MEALK[key]=meal;meals.push(meal);
   }
   meals.sort(function(a,b){return a.miss.length-b.miss.length||a.t-b.t});
-  return meals;
+  return meals.slice(0,MEAL_LIMIT);
 }
 function mealTileHTML(c,force){
   var items=c.items,n=items.length,open=force||!!MOPEN[c.key];
@@ -3149,7 +3148,7 @@ function renderCart(){
   var groupsHTML=groups.length?"<section class='cart-selected'><h3>"+T("Dishes in your cart","कार्ट में व्यंजन")+"</h3>"+cards+"</section>":"";
   var looseHTML=loose.length?"<section class='cart-loose'><h3>"+T("Other shopping items","अन्य खरीदारी सामग्री")+"</h3><ul class='cart-items'>"+
     loose.map(function(item){return cartItemRow(item[0],-1,false)}).join("")+"</ul></section>":"";
-  var dishes=cartDishes(6);
+  var dishes=cartDishes(DISH_LIMIT);
   var suggestions=dishes.length?"<section class='cart-suggestion' aria-labelledby='cart-suggestion-title'>"+
     "<h3 id='cart-suggestion-title'>"+T("More dishes to shop for","खरीदने के लिए और व्यंजन")+"</h3>"+
     "<p class='cart-needed-label'>"+T("Just 1–2 more ingredients per dish, using what you already have or plan to buy","हर व्यंजन के लिए बस 1–2 और सामग्री")+"</p>"+
@@ -3299,7 +3298,7 @@ Object.assign(HI,{"Pick ingredients":"सामान चुनें","Shopping
 RX.unshift([/(\d+) recipes/g,"$1 रेसिपी"],[/(\d+) regions/g,"$1 क्षेत्र"]);
 var REG=["Punjabi","Rajasthani","Sindhi","Gujarati","Maharashtrian","Bengali","South Indian","North Indian","Bihari","Odia","Pahadi","Kashmiri","Goan & Konkan","Assam & NE"],WLD=["Indo-Chinese","Italian"];function isReg(c){return REG.indexOf(c)>-1||WLD.indexOf(c)>-1}function regOn(){return REG.concat(WLD).filter(function(c){return cuis[c]}).length}
 Object.assign(HI,{"Search any recipe…":"कोई भी रेसिपी खोजें…"});
-$("rq").addEventListener("input",function(){SHOW_COUNTS.search=SHOW_BATCH;if(this.value.trim()&&(document.body.dataset.v!=="recipes"||/(^| )sh-/.test(document.body.className)))setView("recipes");renderResults()});
+$("rq").addEventListener("input",function(){if(this.value.trim()&&(document.body.dataset.v!=="recipes"||/(^| )sh-/.test(document.body.className)))setView("recipes");renderResults()});
 var regOpen=false;
 function afl(){var a=[];if(!sel.meal)Object.keys(sel).forEach(function(k){var o=CRS.filter(function(c){return c[0]===k})[0];if(o)a.push(["crs",o[1]])});if(tmax)a.push(["tm",tmax>=60?tmax/60+" hr":tmax+" min"]);if(occ!=="All")a.push(["occ",occ]);if(hv!=="All")a.push(["hv",hv]);if(regOn()<REG.length+WLD.length)a.push(["reg",regOn()+" regions"]);return a}
 function renderCuis(){var n=Object.keys(cuis).length,O=[["All","All"],["Daily","Daily"],["Festive","Festive"],["Vrat","Vrat / Upvas"],["Sweets","Sweets"]],T=[[0,"Any"],[20,"20 min"],[30,"30 min"],[45,"45 min"],[60,"1 hr"],[90,"1.5 hr"],[120,"2 hr"]],H=[["All","All"],["Light","🪶 Light"],["Medium","⚖️ Medium"],["Heavy","🔥 Heavy"]],
