@@ -3306,7 +3306,14 @@ function setLang(l){
   $("langBtn").textContent=l==="hi"?"English":"हिन्दी";
   document.title=l==="hi"?"Hatri — पहले रसोई का सामान, फिर खाना":"Hatri — Pantry-first meal planner";
   try{all()}catch(e){}trNode(document.body);
+  if(l==="hi"&&typeof DESI_TRANSLATIONS_READY==="function")DESI_TRANSLATIONS_READY().then(refreshDesiHindi);
 }
+function refreshDesiHindi(){
+  DESI_RECIPES.forEach(function(recipe){if(recipe.hindi)HI[recipe.name]=recipe.hindi});
+  try{all()}catch(e){};
+  if(LANG==="hi")trNode(document.body);
+}
+if(LANG==="hi"&&typeof DESI_TRANSLATIONS_READY==="function")DESI_TRANSLATIONS_READY().then(refreshDesiHindi);
 document.addEventListener("click",function(event){
   var button=event.target.closest("[data-recipe-language]");
   if(!button)return;
@@ -3939,8 +3946,9 @@ document.addEventListener("error",function(e){
 },true);
 /* ===== Smart pantry groups ===== */
 (function(){
-  var groups={"Vegetables":[],"Fruits / Dry fruits":[],"Milk / Bread / Protein":[],"Grains / Pulses":[],"Condiments":[],"Specialty":[]},seen={};
-  var veg={zucchini:1,onion:1,tomato:1,potato:1,capsicum:1,brinjal:1,okra:1,cabbage:1,carrot:1,cucumber:1,lauki:1,beans:1,mushroom:1,corn:1,arbi:1,cauliflower:1,peas:1,spinach:1,sarson:1,methi:1,mooli:1,beetroot:1,sweetpotato:1,suran:1,pumpkin:1,drumstick:1,rawbanana:1,karela:1,tinda:1,turai:1,coriander:1,mint:1,currylv:1,gchilli:1,bigchilli:1,ginger:1,garlic:1,basil:1,tulsi:1,parsley:1,rosemary:1,thyme:1,sage:1,kasurimethi:1,italianherbs:1,collardgreens:1,lotusstem:1,gonguraleaves:1,mixedvegetables:1,ashgourd:1,pointedgourd:1,garadu:1};
+  var groups={"Vegetables":[],"Herbs & aromatics":[],"Fruits / Dry fruits":[],"Milk / Bread / Protein":[],"Grains / Pulses":[],"Condiments":[],"Specialty":[]},seen={};
+  var veg={zucchini:1,onion:1,tomato:1,potato:1,capsicum:1,brinjal:1,okra:1,cabbage:1,carrot:1,cucumber:1,lauki:1,beans:1,mushroom:1,corn:1,arbi:1,cauliflower:1,peas:1,spinach:1,sarson:1,methi:1,mooli:1,beetroot:1,sweetpotato:1,suran:1,pumpkin:1,drumstick:1,rawbanana:1,karela:1,tinda:1,turai:1,collardgreens:1,lotusstem:1,mixedvegetables:1,ashgourd:1,pointedgourd:1,garadu:1,gonguraleaves:1};
+  var herb={coriander:1,mint:1,currylv:1,gchilli:1,bigchilli:1,ginger:1,garlic:1,basil:1,tulsi:1,parsley:1,rosemary:1,thyme:1,sage:1,kasurimethi:1,italianherbs:1};
   var fruit={applejuice:1,lemon:1,coconut:1,rawmango:1,mango:1,banana:1,apple:1,amla:1,orange:1,pineapple:1,watermelon:1,pomegranate:1,mosambi:1,coconutmilk:1,tendercoconut:1,tendercoconutmalai:1,lemonzest:1,orangejuice:1,orangezest:1,blueberries:1,strawberries:1,desiccatedcoconut:1,pineapplerings:1,kiwi:1,lemonlimesoda:1,passionfruitpulp:1,lychee:1,peach:1,dates:1,guavajuice:1,cranberryjuice:1,orangeslices:1,gratedcoconut:1,foodgradeslakedlime:1,baelfruitpulp:1,dryfruit:1,cashews:1,almonds:1,walnuts:1,pistachios:1,raisins:1,berries:1,cherries:1};
   var protein={feta:1,tofu:1,paneer:1,curd:1,butter:1,ghee:1,milk:1,cream:1,mawa:1,cheese:1,creamcheese:1,condensedmilk:1,ricottacheese:1,parmesanstylevegetariancheese:1,buttermilk:1,batter:1,bread:1,fermentedricebatter:1,eggs:1,chicken:1,fish:1,mutton:1,prawn:1,soya:1,soyachaap:1,sprouts:1,cookedwhitebeans:1};
   var grains={masoorwhole:1,cookedfavabeans:1,shortgrainrice:1,glassnoodles:1,couscous:1,rice:1,basmatirice:1,arboriorice:1,atta:1,besan:1,suji:1,poha:1,bread:1,bajra:1,makki:1,batter:1,sev:1,kuttu:1,singhara:1,samak:1,makhana:1,vermicelli:1,daliya:1,jowar:1,sabudana:1,chanadal:1,maida:1,pasta:1,noodles:1,oats:1,ragi:1,riceflour:1,cornflour:1,polenta:1,pizzabaseordough:1,cannellonipastatubes:1,jumbopastashells:1};
@@ -3950,7 +3958,8 @@ document.addEventListener("error",function(e){
     if(protein[id]||NV.indexOf(id)>-1)k="Milk / Bread / Protein";
     else if(fruit[id]||c[0]==="Fruits & coconut")k="Fruits / Dry fruits";
     else if(grains[id])k="Grains / Pulses";
-    else if(veg[id]||/^Daily vegetables|^Seasonal|^Herbs/.test(c[0]))k="Vegetables";
+    else if(herb[id]||/^Herbs/.test(c[0]))k="Herbs & aromatics";
+    else if(veg[id]||/^Daily vegetables|^Seasonal/.test(c[0]))k="Vegetables";
     else if(cond[id])k="Condiments";
     else if(/^Dairy/.test(c[0]))k="Milk / Bread / Protein";
     else if(/^Grains|^Dals/.test(c[0]))k="Grains / Pulses";
@@ -3967,7 +3976,12 @@ function renderPantrySlides(){
   if(typeof pantryTab!=="number")pantryTab=0;
   if(pantryTab>=cats.length)pantryTab=0;
   var c=cats[pantryTab],oldGrid=el.querySelector(".pantry-grid");
-  var layout=JSON.stringify([cats.map(function(group){return group[0]}),pantryTab,c[1].map(function(x){return x[0]})]);
+  var vegSubgroups=[["All vegetables",function(){return true}],["Roots & tubers",function(id){return /^(potato|carrot|mooli|beetroot|arbi|sweetpotato|suran|garadu)$/.test(id)}],["Gourds & squash",function(id){return /^(lauki|pumpkin|karela|tinda|turai|ashgourd|pointedgourd|cucumber)$/.test(id)}],["Leafy greens",function(id){return /^(spinach|sarson|methi|collardgreens|gonguraleaves)$/.test(id)}],["Pods & peas",function(id){return /^(beans|peas|drumstick|okra)$/.test(id)}],["Fruit vegetables",function(id){return /^(onion|tomato|capsicum|brinjal|rawbanana)$/.test(id)}],["Cruciferous",function(id){return /^(cabbage|cauliflower|broccoli)$/.test(id)}],["Corn & fungi",function(id){return /^(corn|mushroom)$/.test(id)}],["Other vegetables",function(id){return /^(zucchini|lotusstem|mixedvegetables)$/.test(id)}]];
+  if(typeof pantryVegSub!=="number")pantryVegSub=0;
+  if(c[0]!=="Vegetables")pantryVegSub=0;
+  var subgroup=vegSubgroups[pantryVegSub]||vegSubgroups[0];
+  var visibleItems=c[0]==="Vegetables"&&pantryVegSub>0?c[1].filter(function(x){return subgroup[1](x[0])}):c[1];
+  var layout=JSON.stringify([cats.map(function(group){return group[0]}),pantryTab,pantryVegSub,visibleItems.map(function(x){return x[0]})]);
   var selectedCount=String(c[1].filter(function(x){return !!have[x[0]]}).length);
   // Keep the loaded images and scroll position when the visible ingredients are the same.
   if(oldGrid&&el.dataset.pantryLayout===layout){
@@ -3983,7 +3997,7 @@ function renderPantrySlides(){
   }
   var tr=document.createElement("div");tr.className="ftray pantry-tray";
   var tb=document.createElement("div");tb.className="ftabs pantry-tabs";
-  var groupIcons={Vegetables:"🥬","Fruits / Dry fruits":"🍎","Milk / Bread / Protein":"🥛","Grains / Pulses":"🌾",Condiments:"🧂",Specialty:"🧺"};
+  var groupIcons={Vegetables:"🥬","Herbs & aromatics":"🌿","Fruits / Dry fruits":"🍎","Milk / Bread / Protein":"🥛","Grains / Pulses":"🌾",Condiments:"🧂",Specialty:"🧺"};
   tb.innerHTML=cats.map(function(c,i){
     var on=i===pantryTab;
     return "<button type='button' class='ft"+(on?" on":"")+"' data-pantry-cat='"+i+"' aria-pressed='"+on+"'><span class='fi'>"+(groupIcons[c[0]]||"🧺")+"</span><span class='fl'>"+c[0]+"</span></button>";
@@ -3991,9 +4005,10 @@ function renderPantrySlides(){
   tr.appendChild(tb);
   var pn=document.createElement("div");pn.className="fpanel pantry-panel";
   var changedGroup=el.dataset.pantryGroup!==c[0];
-  pn.innerHTML="<div class='fph'><h3>"+c[0]+" (<span class='pantry-count'>"+selectedCount+"</span>)</h3><div class='pantry-head-actions'><div class='pantry-bulk' role='group' aria-label='Select pantry items'><button type='button' data-pantry-bulk='all'>Select all</button><button type='button' data-pantry-bulk='none'>Clear all</button></div></div></div>";
+  var subtabs=c[0]==="Vegetables"?"<div class='pantry-subtabs' role='tablist' aria-label='Vegetable types'>"+vegSubgroups.map(function(s,i){return "<button type='button' role='tab' class='"+(i===pantryVegSub?"on":"")+"' data-pantry-sub='"+i+"' aria-selected='"+(i===pantryVegSub)+"'>"+s[0]+"</button>"}).join("")+"</div>":"";
+  pn.innerHTML=subtabs+"<div class='fph'><h3>"+c[0]+" (<span class='pantry-count'>"+selectedCount+"</span>)</h3><div class='pantry-head-actions'><div class='pantry-bulk' role='group' aria-label='Select pantry items'><button type='button' data-pantry-bulk='all'>Select all</button><button type='button' data-pantry-bulk='none'>Clear all</button></div></div></div>";
   var g=document.createElement("div");g.className="fgrid pantry-grid";
-  c[1].forEach(function(x){g.insertAdjacentHTML("beforeend",ingredientTileHTML(x[0],NAME[x[0]]||x[1],!!have[x[0]]))});
+  visibleItems.forEach(function(x){g.insertAdjacentHTML("beforeend",ingredientTileHTML(x[0],NAME[x[0]]||x[1],!!have[x[0]]))});
   pn.appendChild(g);tr.appendChild(pn);
   var next=document.createDocumentFragment();
   next.appendChild(tr);
@@ -4002,9 +4017,10 @@ function renderPantrySlides(){
   el.dataset.pantryLayout=layout;
   if(changedGroup)el.querySelector(".pantry-grid").scrollLeft=0;
 }
-var pantryTab=0;
+var pantryTab=0,pantryVegSub=0;
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pantry-bulk]");if(!b)return;var cats=CATS.map(function(c){return [c[0],c[1].filter(function(x){return nonveg||NV.indexOf(x[0])<0})]}).filter(function(c){return c[1].length}),c=cats[pantryTab];if(!c)return;var allItems=b.getAttribute("data-pantry-bulk")==="all";c[1].forEach(function(x){if(allItems){have[x[0]]=1;delete cart[x[0]]}else delete have[x[0]]});save();all();e.preventDefault();e.stopPropagation()},true);
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pantry-cat]");if(!b)return;pantryTab=+b.getAttribute("data-pantry-cat")||0;renderPantrySlides();e.preventDefault();e.stopPropagation()},true);
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pantry-sub]");if(!b)return;pantryVegSub=+b.getAttribute("data-pantry-sub")||0;renderPantrySlides();e.preventDefault();e.stopPropagation()},true);
 var _allWithPantry=all;all=function(){var r=_allWithPantry.apply(this,arguments);try{renderPantrySlides()}catch(e){}return r};
 // Keep badges and other features that read the recipe flag consistent with Veg Mode.
 MEALS.forEach(function(m){if(!isVegetarianDish(m))m[1]=0});
@@ -4418,6 +4434,10 @@ main#planner{box-shadow:none!important}
   text-shadow:0 1px 2px rgba(0,0,0,.6);
 }
 #pantrySlides .pantry-grid .sl.pantry-photo:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.pantry-subtabs{display:flex;gap:4px;overflow-x:auto;padding:0 10px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.pantry-subtabs::-webkit-scrollbar{display:none}
+.pantry-subtabs button{flex:none;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);padding:5px 9px;font:inherit;font-size:11px;line-height:1.1;white-space:nowrap;cursor:pointer}
+.pantry-subtabs button.on{border-color:var(--accent);background:var(--accent-bg);color:var(--text);font-weight:700}
 .pantry-check{
   position:absolute;
   top:3px;

@@ -1,7 +1,6 @@
 const DESI_RECIPES = [
   {
     name: "Tender Coconut Phirni",
-    hindi: "नारियल मलाई फिरनी",
     region: "North Indian",
     course: "Sweet",
     serves: 2,
@@ -14,7 +13,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Aval Payasam",
-    hindi: "अवल पायसम",
     region: "South Indian",
     course: "Sweet",
     serves: 2,
@@ -26,7 +24,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Pineapple Sheera",
-    hindi: "अनानास शीरा",
     region: "Maharashtrian",
     course: "Sweet",
     serves: 2,
@@ -38,7 +35,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Patishapta Pitha",
-    hindi: "पाटिशप्ता पीठा",
     region: "Bengali",
     course: "Sweet",
     serves: 2,
@@ -50,7 +46,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Kesar Malai Peda",
-    hindi: "केसर मलाई पेड़ा",
     region: "North Indian",
     course: "Sweet",
     serves: 2,
@@ -62,7 +57,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Chhena Murki",
-    hindi: "छेना मुरकी",
     region: "Bengali",
     course: "Sweet",
     serves: 2,
@@ -74,7 +68,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Mango Rose Fruit Cream",
-    hindi: "आम गुलाब फ्रूट क्रीम",
     region: "North Indian",
     course: "Sweet",
     serves: 2,
@@ -86,7 +79,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Gur Til Poli",
-    hindi: "गुड़ तिल पोली",
     region: "Maharashtrian",
     course: "Sweet",
     serves: 2,
@@ -98,7 +90,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Bhapa Sandesh",
-    hindi: "भापा संदेश",
     region: "Bengali",
     course: "Sweet",
     serves: 2,
@@ -110,7 +101,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Baked Masala Khakhra",
-    hindi: "बेक्ड मसाला खाखरा",
     region: "Gujarati",
     course: "Baked",
     serves: 2,
@@ -122,7 +112,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Savory Ajwain Bakery Biscuits",
-    hindi: "अजवाइन बेकरी बिस्कुट",
     region: "North Indian",
     course: "Baked",
     serves: 2,
@@ -134,7 +123,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Ragi Cocoa Nankhatai",
-    hindi: "रागी कोको नानखटाई",
     region: "North Indian",
     course: "Baked",
     serves: 2,
@@ -146,7 +134,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Coconut Dilkhush Bun",
-    hindi: "नारियल दिलखुश बन",
     region: "South Indian",
     course: "Baked",
     serves: 2,
@@ -158,7 +145,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Badam Rusk Toast",
-    hindi: "बादाम रस्क टोस्ट",
     region: "North Indian",
     course: "Baked",
     serves: 2,
@@ -170,7 +156,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Baked Sesame Nippattu",
-    hindi: "बेक्ड तिल निप्पट्टू",
     region: "South Indian",
     course: "Baked",
     serves: 2,
@@ -182,7 +167,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Bakery Onion Crackers",
-    hindi: "बेकरी प्याज़ क्रैकर",
     region: "South Indian",
     course: "Baked",
     serves: 2,
@@ -194,7 +178,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Achari Aloo Puff",
-    hindi: "अचारी आलू पफ",
     region: "North Indian",
     course: "Baked",
     serves: 2,
@@ -206,7 +189,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Bangalore Khara Buns",
-    hindi: "बेंगलुरु खारा बन",
     region: "South Indian",
     course: "Baked",
     serves: 2,
@@ -218,7 +200,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Hara Moong Kachumber Chaat",
-    hindi: "हरा मूंग कचूमर चाट",
     region: "North Indian",
     course: "Chaat",
     serves: 2,
@@ -231,7 +212,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Makhana Bhel Chaat",
-    hindi: "मखाना भेल चाट",
     region: "North Indian",
     course: "Chaat",
     serves: 2,
@@ -243,7 +223,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Kala Chana Dahi Chaat",
-    hindi: "काला चना दही चाट",
     region: "North Indian",
     course: "Chaat",
     serves: 2,
@@ -255,7 +234,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Aloo Katori Chaat",
-    hindi: "आलू कटोरी चाट",
     region: "North Indian",
     course: "Chaat",
     serves: 2,
@@ -267,7 +245,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Crispy Arbi Chaat",
-    hindi: "करारी अरबी चाट",
     region: "North Indian",
     course: "Chaat",
     serves: 2,
@@ -279,7 +256,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Masala Idli Chaat",
-    hindi: "मसाला इडली चाट",
     region: "South Indian",
     course: "Chaat",
     serves: 2,
@@ -291,7 +267,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Mysore Bonda",
-    hindi: "मैसूर बोंडा",
     region: "South Indian",
     course: "Snack",
     serves: 2,
@@ -303,7 +278,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Ammini Kozhukattai",
-    hindi: "अम्मिणि कोझुकट्टई",
     region: "South Indian",
     course: "Snack",
     serves: 2,
@@ -315,7 +289,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Peanut Sundal",
-    hindi: "मूँगफली सुंदल",
     region: "South Indian",
     course: "Snack",
     serves: 2,
@@ -328,7 +301,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Ellu Sadam",
-    hindi: "तिल भात",
     region: "South Indian",
     course: "Rice",
     serves: 2,
@@ -340,7 +312,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Vangi Bath",
-    hindi: "वांगी भात",
     region: "South Indian",
     course: "Rice",
     serves: 2,
@@ -352,7 +323,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Kothamalli Sadam",
-    hindi: "कोथमल्ली सादम",
     region: "South Indian",
     course: "Rice",
     serves: 2,
@@ -364,7 +334,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Nellikai Sadam",
-    hindi: "आँवला भात",
     region: "South Indian",
     course: "Rice",
     serves: 2,
@@ -376,7 +345,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Lemon Peanut Millet Upma",
-    hindi: "नींबू मूँगफली मिलेट उपमा",
     region: "South Indian",
     course: "Complete",
     serves: 2,
@@ -388,7 +356,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Moth Bean Masala Bhaat",
-    hindi: "मोठ मसाला भात",
     region: "Maharashtrian",
     course: "Complete",
     serves: 2,
@@ -400,7 +367,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Dill Moong Khichdi",
-    hindi: "सोआ मूंग खिचड़ी",
     region: "South Indian",
     course: "Complete",
     serves: 2,
@@ -412,7 +378,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Milagu Jeeraga Sadam",
-    hindi: "काली मिर्च जीरा भात",
     region: "South Indian",
     course: "Rice",
     serves: 2,
@@ -424,7 +389,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Ghee Masala Neichoru",
-    hindi: "मसाला नेईचोरु",
     region: "South Indian",
     course: "Rice",
     serves: 2,
@@ -436,7 +400,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Vendakkai Puli Kuzhambu",
-    hindi: "भिंडी इमली कुझम्बु",
     region: "South Indian",
     course: "Main",
     serves: 2,
@@ -448,7 +411,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Paruppu Urundai Kuzhambu",
-    hindi: "दाल के गोले का कुझम्बु",
     region: "South Indian",
     course: "Main",
     serves: 2,
@@ -461,7 +423,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Tomato Pappu",
-    hindi: "टमाटर पप्पु",
     region: "South Indian",
     course: "Main",
     serves: 2,
@@ -473,7 +434,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Bottle Gourd Moong Kootu",
-    hindi: "लौकी मूंग कूटु",
     region: "South Indian",
     course: "Main",
     serves: 2,
@@ -485,7 +445,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Mullangi Sambar",
-    hindi: "मूली सांभर",
     region: "South Indian",
     course: "Main",
     serves: 2,
@@ -497,7 +456,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Raw Banana Erissery",
-    hindi: "कच्चे केले की एरिस्सेरी",
     region: "South Indian",
     course: "Main",
     serves: 2,
@@ -509,7 +467,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Moong Dal Mor Kootu",
-    hindi: "मूंग दाल मोर कूटु",
     region: "South Indian",
     course: "Main",
     serves: 2,
@@ -521,7 +478,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Mathanga Vanpayar Erissery",
-    hindi: "कद्दू लोबिया एरिस्सेरी",
     region: "South Indian",
     course: "Main",
     serves: 2,
@@ -534,7 +490,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Potato Coconut Ishtu",
-    hindi: "आलू नारियल इश्टू",
     region: "South Indian",
     course: "Main",
     serves: 2,
@@ -546,7 +501,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Gud Adrak Chai",
-    hindi: "गुड़ अदरक चाय",
     region: "North Indian",
     course: "Drink",
     serves: 2,
@@ -558,7 +512,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Mango Sattu Shake",
-    hindi: "आम सत्तू शेक",
     region: "Bihari",
     course: "Drink",
     serves: 2,
@@ -570,7 +523,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Pudina Panakam",
-    hindi: "पुदीना पानकम",
     region: "South Indian",
     course: "Drink",
     serves: 2,
@@ -582,7 +534,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Banana Coconut Elaneer Shake",
-    hindi: "केला नारियल पानी शेक",
     region: "South Indian",
     course: "Drink",
     serves: 2,
@@ -594,7 +545,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Gudhal Jeera Sharbat",
-    hindi: "गुड़हल जीरा शरबत",
     region: "North Indian",
     course: "Drink",
     serves: 2,
@@ -606,7 +556,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Egg Pepper Roast",
-    hindi: "अंडा पेपर रोस्ट",
     region: "South Indian",
     course: "Main",
     serves: 2,
@@ -619,7 +568,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Prawn Moilee",
-    hindi: "झींगा मोइली",
     region: "South Indian",
     course: "Main",
     serves: 2,
@@ -632,7 +580,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Kozhi Sukka",
-    hindi: "कोझी सुक्का",
     region: "South Indian",
     course: "Main",
     serves: 2,
@@ -645,7 +592,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Mutton Dalcha",
-    hindi: "मटन दालचा",
     region: "South Indian",
     course: "Main",
     serves: 2,
@@ -658,7 +604,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Beetroot Puri",
-    hindi: "चुकंदर पूरी",
     region: "North Indian",
     course: "Bread",
     serves: 2,
@@ -670,7 +615,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Kaddu Puri",
-    hindi: "कद्दू पूरी",
     region: "North Indian",
     course: "Bread",
     serves: 2,
@@ -682,7 +626,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Dhaniya Lahsun Naan",
-    hindi: "धनिया लहसुन नान",
     region: "Punjabi",
     course: "Bread",
     serves: 2,
@@ -694,7 +637,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Tandalachi Bhakri",
-    hindi: "तांदळाची भाकरी",
     region: "Maharashtrian",
     course: "Bread",
     serves: 2,
@@ -706,7 +648,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Gajar Ajwain Paratha",
-    hindi: "गाजर अजवाइन पराठा",
     region: "North Indian",
     course: "Bread",
     serves: 2,
@@ -718,7 +659,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Pudina Lachha Paratha",
-    hindi: "पुदीना लच्छा पराठा",
     region: "Punjabi",
     course: "Bread",
     serves: 2,
@@ -730,7 +670,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Paneer Pesarattu",
-    hindi: "पनीर पेसरट्टु",
     region: "South Indian",
     course: "Snack",
     serves: 2,
@@ -743,7 +682,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Onion Rava Paniyaram",
-    hindi: "प्याज़ रवा पनियारम",
     region: "South Indian",
     course: "Snack",
     serves: 2,
@@ -755,7 +693,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Mutta Dosa",
-    hindi: "अंडा डोसा",
     region: "South Indian",
     course: "Snack",
     serves: 2,
@@ -768,7 +705,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Beetroot Peanut Chutney",
-    hindi: "चुकंदर मूँगफली चटनी",
     region: "South Indian",
     course: "Side",
     serves: 2,
@@ -780,7 +716,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Capsicum Sesame Chutney",
-    hindi: "शिमला मिर्च तिल चटनी",
     region: "South Indian",
     course: "Side",
     serves: 2,
@@ -792,7 +727,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Tomato Date Jam",
-    hindi: "टमाटर खजूर जैम",
     region: "Bengali",
     course: "Pickle",
     serves: 2,
@@ -804,7 +738,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Carrot Coconut Thogayal",
-    hindi: "गाजर नारियल तोगयल",
     region: "South Indian",
     course: "Side",
     serves: 2,
@@ -816,7 +749,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Mullangi Thayir Pachadi",
-    hindi: "मूली दही पचड़ी",
     region: "South Indian",
     course: "Side",
     serves: 2,
@@ -828,7 +760,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Pineapple Pachadi",
-    hindi: "अनानास पचड़ी",
     region: "South Indian",
     course: "Side",
     serves: 2,
@@ -840,7 +771,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Karuveppilai Podi",
-    hindi: "करी पत्ता पोडी",
     region: "South Indian",
     course: "Side",
     serves: 8,
@@ -852,7 +782,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Purple Cabbage Poriyal",
-    hindi: "बैंगनी पत्तागोभी पोरियल",
     region: "South Indian",
     course: "Side",
     serves: 2,
@@ -864,7 +793,6 @@ const DESI_RECIPES = [
   },
   {
     name: "Carrot Moong Kosambari",
-    hindi: "गाजर मूंग कोसंबरी",
     region: "South Indian",
     course: "Side",
     serves: 2,
@@ -876,3 +804,43 @@ const DESI_RECIPES = [
     soak: [60, "split yellow moong dal"]
   }
 ];
+
+// Translate recipe text at runtime so Hindi content stays sourced from Google Translate.
+const DESI_TRANSLATIONS_READY = (function(){
+  var texts=[],seen={};
+  DESI_RECIPES.forEach(function(recipe){
+    if(!seen[recipe.name]){seen[recipe.name]=1;texts.push(recipe.name)}
+    [recipe.amounts&&recipe.amounts.en,recipe.steps&&recipe.steps.en].forEach(function(list){
+      (list||[]).forEach(function(text){if(!seen[text]){seen[text]=1;texts.push(text)}});
+    });
+  });
+  function translate(text){
+    var url="https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=hi&dt=t&q="+encodeURIComponent(text);
+    return fetch(url).then(function(response){if(!response.ok)throw Error("Google Translate request failed");return response.json()}).then(function(data){
+      return data[0].map(function(part){return part[0]}).join("");
+    });
+  }
+  var cursor=0,workers=[],ready;
+  function worker(){
+    return new Promise(function(resolve){
+      function next(){
+        var index=cursor++;
+        if(index>=texts.length){resolve();return}
+        translate(texts[index]).then(function(hindi){seen[texts[index]]=hindi}).catch(function(){}) .then(next);
+      }
+      next();
+    });
+  }
+  return function(){
+    if(ready)return ready;
+    for(var i=0;i<6;i++)workers.push(worker());
+    ready=Promise.all(workers).then(function(){
+      DESI_RECIPES.forEach(function(recipe){
+        recipe.hindi=seen[recipe.name]||recipe.name;
+        if(recipe.amounts&&recipe.amounts.en)recipe.amounts.hi=recipe.amounts.en.map(function(text){return seen[text]||text});
+        if(recipe.steps&&recipe.steps.en)recipe.steps.hi=recipe.steps.en.map(function(text){return seen[text]||text});
+      });
+    });
+    return ready;
+  };
+})();
