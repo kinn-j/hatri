@@ -1009,7 +1009,7 @@ test('activity writes are opt-in, scoped to the signed-in account and omit searc
       'firebase-auth.js': `
         const auth = { currentUser: { uid: "test-one" } };
         export const getAuth = () => auth, browserLocalPersistence = {}, setPersistence = async () => {};
-        export const GoogleAuthProvider = class {}, signInWithPopup = async () => {};
+        export const GoogleAuthProvider = class {}, signInWithPopup = async () => {}, connectAuthEmulator = () => {};
         export function onAuthStateChanged(auth, callback) {
           window.testAuth = uid => { auth.currentUser = uid ? { uid } : null; return callback(auth.currentUser); };
           window.testAuth(auth.currentUser.uid);
@@ -1021,6 +1021,9 @@ test('activity writes are opt-in, scoped to the signed-in account and omit searc
         export const getFirestore = () => ({}), doc = (db, ...path) => path;
         export const getDoc = async () => ({exists: () => false});
         export const serverTimestamp = () => "server-time", Timestamp = { fromMillis: millis => millis };
+        export const collection = () => ({}), addDoc = async () => ({id: "test-video"});
+        export const limit = value => value, onSnapshot = () => () => {}, orderBy = value => value;
+        export const query = (...values) => values, connectFirestoreEmulator = () => {};
         export const setDoc = async (path, data) => {
           if (path[2] === "activityEvents") window.activityWrites.push({path, data});
         };
