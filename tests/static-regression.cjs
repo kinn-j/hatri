@@ -8,6 +8,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const {execFileSync} = require('node:child_process');
 const src = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf8');
+const desiSrc = fs.readFileSync(path.resolve(__dirname, '../desi-recipes.js'), 'utf8');
 const sw = fs.readFileSync(path.resolve(__dirname, '../sw.js'), 'utf8');
 
 function fn(start, end, globals = {}) {
@@ -38,6 +39,18 @@ test('Hindi translation skips CSS text and still translates visible text', () =>
   const text = { nodeType: 3, nodeValue: 'Kitchen', parentElement: parent };
   c.trNode(text); assert.equal(text.nodeValue, 'रसोई');
   c.LANG = 'en'; c.trNode(text); assert.equal(text.nodeValue, 'Kitchen');
+});
+
+test('desi recipes keep English source data and load Hindi through Google Translate', () => {
+  const context = {};
+  new vm.Script(desiSrc);
+  vm.runInNewContext(desiSrc.replace(/^const DESI_RECIPES/, 'DESI_RECIPES'), context);
+  assert.equal(context.DESI_RECIPES.length, 72);
+  assert.doesNotMatch(desiSrc, /^\s*hindi:/m);
+  assert.doesNotMatch(desiSrc, /DESI_HINDI_TEXT/);
+  assert.match(desiSrc, /translate\.googleapis\.com\/translate_a\/single/);
+  assert.match(desiSrc, /recipe\.amounts\.hi/);
+  assert.match(desiSrc, /recipe\.steps\.hi/);
 });
 
 test('meal pairing rules exclude incompatible sauces and cross-cuisine staples', () => {
@@ -112,6 +125,15 @@ test('pantry image fallback and accurate grains category exist', () => {
   assert.match(src, /document\.addEventListener\("error",function\(e\)/);
   assert.match(src, /"Grains \/ Pulses":\[\]/);
   assert.match(src, /\.pantry-photo:focus-visible/);
+});
+
+test('pantry separates herbs and provides compact vegetable subcategories', () => {
+  assert.match(src, /"Herbs & aromatics":\[\]/);
+  assert.match(src, /herb\[id\].*Herbs & aromatics/);
+  assert.match(src, /\["Roots & tubers"/);
+  assert.match(src, /\["Gourds & squash"/);
+  assert.match(src, /data-pantry-sub/);
+  assert.match(src, /visibleItems=c\[0\]==="Vegetables"/);
 });
 
 test('cart suggestions prefer recipes that need fewer extra ingredients and use more of the cart', () => {
