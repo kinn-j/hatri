@@ -581,6 +581,7 @@ body[data-v="reels"]{background:#09120e;overflow:hidden}body[data-v="reels"]>.he
 <script src="./instagram-recipes.js"></script>
 <script src="./quick-north-recipes.js"></script>
 <script src="./desi-recipes.js"></script>
+<script src="./additional-recipes.js"></script>
 <script src="./street-food-recipes.js"></script>
 <script src="./rajasthani-recipes.js"></script>
 <script src="./seasonal-recipes.js"></script>
@@ -2409,7 +2410,7 @@ var photoAliases={
   "south-indian-filter-coffee": "filter-coffee.webp",
   "tandoori-mushroom-tikka": "mushroom-tikka.webp"
 };
-function bundledPhotoPath(slug){return "images/"+(photoAliases[slug]||slug+".webp")}
+function bundledPhotoPath(slug){return "images/"+((typeof SWEET_PHOTOS!=="undefined"&&SWEET_PHOTOS[slug])||photoAliases[slug]||slug+".webp")}
 function slug(n){return n.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
 function pslug(n){return slug(n).replace(/^air-fryer-/,"")}
 (async function(){
@@ -3678,7 +3679,8 @@ if(typeof INSTAGRAM_RECIPES!=="undefined"){
   var international=typeof INTERNATIONAL_RECIPES==="undefined"?[]:INTERNATIONAL_RECIPES;
   var winter=typeof WINTER_RECIPES==="undefined"?[]:WINTER_RECIPES;
   var desi=typeof DESI_RECIPES==="undefined"?[]:DESI_RECIPES;
-  quick.concat(street,rajasthani,seasonal,international,winter,desi).forEach(function(recipe){
+  var additional=typeof ADDITIONAL_RECIPES==="undefined"?[]:ADDITIONAL_RECIPES;
+  quick.concat(street,rajasthani,seasonal,international,winter,desi,additional).forEach(function(recipe){
     var name=recipe.name,c=recipe.course;
     var occasions=recipe.occasion?["Festive",recipe.occasion]:["Daily"];
     if(winter.includes(recipe))occasions.push("Winter");
