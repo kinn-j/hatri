@@ -24,8 +24,8 @@ Firebase services have free usage allowances; review quotas if the app grows.
 ## 2. Publish the updated app
 
 From this package, place **both** `index.html` and `auth.js` in the repository
-root (next to the existing `sw.js` and `manifest.webmanifest`). Keep the
-existing `images/`, `images/photos.json`, and `icons/` folders untouched.
+root next to the existing `translation.js`, `sw.js`, and `manifest.webmanifest`.
+Keep the existing `images/`, `images/photos.json`, and `icons/` folders untouched.
 
 You can also commit `firestore.rules` and this setup guide for version history,
 but uploading `firestore.rules` to GitHub does **not** deploy those rules to

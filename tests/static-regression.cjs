@@ -27,30 +27,26 @@ test('every inline script parses', () => {
   assert.ok(count >= 10);
 });
 
-test('Hindi translation skips CSS text and still translates visible text', () => {
-  const c = fn('function trNode(', 'new MutationObserver(', {
-    LANG: 'hi', trText: str => str.replaceAll('none', 'कोई नहीं').replaceAll('Kitchen', 'रसोई')
-  });
-  const style = { closest: selector => selector.includes('style') };
-  const css = { nodeType: 3, nodeValue: 'display:none', parentElement: style };
-  c.trNode(css);
-  assert.equal(css.nodeValue, 'display:none');
-  const parent = { closest: () => null };
-  const text = { nodeType: 3, nodeValue: 'Kitchen', parentElement: parent };
-  c.trNode(text); assert.equal(text.nodeValue, 'रसोई');
-  c.LANG = 'en'; c.trNode(text); assert.equal(text.nodeValue, 'Kitchen');
-});
-
-test('desi recipes keep English source data and load Hindi through Google Translate', () => {
+test('the app and recipe catalog use English source text with one runtime translator', () => {
   const context = {};
   new vm.Script(desiSrc);
   vm.runInNewContext(desiSrc.replace(/^const DESI_RECIPES/, 'DESI_RECIPES'), context);
   assert.equal(context.DESI_RECIPES.length, 72);
-  assert.doesNotMatch(desiSrc, /^\s*hindi:/m);
-  assert.doesNotMatch(desiSrc, /DESI_HINDI_TEXT/);
-  assert.match(desiSrc, /translate\.googleapis\.com\/translate_a\/single/);
-  assert.match(desiSrc, /recipe\.amounts\.hi/);
-  assert.match(desiSrc, /recipe\.steps\.hi/);
+  const frontend = fs.readdirSync(path.resolve(__dirname, '..'))
+    .filter(name => name.endsWith('-recipes.js') || ['recipe-details.js', 'hero-carousel.js'].includes(name));
+  for (const name of frontend) {
+    const code = fs.readFileSync(path.resolve(__dirname, '..', name), 'utf8');
+    assert.doesNotMatch(code, /\p{Script=Devanagari}/u, name);
+    assert.doesNotMatch(code, /translate\.googleapis\.com/, name);
+  }
+  const translation = fs.readFileSync(path.resolve(__dirname, '../translation.js'), 'utf8');
+  new vm.Script(translation);
+  assert.match(translation, /translate\.googleapis\.com\/translate_a\/single/);
+  assert.doesNotMatch(src, /\p{Script=Devanagari}/u);
+  assert.match(src, /<script src="\.\/translation\.js"><\/script>/);
+  const legacy = fs.readFileSync(path.resolve(__dirname, '../Raman_Rasoi_Google_Login_Configured/index.html'), 'utf8');
+  assert.doesNotMatch(legacy, /\p{Script=Devanagari}/u);
+  assert.match(legacy, /import\(translationUrl.href\)/);
 });
 
 test('meal pairing rules exclude incompatible sauces and cross-cuisine staples', () => {
@@ -114,10 +110,9 @@ test('vegetarian panna cotta guidance excludes animal gelatin', () => {
   }
 });
 
-test('Gajar Halwa has needed sugar and an explicit bilingual recipe', () => {
+test('Gajar Halwa has needed sugar and an explicit English recipe', () => {
   assert.match(src, /\["Gajar Halwa",1,20,45,0,\["carrot","milk","ghee","sugar"/);
   assert.match(src, /STEPS\["Gajar Halwa"\]=\{"en":\[/);
-  assert.match(src, /"hi":\["500 ग्राम गाजर/);
 });
 
 test('pantry image fallback and accurate grains category exist', () => {
@@ -173,9 +168,37 @@ test('adding all recipe ingredients preserves existing and legacy cart quantitie
 
 test('PWA registers offline worker and caches the required shell files', () => {
   assert.match(src, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
-  assert.match(sw, /const CACHE = 'hatri-v49-desi-recipes'/);
+  assert.match(sw, /const CACHE = 'hatri-v52-runtime-translation'/);
+  assert.ok(sw.includes("'./translation.js'"));
   for (const item of ['auth.js','recipe-reels.js','ingredient-images.js','recipe-details.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp','seasonal-recipes.js','winter-recipes.js','desi-recipes.js','additional-recipes.js','activity.js','international-recipes.js','hero-carousel.js','images/hatri-dinner-header.webp','images/hatri-christmas-header.webp','images/mushroom-barley-soup.webp']) assert.ok(sw.includes(`'./${item}'`));
   new vm.Script(sw);
+});
+
+test('cloud preferences ignore and omit saved heaviness selections', () => {
+  for (const folder of ['..', '../Raman_Rasoi_Google_Login_Configured']) {
+    const auth = fs.readFileSync(path.resolve(__dirname, folder, 'auth.js'), 'utf8');
+    const start = auth.indexOf('function localSnapshot()');
+    const end = auth.indexOf('function queueSave()', start);
+    assert.ok(start >= 0 && end > start);
+    const core = { have: { paneer: 1 } };
+    const filters = { r: { 'North Indian': 1 }, o: { Festive: 1 }, t: { t3: 1 } };
+    const window = {
+      applyState: state => assert.deepEqual(state, core),
+      stateObj: () => core,
+      migrateWinterOccasion() {}, syncT() {}, saveF() {}, all() {},
+    };
+    const context = vm.createContext({ window });
+    vm.runInContext(auth.slice(start, end), context);
+    context.applyCloud({
+      core, filters: { ...filters, h: { Light: 1 } },
+      choices: { occasion: 'Festive', heaviness: 'Light' },
+    });
+    assert.equal('HS' in window || 'hv' in window, false);
+    const saved = JSON.parse(JSON.stringify(context.localSnapshot()));
+    const expected = folder === '..' ? { ...filters, winter: true } : filters;
+    assert.deepEqual(saved.filters, expected);
+    assert.deepEqual(saved.choices, { occasion: 'Festive' });
+  }
 });
 
 test('community video feed keeps media out of Firestore and enforces its upload contract', () => {
@@ -247,14 +270,18 @@ test('a failed photo decode can replace a bad cached image and reuse the repaire
   assert.equal(downloads, 1);
 });
 
-test('every catalog image has a first-render WebP preview embedded in the page', () => {
-  const previews = fn('var mealPhotoPreviews=', 'var bundledPhotos=').mealPhotoPreviews;
+test('every catalog image has a unique slot in the shared WebP preview', () => {
+  const { mealPhotoPreviews, mealPreviewSize, mealPreviewColumns, mealPreviewRows, mealPreviewAsset } =
+    fn('var mealPreviewSize=', 'var bundledPhotos=');
   const catalog = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../images/photos.json')));
-  const paths = new Set(Object.values(catalog).map(filename => 'images/' + filename));
-  assert.deepEqual(new Set(Object.keys(previews)), paths);
-  for (const [filename, encoded] of Object.entries(previews)) {
-    const data = Buffer.from(encoded, 'base64');
-    assert.equal(data.toString('ascii', 8, 12), 'WEBP', filename);
-    assert.equal(data.readUInt32LE(4) + 8, data.length, filename);
-  }
+  const paths = [...new Set(Object.values(catalog))].sort().map(filename => 'images/' + filename);
+  assert.deepEqual(Object.entries(mealPhotoPreviews), paths.map((filename, i) => [filename, i]));
+  assert.equal(mealPreviewSize, 72);
+  assert.equal(mealPreviewRows, Math.ceil(paths.length / mealPreviewColumns));
+  const atlas = fs.readFileSync(path.resolve(__dirname, '../images/meal-previews.webp'));
+  assert.equal(atlas.toString('ascii', 8, 12), 'WEBP');
+  assert.equal(atlas.readUInt32LE(4) + 8, atlas.length);
+  const revision = require('node:crypto').createHash('sha256').update(atlas).digest('hex').slice(0, 12);
+  assert.equal(mealPreviewAsset, `./images/meal-previews.webp?v=${revision}`);
+  assert.ok(sw.includes(`const MEAL_PREVIEW = '${mealPreviewAsset}';`));
 });

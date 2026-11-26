@@ -17,6 +17,8 @@ if (location.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(locatio
 const feed = document.getElementById('reels-feed');
 const dialog = document.getElementById('reels-upload-dialog');
 const form = document.getElementById('reels-upload-form');
+const videoInput = document.getElementById('reels-video-input');
+const videoName = document.getElementById('reels-video-name');
 const status = document.getElementById('reels-upload-status');
 const progress = document.getElementById('reels-upload-progress');
 const MAX_BYTES = 100 * 1024 * 1024;
@@ -41,10 +43,13 @@ function render(items) {
   items.forEach(item => {
     const card = document.createElement('article'); card.className = 'reel-card';
     const video = document.createElement('video');
-    video.src = text(item.videoUrl); video.muted = true; video.loop = true; video.playsInline = true; video.preload = 'metadata';
+    video.src = text(item.videoUrl); video.muted = true; video.loop = true; video.playsInline = true; video.preload = 'none';
     video.addEventListener('click', () => video.paused ? video.play() : video.pause());
     const copy = document.createElement('div'); copy.className = 'reel-copy';
-    const author = document.createElement('div'); author.className = 'reel-author'; author.textContent = '@' + (text(item.creatorName) || 'Hatri cook');
+    const author = document.createElement('div'); author.className = 'reel-author';
+    const creator = text(item.creatorName);
+    if (creator) author.translate = false;
+    author.textContent = '@' + (creator || 'Hatri cook');
     const title = document.createElement('h2'); title.textContent = text(item.title) || 'Recipe video';
     const caption = document.createElement('p'); caption.textContent = text(item.caption);
     const meta = document.createElement('div'); meta.className = 'reel-meta'; meta.textContent = 'Public recipe · Tap video to pause';
@@ -68,15 +73,22 @@ onSnapshot(query(collection(db, 'publicRecipeVideos'), orderBy('createdAt', 'des
   render(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(item => item.status === 'published'));
 }, error => empty(error.code === 'permission-denied' ? 'Public videos are not enabled yet. Publish the Firestore rules, then refresh.' : 'Could not load community videos.'));
 
+function showVideoName() {
+  const file = videoInput.files[0];
+  videoName.translate = !file;
+  videoName.textContent = file?.name || 'No video selected';
+}
+document.getElementById('reels-video-pick').addEventListener('click', () => videoInput.click());
+videoInput.addEventListener('change', showVideoName);
 document.getElementById('reels-upload-open').addEventListener('click', () => {
   if (!signedInUser) { window.toast?.('Sign in with Google from your profile before uploading.'); document.querySelector('[data-rr-profile-open]')?.click(); return; }
-  form.reset(); status.textContent = ''; progress.style.width = '0%'; dialog.showModal();
+  form.reset(); showVideoName(); status.textContent = ''; progress.style.width = '0%'; dialog.showModal();
 });
 document.getElementById('reels-upload-cancel').addEventListener('click', () => dialog.close());
 form.addEventListener('submit', async event => {
   event.preventDefault();
   if (!signedInUser) { status.textContent = 'Please sign in first.'; return; }
-  const file = form.video.files[0];
+  const file = videoInput.files[0];
   if (!file || !/^video\/(mp4|webm|quicktime)$/.test(file.type)) { status.textContent = 'Choose an MP4, WebM, or MOV video.'; return; }
   if (file.size > MAX_BYTES) { status.textContent = 'Videos must be 100 MB or smaller.'; return; }
   const publish = form.querySelector('[type="submit"]'); publish.disabled = true; status.textContent = 'Uploading video…';
