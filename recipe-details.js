@@ -5172,17 +5172,6 @@ const HATRI_RECIPE_DETAILS = {
         "1 tbsp ghee",
         "½ tsp cumin",
         "½ tsp salt"
-      ],
-      "hi": [
-        "350 ग्राम पालक",
-        "200 ग्राम पनीर",
-        "1 छोटा प्याज़",
-        "1 टमाटर",
-        "लहसुन की 2 कलियाँ",
-        "1 छोटा चम्मच अदरक",
-        "1 बड़ा चम्मच घी",
-        "½ छोटा चम्मच जीरा",
-        "½ छोटा चम्मच नमक"
       ]
     },
     "steps": {
@@ -5190,11 +5179,6 @@ const HATRI_RECIPE_DETAILS = {
         "Blanch spinach 1 min, cool in cold water, drain and blend with a splash of fresh water.",
         "Sizzle cumin in ghee, brown chopped onion then add garlic, ginger and chopped tomato. Cook down to a paste.",
         "Add spinach purée and salt. Simmer 4–5 min, then add paneer cubes and warm gently for 2–3 min."
-      ],
-      "hi": [
-        "पालक 1 मिनट उबालकर ठंडे पानी में डालें। निथारकर थोड़ा पानी डालकर पीसें।",
-        "घी में जीरा चटकाएँ और कटा प्याज़ भूरा करें। लहसुन, अदरक और कटा टमाटर डालकर गाढ़ा पकाएँ।",
-        "पालक का पेस्ट और नमक डालकर 4–5 मिनट पकाएँ। पनीर के टुकड़े डालकर धीमी आँच पर 2–3 मिनट गरम करें।"
       ]
     }
   },
@@ -5453,17 +5437,6 @@ const HATRI_RECIPE_DETAILS = {
         "2 tbsp butter",
         "¼ cup cream",
         "½ tsp each Kashmiri chilli powder, kasuri methi and salt"
-      ],
-      "hi": [
-        "450 ग्राम बिना हड्डी का चिकन",
-        "⅓ कप दही",
-        "1 बड़ा चम्मच अदरक-लहसुन का पेस्ट",
-        "1 छोटा चम्मच गरम मसाला",
-        "3 टमाटर",
-        "10 काजू",
-        "2 बड़े चम्मच मक्खन",
-        "¼ कप क्रीम",
-        "½ छोटा चम्मच प्रत्येक कश्मीरी मिर्च, कसूरी मेथी और नमक"
       ]
     },
     "steps": {
@@ -5471,11 +5444,6 @@ const HATRI_RECIPE_DETAILS = {
         "Coat cubed chicken in curd, half the paste, garam masala and half the salt. Refrigerate at least 30 min.",
         "Simmer chopped tomatoes and cashews with ½ cup water until soft. Cool slightly and blend. Sear chicken in 1 tbsp butter in a single layer.",
         "Fry remaining paste and chilli briefly in remaining butter. Add purée, chicken and remaining salt. Simmer until chicken reaches 74°C. Stir in cream and crushed kasuri methi off heat."
-      ],
-      "hi": [
-        "चिकन में दही, आधा पेस्ट, गरम मसाला और आधा नमक मिलाकर कम से कम 30 मिनट फ्रिज में रखें।",
-        "टमाटर और काजू ½ कप पानी में नरम होने तक पकाकर थोड़ा ठंडा करें और पीसें। 1 बड़े चम्मच मक्खन में चिकन को एक परत में हल्का भूरा करें।",
-        "बचे मक्खन में बाकी पेस्ट और मिर्च कुछ सेकंड भूनें। टमाटर का पेस्ट, चिकन और बचा नमक डालें। चिकन के सबसे मोटे हिस्से का तापमान 74°C होने तक पकाएँ। आँच बंद कर क्रीम और मसलकर कसूरी मेथी मिलाएँ।"
       ]
     }
   },
@@ -6156,18 +6124,6 @@ const HATRI_RECIPE_DETAILS = {
         "¼ tsp turmeric",
         "½ tsp salt",
         "1 tbsp lemon juice"
-      ],
-      "hi": [
-        "1½ कप मोटा पोहा",
-        "1 छोटा प्याज़",
-        "2 बड़े चम्मच मूँगफली",
-        "1 बड़ा चम्मच तेल",
-        "½ छोटा चम्मच राई",
-        "8 करी पत्ते",
-        "1 हरी मिर्च",
-        "¼ छोटा चम्मच हल्दी",
-        "½ छोटा चम्मच नमक",
-        "1 बड़ा चम्मच नींबू का रस"
       ]
     },
     "steps": {
@@ -6175,11 +6131,6 @@ const HATRI_RECIPE_DETAILS = {
         "Rinse poha in a sieve and drain 5 min. It should soften enough to crush between two fingers.",
         "Fry peanuts in oil and remove. Pop mustard, add curry leaves and chilli and soften diced onion. Stir in turmeric.",
         "Fold in poha and salt. Cover on low 2 min to heat through. Finish with lemon and peanuts."
-      ],
-      "hi": [
-        "पोहा छलनी में धोकर 5 मिनट निथारें। दाना उँगलियों के बीच आसानी से मसल जाना चाहिए।",
-        "तेल में मूँगफली तलकर निकालें। उसी तेल में राई, करी पत्ते और मिर्च चटकाएँ। कटा प्याज़ नरम करें और हल्दी डालें।",
-        "पोहा और नमक मिलाकर धीमी आँच पर 2 मिनट ढकें। नींबू और मूँगफली डालकर परोसें।"
       ]
     }
   },
@@ -6341,12 +6292,6 @@ const HATRI_RECIPE_DETAILS = {
         "100 g sugar",
         "60 ml water",
         "1 tsp ghee for the paper, optional"
-      ],
-      "hi": [
-        "200 ग्राम बिना नमक के काजू",
-        "100 ग्राम चीनी",
-        "60 मिली पानी",
-        "कागज़ पर लगाने के लिए 1 छोटा चम्मच घी (वैकल्पिक)"
       ]
     },
     "steps": {
@@ -6354,11 +6299,6 @@ const HATRI_RECIPE_DETAILS = {
         "Pulse room-temperature cashews in short bursts to a fine powder. Stop before the nuts release oil. Sift and regrind any large pieces.",
         "Dissolve sugar in water and bring just to a light simmer. Add cashew powder and stir over low heat for 5–8 min, until a cooled pinch forms a smooth ball.",
         "Transfer to parchment. When cool enough to handle, knead briefly, roll between two sheets to about 5 mm thick and cut into diamonds when set."
-      ],
-      "hi": [
-        "काजू को रुक-रुककर बारीक पीसें। तेल निकलने से पहले रुकें। बड़े टुकड़े छानकर दोबारा पीसें।",
-        "चीनी और पानी को हल्का उबालें। काजू का पाउडर डालकर धीमी आँच पर 5–8 मिनट चलाएँ। थोड़ा मिश्रण ठंडा करके देखें, उसकी चिकनी गोली बन जानी चाहिए।",
-        "मिश्रण बेकिंग पेपर पर निकालें। छूने लायक ठंडा होने पर हल्का गूँथें और दो कागज़ों के बीच 5 मिमी मोटा बेलें। जमने पर हीरे के आकार में काटें।"
       ]
     }
   },
@@ -6379,21 +6319,6 @@ const HATRI_RECIPE_DETAILS = {
         "⅛ tsp baking soda",
         "½ tsp sugar",
         "frying oil"
-      ],
-      "hi": [
-        "¾ कप सूखे काबुली चने",
-        "1 प्याज़",
-        "2 टमाटर",
-        "1 छोटा चम्मच अदरक-लहसुन का पेस्ट",
-        "2 छोटे चम्मच छोले मसाला",
-        "1 बड़ा चम्मच तेल",
-        "कुल ¾ छोटा चम्मच नमक",
-        "1½ कप मैदा",
-        "½ कप सादा दही",
-        "½ छोटा चम्मच बेकिंग पाउडर",
-        "⅛ छोटा चम्मच बेकिंग सोडा",
-        "½ छोटा चम्मच चीनी",
-        "तलने का तेल"
       ]
     },
     "steps": {
@@ -6402,12 +6327,6 @@ const HATRI_RECIPE_DETAILS = {
         "Brown chopped onion in 1 tbsp oil. Stir in paste, tomatoes and chole masala and cook down. Add chickpeas, ½ tsp salt and enough cooking water to make a gravy. Simmer 10–15 min.",
         "Mix flour, leaveners, sugar, remaining salt, curd and enough water to make a soft dough. Cover and rest 1 hour.",
         "Roll dough into 6 ovals, about 3 mm thick. Fry one at a time at 175–185°C, pressing lightly to puff and turning once."
-      ],
-      "hi": [
-        "चने रात भर भिगोकर पानी फेंकें। 2½ कप ताज़े पानी में तेज़ प्रेशर पर 25–35 मिनट पकाएँ। प्रेशर अपने आप उतरने दें। चना आसानी से मसल जाना चाहिए।",
-        "1 बड़े चम्मच तेल में कटा प्याज़ भूरा करें। पेस्ट, टमाटर और छोले मसाला डालकर गाढ़ा होने तक पकाएँ। चने, ½ छोटा चम्मच नमक और पकाने का थोड़ा पानी डालकर 10–15 मिनट उबालें।",
-        "मैदा, बेकिंग पाउडर, सोडा, चीनी, बचा नमक और दही मिलाएँ। ज़रूरत भर पानी से नरम आटा गूँथकर 1 घंटा ढकें।",
-        "6 अंडाकार भटूरे 3 मिमी मोटे बेलें। 175–185°C के तेल में एक-एक करके तलें। हल्का दबाकर फुलाएँ और एक बार पलटें।"
       ]
     }
   },
@@ -6421,14 +6340,6 @@ const HATRI_RECIPE_DETAILS = {
         "3–4 tbsp sugar",
         "¼ tsp ground cardamom",
         "2 tbsp chopped nuts, optional"
-      ],
-      "hi": [
-        "500 ग्राम गाजर",
-        "500 मिली फुल-फैट दूध",
-        "2 बड़े चम्मच घी",
-        "3–4 बड़े चम्मच चीनी",
-        "¼ छोटा चम्मच इलायची पाउडर",
-        "2 बड़े चम्मच कटे मेवे (वैकल्पिक)"
       ]
     },
     "steps": {
@@ -6436,11 +6347,6 @@ const HATRI_RECIPE_DETAILS = {
         "Peel and grate the carrots. Simmer the grated carrots in milk in a heavy pan, stirring often, until the carrots soften and most milk evaporates, about 25–35 min.",
         "Stir in ghee and cook over medium-low heat for 8–10 min until glossy and fragrant. Do not let it catch on the bottom.",
         "Add sugar and cardamom and stir until the released liquid has cooked off. Finish with nuts if desired."
-      ],
-      "hi": [
-        "गाजर छीलकर कद्दूकस करें। भारी तले की कड़ाही में दूध के साथ 25–35 मिनट पकाएँ। बीच-बीच में चलाएँ, जब तक गाजर नरम हो जाए और ज़्यादातर दूध सूख जाए।",
-        "घी मिलाकर मध्यम से धीमी आँच पर 8–10 मिनट भूनें। मिश्रण चमकदार और खुशबूदार होने तक चलाते रहें।",
-        "चीनी और इलायची मिलाएँ। चीनी से निकला पानी सूखने तक पकाएँ। चाहें तो मेवे डालें।"
       ]
     }
   },
@@ -6456,16 +6362,6 @@ const HATRI_RECIPE_DETAILS = {
         "250 ml water",
         "3 crushed cardamom pods",
         "frying oil"
-      ],
-      "hi": [
-        "200 ग्राम नरम मावा",
-        "2 बड़े चम्मच मैदा",
-        "¼ छोटा चम्मच बेकिंग पाउडर",
-        "ज़रूरत पर 1–2 छोटे चम्मच दूध",
-        "200 ग्राम चीनी",
-        "250 मिली पानी",
-        "3 कुटी इलायची",
-        "तलने का तेल"
       ]
     },
     "steps": {
@@ -6473,11 +6369,6 @@ const HATRI_RECIPE_DETAILS = {
         "Crumble mawa and mix gently with sifted maida and baking powder. Add milk only if crumbly. Divide into 12 smooth, crack-free balls.",
         "Simmer sugar, water and cardamom for 5 min. Keep syrup warm and pourable.",
         "Fry balls in small batches at 145–155°C, turning often until evenly deep golden. Drain briefly, then soak in warm syrup at least 1 hour."
-      ],
-      "hi": [
-        "मावा मसलें। छना मैदा और बेकिंग पाउडर हल्के हाथ से मिलाएँ। मिश्रण बिखरे तो थोड़ा दूध डालें। 12 चिकने, बिना दरार के गोले बनाएँ।",
-        "चीनी, पानी और इलायची 5 मिनट उबालें। चाशनी हल्की और गरम रखें।",
-        "गोलों को 145–155°C के तेल में थोड़े-थोड़े करके तलें। पलटते रहें, ताकि सब तरफ़ गहरा सुनहरा रंग आए। निकालकर गरम चाशनी में कम से कम 1 घंटा भिगोएँ।"
       ]
     }
   },
@@ -6493,16 +6384,6 @@ const HATRI_RECIPE_DETAILS = {
         "250 ml water",
         "3 cardamom pods",
         "frying oil"
-      ],
-      "hi": [
-        "200 ग्राम नरम मावा",
-        "2 बड़े चम्मच मैदा",
-        "¼ छोटा चम्मच बेकिंग पाउडर",
-        "ज़रूरत पर 1–2 छोटे चम्मच दूध",
-        "200 ग्राम चीनी",
-        "250 मिली पानी",
-        "3 इलायची",
-        "तलने का तेल"
       ]
     },
     "steps": {
@@ -6510,11 +6391,6 @@ const HATRI_RECIPE_DETAILS = {
         "Mix crumbled mawa with sifted maida and baking powder. Add a little milk only if crumbly. Roll 24 small smooth balls.",
         "Simmer sugar, water and crushed cardamom for 5 min. Keep the syrup warm.",
         "Fry in small batches at 145–155°C, turning often for even browning. Drain briefly and soak in warm syrup for at least 45 min."
-      ],
-      "hi": [
-        "मावा मसलकर छना मैदा और बेकिंग पाउडर मिलाएँ। मिश्रण बिखरे तो थोड़ा दूध डालें। 24 छोटे, बिना दरार के गोले बनाएँ।",
-        "चीनी, पानी और कुटी इलायची 5 मिनट उबालें। चाशनी गरम रखें।",
-        "145–155°C पर छोटे बैच में तलें और बराबर भूरा होने तक पलटते रहें। निकालकर गरम चाशनी में कम से कम 45 मिनट रखें।"
       ]
     }
   },
@@ -6526,12 +6402,6 @@ const HATRI_RECIPE_DETAILS = {
         "2 tbsp lemon juice diluted with 2 tbsp water",
         "1 cup sugar",
         "4 cups water for syrup"
-      ],
-      "hi": [
-        "1 लीटर फुल-फैट दूध",
-        "2 बड़े चम्मच नींबू का रस और 2 बड़े चम्मच पानी",
-        "1 कप चीनी",
-        "चाशनी के लिए 4 कप पानी"
       ]
     },
     "steps": {
@@ -6539,11 +6409,6 @@ const HATRI_RECIPE_DETAILS = {
         "Bring the milk to a boil and take off heat. Add diluted lemon gradually until curds separate and whey is greenish. Strain through muslin and rinse curds with clean cold water.",
         "Hang curds 25–35 min until damp but no longer dripping. Knead until smooth and roll into 10 small, crack-free balls.",
         "Boil sugar and water in a wide pot. Add balls, cover and maintain a lively boil for 14–18 min, until doubled. Cool fully in syrup and refrigerate."
-      ],
-      "hi": [
-        "दूध उबालकर आँच बंद करें। पानी में मिला नींबू धीरे-धीरे डालें। दूध फट जाए और हल्का हरा पानी अलग हो जाए तो मलमल में छानकर छैना ठंडे पानी से धोएँ।",
-        "25–35 मिनट टाँगें। छैना नम रहे और पानी टपकना बंद हो जाए। चिकना गूँथकर 10 छोटे, बिना दरार के गोले बनाएँ।",
-        "चौड़े बर्तन में चीनी और पानी उबालें। गोले डालकर ढकें और तेज़ उबाल पर 14–18 मिनट पकाएँ, जब तक आकार दुगना हो जाए। चाशनी में ठंडा करके फ्रिज में रखें।"
       ]
     }
   },
@@ -6559,15 +6424,6 @@ const HATRI_RECIPE_DETAILS = {
         "¼ tsp cardamom",
         "pinch saffron",
         "2 tbsp pistachios"
-      ],
-      "hi": [
-        "छैने के लिए 1 लीटर फुल-फैट दूध",
-        "2 बड़े चम्मच नींबू का रस और 2 बड़े चम्मच पानी",
-        "चाशनी के लिए 1 कप चीनी और 4 कप पानी",
-        "रबड़ी के लिए 600 मिली दूध और 3 बड़े चम्मच चीनी",
-        "¼ छोटा चम्मच इलायची",
-        "चुटकी भर केसर",
-        "2 बड़े चम्मच पिस्ता"
       ]
     },
     "steps": {
@@ -6576,12 +6432,6 @@ const HATRI_RECIPE_DETAILS = {
         "Boil syrup sugar and water. Add discs and cook covered at a lively boil about 15 min until expanded. Cool in syrup.",
         "Separately simmer milk until reduced by about a third. Add sugar, saffron and cardamom. Cool, then gently press syrup from the discs and place them in the milk.",
         "Refrigerate at least 2 hours and top with pistachios."
-      ],
-      "hi": [
-        "1 लीटर दूध उबालकर आँच बंद करें। पानी में मिला नींबू धीरे-धीरे डालकर फाड़ें। छैना छानें, धोएँ और 25–35 मिनट टाँगें। चिकना गूँथकर 10 छोटी टिकियाँ बनाएँ।",
-        "चाशनी उबालें। टिकियाँ डालकर ढकें और तेज़ उबाल पर करीब 15 मिनट पकाएँ, जब तक फूल जाएँ। चाशनी में ठंडा करें।",
-        "रबड़ी का दूध अलग से उबालें, जब तक लगभग एक तिहाई कम हो जाए। चीनी, केसर और इलायची मिलाकर ठंडा करें। टिकियाँ हल्के से दबाकर रबड़ी में डालें।",
-        "कम से कम 2 घंटे फ्रिज में रखें। पिस्ता छिड़ककर परोसें।"
       ]
     }
   },
@@ -6594,13 +6444,6 @@ const HATRI_RECIPE_DETAILS = {
         "¼ tsp cardamom",
         "pinch saffron dissolved in 1 tsp warm milk",
         "2 tbsp pistachios"
-      ],
-      "hi": [
-        "500 ग्राम गाढ़ा सादा दही",
-        "50 ग्राम पिसी चीनी",
-        "¼ छोटा चम्मच इलायची",
-        "1 छोटे चम्मच गरम दूध में भीगा चुटकी भर केसर",
-        "2 बड़े चम्मच पिस्ता"
       ]
     },
     "steps": {
@@ -6608,11 +6451,6 @@ const HATRI_RECIPE_DETAILS = {
         "Drain curd in muslin in a strainer over a bowl in the refrigerator for 4–6 hours, until thick and scoopable.",
         "Whisk with sugar, cardamom and saffron milk until smooth. Taste before adding additional sugar.",
         "Chill for 30 min and serve topped with chopped pistachios."
-      ],
-      "hi": [
-        "दही मलमल में रखकर कटोरे के ऊपर छलनी में रखें। फ्रिज में 4–6 घंटे पानी निकलने दें, जब तक दही गाढ़ा हो जाए।",
-        "दही में चीनी, इलायची और केसर वाला दूध डालकर चिकना फेंटें। चखकर ज़रूरत हो तो चीनी बढ़ाएँ।",
-        "30 मिनट ठंडा करें और कटा पिस्ता डालकर परोसें।"
       ]
     }
   },
@@ -6624,12 +6462,6 @@ const HATRI_RECIPE_DETAILS = {
         "¼ cup sugar",
         "¼ tsp cardamom",
         "2 tbsp chopped almonds and pistachios, optional"
-      ],
-      "hi": [
-        "750 मिली फुल-फैट दूध",
-        "¼ कप चीनी",
-        "¼ छोटा चम्मच इलायची",
-        "2 बड़े चम्मच कटे बादाम और पिस्ता (वैकल्पिक)"
       ]
     },
     "steps": {
@@ -6637,11 +6469,6 @@ const HATRI_RECIPE_DETAILS = {
         "Simmer milk in a wide heavy pan 30–45 min until about half remains, stirring often and scraping in the milk solids.",
         "Stir in sugar and cardamom, cook 3 min and stir in nuts. Cool promptly.",
         "Pour into 4 moulds and freeze 6–8 hours. Dip moulds briefly in lukewarm water to unmould."
-      ],
-      "hi": [
-        "चौड़ी, भारी तले की कड़ाही में दूध 30–45 मिनट उबालें, जब तक लगभग आधा रह जाए। चलाते रहें और किनारों की मलाई वापस मिलाएँ।",
-        "चीनी और इलायची डालकर 3 मिनट पकाएँ। मेवे मिलाएँ और जल्दी ठंडा करें।",
-        "4 साँचों में भरकर 6–8 घंटे फ़्रीज़र में रखें। निकालने के लिए साँचे कुछ सेकंड गुनगुने पानी में डुबोएँ।"
       ]
     }
   },
@@ -6657,16 +6484,6 @@ const HATRI_RECIPE_DETAILS = {
         "¼ tsp dried oregano",
         "salt",
         "¼ cup grated cheese, optional"
-      ],
-      "hi": [
-        "160 ग्राम सूखा पास्ता",
-        "1½ बड़े चम्मच मक्खन",
-        "1½ बड़े चम्मच मैदा",
-        "1½ कप दूध",
-        "¼ छोटा चम्मच काली मिर्च",
-        "¼ छोटा चम्मच ओरेगैनो",
-        "नमक",
-        "¼ कप कद्दूकस चीज़ (वैकल्पिक)"
       ]
     },
     "steps": {
@@ -6674,11 +6491,6 @@ const HATRI_RECIPE_DETAILS = {
         "Boil pasta in salted water until al dente. Save ¼ cup cooking water, then drain.",
         "Melt butter on medium-low heat. Whisk in flour for 1 min without browning. Gradually whisk in milk and simmer 4–6 min, until the sauce coats a spoon.",
         "Season with salt, pepper and oregano. Stir in optional cheese and pasta. Loosen with a little cooking water and serve hot."
-      ],
-      "hi": [
-        "पास्ता नमक वाले पानी में उबालें, जब तक अंदर हल्का कड़ा रहे। ¼ कप पकाने का पानी बचाकर छानें।",
-        "मध्यम से धीमी आँच पर मक्खन पिघलाएँ। मैदा डालकर बिना भूरा किए 1 मिनट चलाएँ। दूध धीरे-धीरे फेंटते हुए डालें और 4–6 मिनट पकाएँ, जब तक सॉस चम्मच पर टिके।",
-        "नमक, काली मिर्च और ओरेगैनो डालें। पास्ता और चाहें तो चीज़ मिलाएँ। ज़रूरत पर थोड़ा बचा पानी डालकर गरम परोसें।"
       ]
     }
   },
@@ -6880,15 +6692,6 @@ const HATRI_RECIPE_DETAILS = {
         "1½ tbsp ghee",
         "½ tsp sendha namak",
         "1 green chilli and ½ lemon, optional"
-      ],
-      "hi": [
-        "¾ कप मध्यम साबूदाना",
-        "भिगोने के लिए ¾ कप पानी या पैकेट के अनुसार",
-        "1 उबला आलू",
-        "⅓ कप भुनी मूँगफली",
-        "1½ बड़े चम्मच घी",
-        "½ छोटा चम्मच सेंधा नमक",
-        "1 हरी मिर्च और ½ नींबू (वैकल्पिक)"
       ]
     },
     "steps": {
@@ -6896,11 +6699,6 @@ const HATRI_RECIPE_DETAILS = {
         "Rinse pearls to remove surface starch. Soak 4–6 hours until they crush easily between two fingers, then drain thoroughly.",
         "Crush peanuts and mix with drained pearls and salt. Dice potato and fry it in ghee with slit chilli until the edges colour.",
         "Fold in sabudana. Cook on medium-low for 4–6 min, turning gently until most pearls are translucent. Finish with lemon if using."
-      ],
-      "hi": [
-        "साबूदाना धोकर 4–6 घंटे भिगोएँ, जब तक दाना उँगलियों में आसानी से दब जाए। अच्छी तरह निथारें।",
-        "मूँगफली दरदरी कूटकर साबूदाने और नमक में मिलाएँ। आलू काटकर घी और चाहें तो हरी मिर्च के साथ हल्का सुनहरा भूनें।",
-        "साबूदाना डालकर मध्यम से धीमी आँच पर 4–6 मिनट हल्के हाथ से चलाएँ। ज़्यादातर दाने पारदर्शी हो जाएँ तो आँच बंद करें और चाहें तो नींबू डालें।"
       ]
     }
   },
@@ -6915,15 +6713,6 @@ const HATRI_RECIPE_DETAILS = {
         "½ tsp sendha namak",
         "1 green chilli, optional",
         "permitted frying oil"
-      ],
-      "hi": [
-        "¾ कप मध्यम साबूदाना",
-        "भिगोने के लिए ¾ कप पानी या पैकेट के अनुसार",
-        "250 ग्राम उबले आलू",
-        "⅓ कप भुनी मूँगफली",
-        "½ छोटा चम्मच सेंधा नमक",
-        "1 हरी मिर्च (वैकल्पिक)",
-        "व्रत में मान्य तलने का तेल"
       ]
     },
     "steps": {
@@ -6931,11 +6720,6 @@ const HATRI_RECIPE_DETAILS = {
         "Rinse and soak pearls 4–6 hours until easily crushed. Drain well. Mash dry cooked potatoes and crush peanuts.",
         "Mix with drained pearls, salt and finely chopped chilli. Press into 8 firm flat patties with no cracks.",
         "Fry one test patty at 170–175°C. If it breaks, mash and compress the remaining mixture more firmly. Fry in batches until evenly golden and drain."
-      ],
-      "hi": [
-        "साबूदाना धोकर 4–6 घंटे भिगोएँ। दाना आसानी से दब जाए तो अच्छी तरह निथारें। आलू मसलें और मूँगफली कूटें।",
-        "साबूदाना, आलू, मूँगफली, नमक और चाहें तो कटी मिर्च मिलाएँ। 8 चपटी, कसी हुई टिकियाँ बनाएँ।",
-        "170–175°C के तेल में पहले एक टिकिया तलें। टूटे तो बाकी मिश्रण थोड़ा और मसलकर कसें। बैच में सुनहरा तलकर निथारें।"
       ]
     }
   },
@@ -6987,13 +6771,6 @@ const HATRI_RECIPE_DETAILS = {
         "1 tsp cumin seeds",
         "½ tsp sendha namak",
         "1 green chilli and 1 tsp lemon juice, optional"
-      ],
-      "hi": [
-        "350 ग्राम आलू",
-        "1 बड़ा चम्मच घी",
-        "1 छोटा चम्मच जीरा",
-        "½ छोटा चम्मच सेंधा नमक",
-        "1 हरी मिर्च और 1 छोटा चम्मच नींबू का रस (वैकल्पिक)"
       ]
     },
     "steps": {
@@ -7001,11 +6778,6 @@ const HATRI_RECIPE_DETAILS = {
         "Boil potatoes until just tender, drain, peel and cut into bite-size chunks.",
         "Heat ghee and sizzle cumin until fragrant. Add slit chilli if using, then add potato and salt.",
         "Cook over medium heat for 5–7 min, turning gently until the sides colour. Finish with lemon if desired."
-      ],
-      "hi": [
-        "आलू हल्के नरम होने तक उबालें। पानी निथारकर छीलें और टुकड़े काटें।",
-        "घी में जीरा चटकाएँ। चाहें तो चीरी हुई मिर्च डालें। आलू और सेंधा नमक मिलाएँ।",
-        "मध्यम आँच पर धीरे पलटते हुए 5–7 मिनट सेंकें, जब तक किनारे सुनहरे हों। चाहें तो नींबू डालें।"
       ]
     }
   },
@@ -7074,13 +6846,6 @@ const HATRI_RECIPE_DETAILS = {
         "2 garlic cloves",
         "1 tbsp chopped parsley",
         "pinch of salt"
-      ],
-      "hi": [
-        "बैगेट या सफ़ेद ब्रेड के 4 मोटे स्लाइस",
-        "2 बड़े चम्मच नरम मक्खन",
-        "लहसुन की 2 कलियाँ",
-        "1 बड़ा चम्मच कटी पार्सले",
-        "चुटकी भर नमक"
       ]
     },
     "steps": {
@@ -7088,11 +6853,6 @@ const HATRI_RECIPE_DETAILS = {
         "Grate garlic and mix into butter with parsley and salt. Spread thinly across the bread.",
         "Toast on a tawa, buttered side down over medium-low heat, until golden, about 2–3 min. Flip briefly to crisp the underside.",
         "Alternatively bake buttered side up at 200°C for 7–10 min. Serve hot."
-      ],
-      "hi": [
-        "लहसुन कद्दूकस कर मक्खन, पार्सले और नमक में मिलाएँ। ब्रेड पर पतली परत लगाएँ।",
-        "मध्यम से धीमी आँच पर मक्खन वाली सतह नीचे रखकर 2–3 मिनट सुनहरा सेंकें। पलटकर दूसरी तरफ़ भी कुरकुरी करें।",
-        "या मक्खन वाली सतह ऊपर रखकर 200°C पर 7–10 मिनट बेक करें। गरम परोसें।"
       ]
     }
   },
@@ -8803,14 +8563,6 @@ const HATRI_RECIPE_DETAILS = {
         "30 g fine pickling salt",
         "1 tbsp coarsely ground yellow mustard seeds",
         "¼ tsp red chilli powder"
-      ],
-      "hi": [
-        "200 ग्राम गाजर",
-        "75 ग्राम चुकंदर (वैकल्पिक)",
-        "1 लीटर पीने का पानी",
-        "30 ग्राम बारीक अचार वाला नमक",
-        "1 बड़ा चम्मच दरदरी पिसी पीली सरसों",
-        "¼ छोटा चम्मच लाल मिर्च पाउडर"
       ]
     },
     "steps": {
@@ -8818,11 +8570,6 @@ const HATRI_RECIPE_DETAILS = {
         "Wash and peel carrots and optional beetroot, and cut into thin sticks. Dissolve salt completely in water. Add mustard and chilli to a clean glass fermentation jar, then add vegetables and enough brine to cover.",
         "Hold the vegetables completely under the brine with a clean fermentation weight. Fit an airlock or a lid that can vent gas. Ferment away from sunlight at about 20–22°C until the liquid is tangy and measures pH 4.6 or below with a calibrated meter. Start checking after 3 days.",
         "Refrigerate as soon as it reaches that acidity. Discard the batch if you see mould, notice a slimy texture or cannot verify the acidity. Serve cold."
-      ],
-      "hi": [
-        "गाजर और चुकंदर धोकर छीलें और पतली लंबी फाँकें काटें। पानी में नमक घोलें। साफ़ काँच के किण्वन वाले जार में सरसों, मिर्च और सब्ज़ियाँ डालें। इतना नमकीन पानी डालें कि सब्ज़ियाँ पूरी तरह डूब जाएँ।",
-        "साफ़ किण्वन भार से सब्ज़ियाँ पानी में डुबोकर रखें। गैस निकलने वाला ढक्कन लगाएँ। धूप से दूर लगभग 20–22°C पर रखें। 3 दिन बाद से कैलिब्रेट किए हुए मीटर से जाँचें। पानी खट्टा हो और pH 4.6 या कम हो जाए तो किण्वन पूरा है।",
-        "इस अम्लता तक पहुँचते ही जार फ्रिज में रखें। अगर फफूँद दिखे, मिश्रण लिसलिसा हो या अम्लता की पुष्टि न हो सके, तो मिश्रण फेंक दें। ठंडा परोसें।"
       ]
     },
     "source": [
@@ -8840,14 +8587,6 @@ const HATRI_RECIPE_DETAILS = {
         "300 g sugar",
         "150 ml water for syrup",
         "½ tsp rose water, optional"
-      ],
-      "hi": [
-        "500 ग्राम छिला, बीज निकाला सफ़ेद पेठा",
-        "½ छोटा चम्मच खाने योग्य अचार वाला चूना",
-        "भिगोने के लिए 1 लीटर पानी",
-        "300 ग्राम चीनी",
-        "चाशनी के लिए 150 मिली पानी",
-        "½ छोटा चम्मच गुलाब जल (वैकल्पिक)"
       ]
     },
     "steps": {
@@ -8855,11 +8594,6 @@ const HATRI_RECIPE_DETAILS = {
         "Cut gourd into 2 cm cubes and prick with a fork. Dissolve pickling lime in the litre of water and soak the gourd for 1 hour. Drain and discard lime water and rinse gourd thoroughly in several changes of fresh water.",
         "Simmer in fresh water until the cubes are just tender and translucent at the edges, about 8–12 min. Drain thoroughly.",
         "Bring sugar and 150 ml water to a simmer. Add gourd and cook gently until the cubes are translucent and syrup thickens, about 15–25 min. Add rose water off heat if using. Lift pieces onto a rack and refrigerate once cool."
-      ],
-      "hi": [
-        "पेठे के 2 सेमी टुकड़े काटें और काँटे से छेद करें। 1 लीटर पानी में खाने योग्य चूना घोलकर टुकड़े 1 घंटा भिगोएँ। चूने का पानी फेंकें और कई बार ताज़े पानी से अच्छी तरह धोएँ।",
-        "टुकड़े ताज़े पानी में 8–12 मिनट उबालें, जब तक हल्के नरम हों और किनारे पारदर्शी होने लगें। अच्छी तरह निथारें।",
-        "चीनी और 150 मिली पानी उबालें। पेठा डालकर धीमी आँच पर 15–25 मिनट पकाएँ, जब तक टुकड़े पारदर्शी हों और चाशनी गाढ़ी हो जाए। चाहें तो आँच बंद कर गुलाब जल डालें। टुकड़े जाली पर निकालें और ठंडा होने पर फ्रिज में रखें।"
       ]
     },
     "source": [

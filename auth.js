@@ -83,6 +83,7 @@ function renderProfileDrawer() {
   }
   const identity = document.createElement('div');
   const name = document.createElement('strong');
+  name.translate = false;
   name.textContent = safeText(currentUser.displayName) || 'Hatri cook';
   const email = document.createElement('span');
   email.textContent = safeText(currentUser.email);
@@ -132,6 +133,7 @@ function renderAccount() {
     '<p class="note">Your saved pantry, shopping list, filters and recipe ratings are private to your Google account.</p>';
   const identity = panel.querySelector('#rr-user-identity');
   if (identity && currentUser) {
+    identity.translate = false;
     identity.textContent = [safeText(currentUser.displayName),
       safeText(currentUser.email)].filter(Boolean).join(' · ') || 'Signed in';
   }
@@ -152,11 +154,11 @@ renderAccount();
 function localSnapshot() {
   const payload = {
     core: window.stateObj(),
-    filters: { r: window.RS, o: window.OS, h: window.HS, t: window.TS, winter: true },
+    filters: { r: window.RS, o: window.OS, t: window.TS, winter: true },
     choices: {
       sel: window.sel, crs: window.crs,
       sweet: window.wSweet, side: window.wSide, protein: window.wProt,
-      occasion: window.occ, heaviness: window.hv
+      occasion: window.occ
     },
     ratings: window.MY || {}
   };
@@ -170,7 +172,6 @@ function applyCloud(data) {
     window.RS = data.filters.r || {};
     window.OS = data.filters.o || {};
     window.migrateWinterOccasion(window.OS, data.filters.winter);
-    window.HS = data.filters.h || {};
     window.TS = data.filters.t || {};
   }
   const c = data.choices || {};
@@ -180,7 +181,6 @@ function applyCloud(data) {
   if (typeof c.side === 'boolean') window.wSide = c.side;
   if (typeof c.protein === 'boolean') window.wProt = c.protein;
   if (typeof c.occasion === 'string') window.occ = c.occasion;
-  if (typeof c.heaviness === 'string') window.hv = c.heaviness;
   window.MY = data.ratings && typeof data.ratings === 'object' ? data.ratings : {};
   window.syncT();
   window.saveF();
@@ -249,13 +249,11 @@ function clearPreviousAccount() {
   window.wSide = true;
   window.wProt = false;
   window.occ = 'All';
-  window.hv = 'All';
   window.tmax = 0;
   window.MY = {};
   window.ME = null;
   window.RS = {};
   window.OS = {};
-  window.HS = {};
   window.TS = {};
   window.defaults();
   window.syncT();

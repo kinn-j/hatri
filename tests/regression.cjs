@@ -43,14 +43,35 @@ test.before(async () => {
 });
 test.after(async () => { await browser?.close(); await new Promise(resolve => server?.close(resolve)); });
 
-async function open(viewport = { width: 390, height: 844 }, device = {}) {
+async function open(viewport = { width: 390, height: 844 }, device = {}, translationRequests) {
   const context = await browser.newContext({ viewport, reducedMotion: 'reduce', ...device });
   // Deterministic offline-image fallback; external auth/provider connectivity is not under test.
   await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, route => route.abort());
+  await mockGoogleTranslate(context, translationRequests);
   const page = await context.newPage();
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.MFREADY === true && document.querySelector('#pantrySlides .pantry-grid'));
   return { page, context };
+}
+
+const translationPattern = 'https://translate.googleapis.com/translate_a/single?**';
+async function mockGoogleTranslate(context, requests = []) {
+  await context.route(translationPattern, async route => {
+    const params = new URL(route.request().url()).searchParams;
+    assert.equal(params.get('sl'), 'en');
+    assert.equal(params.get('tl'), 'hi');
+    const query = params.get('q');
+    requests.push(query);
+    const parts = query.split(/\s*(\[\d{4}\])\s*/).map((source, i) => {
+      if (i % 2) return source;
+      if (/Pahadi/i.test(source)) return 'पहाड़ी';
+      if (source === 'Gajar Halwa') return 'गाजर और दूध से बना पारंपरिक भारतीय हलवा';
+      if (/cauliflower|blanch the florets/i.test(source)) return 'फूलगोभी';
+      if (/500 g carrots/i.test(source)) return '500 ग्राम गाजर';
+      return 'अनुवादित पाठ';
+    });
+    await route.fulfill({ json: [[[parts.join('\n'), query]]], headers: {'Access-Control-Allow-Origin': '*'} });
+  });
 }
 
 test('app boots with bounded results and usable mobile layouts', async () => {
@@ -96,6 +117,79 @@ test('Hindi translation does not corrupt late CSS or leave account button visibl
   await context.close();
 });
 
+test('Google Translate localizes Pahadi, new UI text and accessibility labels, and restores English', async () => {
+  const requests = [];
+  const {page, context} = await open(undefined, {serviceWorkers: 'block'}, requests);
+  try {
+    await page.locator('#langBtn').click();
+    await page.locator('[data-mf-open]').click();
+    const pahadi = page.locator('[data-mf-option="r|Pahadi"]');
+    await page.waitForFunction(() => document.querySelector('[data-mf-option="r|Pahadi"]').textContent.includes('पहाड़ी'));
+    assert.doesNotMatch(await pahadi.innerText(), /Pahadi/);
+    await pahadi.click();
+    assert.equal(await pahadi.getAttribute('aria-pressed'), 'true');
+    await page.locator('[data-mf-apply]').click();
+    await page.locator('#rq').fill('mandua cheela');
+    await page.locator('#results [data-recipe="Uttarakhand%20Mandua%20Cheela"] > summary').click();
+    await page.waitForFunction(() => document.querySelector('#dtray .meta')?.textContent.includes('पहाड़ी'));
+    await page.locator('#dish-detail-close').click();
+    await page.evaluate(() => {
+      const style = document.createElement('style');
+      style.id = 'late-style';
+      style.textContent = '.late-translation { display: block; }';
+      document.body.append(style);
+      const label = document.createElement('button');
+      label.id = 'late-translation';
+      label.textContent = 'Pahadi';
+      label.setAttribute('aria-label', 'Pahadi');
+      document.body.append(label);
+    });
+    await page.waitForFunction(() => document.querySelector('#late-translation').getAttribute('aria-label') === 'पहाड़ी');
+    assert.equal(await page.locator('#late-style').textContent(), '.late-translation { display: block; }');
+    await page.locator('#langBtn').click();
+    assert.equal(await page.locator('#late-translation').textContent(), 'Pahadi');
+    assert.equal(await page.locator('#late-translation').getAttribute('aria-label'), 'Pahadi');
+    assert.ok(requests.some(request => request.includes('Pahadi')));
+  } finally { await context.close(); }
+});
+
+test('Hindi searches use cached catalog translations and keep entered queries local', async () => {
+  const requests = [];
+  const {page, context} = await open(undefined, {serviceWorkers: 'block'}, requests);
+  try {
+    await page.locator('#langBtn').click();
+    const query = 'गाजर हलवा';
+    await page.locator('#rq').fill(query);
+    const recipe = page.locator('#results [data-recipe="Gajar%20Halwa"] summary');
+    await recipe.first().waitFor();
+    await page.waitForFunction(() => document.querySelector('#results [data-recipe="Gajar%20Halwa"] summary').textContent.includes('हलवा'));
+    await page.waitForFunction(() =>
+      JSON.parse(localStorage.getItem('hatri-google-hi-v1') || '[]').some(([source]) => source === 'Gajar Halwa'));
+    assert.ok(requests.some(request => request.includes('Gajar Halwa')));
+    assert.ok(requests.every(request => !request.includes(query)));
+    await context.route(translationPattern, route => route.abort());
+    await page.reload({waitUntil: 'domcontentloaded'});
+    await page.locator('#rq').fill(query);
+    await page.waitForFunction(() => document.querySelector('#results [data-recipe="Gajar%20Halwa"] summary')?.textContent.includes('हलवा'));
+  } finally { await context.close(); }
+});
+
+test('Google login package shares the runtime translator', async () => {
+  const {page, context} = await open({width: 1366, height: 844});
+  try {
+    await page.goto(url + 'Raman_Rasoi_Google_Login_Configured/index.html', {waitUntil: 'domcontentloaded'});
+    await page.waitForFunction(() => !!globalThis.HatriTranslation && window.MFREADY === true);
+    await page.evaluate(() => {
+      setLang('hi');
+      const mark = document.createElement('p');
+      mark.id = 'region-probe';
+      mark.textContent = 'Pahadi';
+      document.body.append(mark);
+    });
+    await page.waitForFunction(() => document.querySelector('#region-probe').textContent === 'पहाड़ी');
+  } finally { await context.close(); }
+});
+
 test('search appears immediately and respects active region, time and diet', async () => {
   const {page, context} = await open();
   await page.locator('#rq').fill('gajar halwa');
@@ -133,6 +227,36 @@ test('Clear all time remains cleared across reload; individual suggestions share
   await context.close();
 });
 
+test('saved heaviness selections do not restrict recipes or appear in filters or recipe cards', async () => {
+  const {page, context} = await open();
+  try {
+    const filters = {
+      r: { 'North Indian': 1 }, o: { Festive: 1 }, t: { t3: 1 },
+      seasonal: true, winter: true,
+    };
+    await page.evaluate(filters => {
+      localStorage.setItem('rr-filters-v2', JSON.stringify({ ...filters, h: { Light: 1 } }));
+    }, filters);
+    await page.reload({waitUntil: 'domcontentloaded'});
+    await page.waitForFunction(() => window.MFREADY === true);
+
+    const more = page.locator('[data-mf-open]');
+    assert.equal(await more.locator('.mf-count').innerText(), '2');
+    await more.click();
+    const dialog = page.locator('#moreFiltersDialog');
+    assert.deepEqual(await dialog.locator('h3').allTextContents(), ['Region', 'Occasion']);
+    await dialog.locator('[data-mf-apply]').click();
+    assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('rr-filters-v2'))), filters);
+
+    await page.locator('#rq').fill('shahi paneer');
+    const recipe = page.locator('#results details.tile').filter({ hasText: 'Shahi Paneer' }).first();
+    assert.equal(await recipe.isVisible(), true);
+    assert.doesNotMatch(await recipe.textContent(), /🪶 Light|⚖️ Medium|🔥 Heavy/);
+  } finally {
+    await context.close();
+  }
+});
+
 test('veg pantry excludes chicken stock; recipe guidance is corrected', async () => {
   const {page, context} = await open();
   await page.evaluate(() => {
@@ -148,7 +272,7 @@ test('veg pantry excludes chicken stock; recipe guidance is corrected', async ()
 });
 
 test('recipe details cover the entire live catalog and render measured methods in search', async () => {
-  const {page, context} = await open();
+  const {page, context} = await open(undefined, {serviceWorkers: 'block'});
   try {
     const audit = await page.evaluate(() => {
       const dishes = new Set(MEALS.map(recipe => recipe[0]));
@@ -184,11 +308,15 @@ test('recipe details cover the entire live catalog and render measured methods i
     await page.locator('#rq').fill('gobi pakora');
     const recipe = page.locator('#results .steps').first();
     await expectRecipe(recipe, false);
-    await page.locator('#langBtn').click();
-    await expectRecipe(page.locator('#results .steps').first(), true);
-    assert.equal(await page.locator('#results .steps ol').first().locator('..').getAttribute('lang'), 'hi');
+    await page.locator('#results details.tile > summary').first().click();
+    await page.locator('#dtray [data-recipe-language="hi"]').click();
+    await page.waitForFunction(() => document.querySelector('#dtray .steps ol').textContent.includes('फूलगोभी'));
+    await expectRecipe(page.locator('#dtray .steps'), true);
+    assert.equal(await page.locator('#dtray .steps ol').locator('..').getAttribute('lang'), 'hi');
+    await page.locator('#dish-detail-close').click();
     await page.locator('#rq').fill('gajar halwa');
-    assert.match(await page.locator('#results .steps ul').first().textContent(), /500 ग्राम गाजर/);
+    await page.locator('#results details.tile > summary').first().click();
+    await page.waitForFunction(() => document.querySelector('#dtray .steps ul').textContent.includes('500 ग्राम गाजर'));
 
     async function expectRecipe(recipe, hindi) {
       if (hindi) {
@@ -267,22 +395,31 @@ test('meal photos are visible on first render with all full-size photos blocked'
   const context = await browser.newContext({viewport:{width:390,height:844}, serviceWorkers:'block'});
   try {
     await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, route => route.abort());
-    await context.route('**/images/*.webp*', route => route.abort());
+    await context.route(url => /\.(webp|png)$/i.test(url.pathname) &&
+      !url.pathname.endsWith('/meal-previews.webp'), route => route.abort());
     const page = await context.newPage();
+    const previewResponse = page.waitForResponse(response =>
+      new URL(response.url()).pathname.endsWith('/images/meal-previews.webp'));
     await page.goto(url, {waitUntil:'domcontentloaded'});
     const cells = page.locator('#results .mtile').first().locator('summary .mc');
     await cells.first().waitFor();
     assert.equal(await cells.count(), 6);
-    const widths = await cells.evaluateAll(elements => Promise.all(elements.map(async el => {
-      const css = getComputedStyle(el).backgroundImage;
-      const data = css.match(/data:image\/webp;base64,[a-z0-9+/=]+/i);
-      if (!data || el.querySelector('.recipe-photo-fallback')) return 0;
-      const preview = new Image();
-      preview.src = data[0];
-      await preview.decode();
-      return preview.naturalWidth;
-    })));
-    assert.deepEqual(widths, Array(6).fill(72));
+    assert.equal((await previewResponse).ok(), true);
+    const previews = await cells.evaluateAll(async elements => {
+      const source = new Image();
+      source.src = elements[0].querySelector('.meal-preview image').getAttribute('href');
+      await source.decode();
+      return elements.every(el => {
+        const filename = new URL(el.querySelector('img').src).pathname.split('/').pop();
+        const index = mealPhotoPreviews['images/' + filename];
+        const box = el.querySelector('.meal-preview').viewBox.baseVal;
+        return box.width === 72 && box.height === 72 &&
+          box.x === (index % mealPreviewColumns) * 72 &&
+          box.y === Math.floor(index / mealPreviewColumns) * 72 &&
+          box.x + box.width <= source.naturalWidth && box.y + box.height <= source.naturalHeight;
+      });
+    });
+    assert.equal(previews, true);
   } finally { await context.close(); }
 });
 
@@ -451,9 +588,56 @@ test('offline service worker installs and controls subsequent navigation', async
   await context.setOffline(true);
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(() => window.MFREADY === true);
+  assert.equal(await page.evaluate(async () => {
+    const preview = new Image();
+    preview.src = document.querySelector('#results .meal-preview image').getAttribute('href');
+    await preview.decode();
+    return preview.naturalWidth === mealPreviewSize * mealPreviewColumns;
+  }), true);
   await page.locator('#rq').fill('gobi pakora');
   assert.match(await page.locator('#results .steps').first().textContent(), /250 g small cauliflower florets/);
   await context.close();
+});
+
+test('closed browse cards render full recipe content only when opened', async () => {
+  const {page, context} = await open();
+  try {
+    const recipe = page.locator('#results details.tile').first();
+    assert.equal(await recipe.getAttribute('data-lazy-card'), '');
+    assert.equal(await recipe.locator('.steps').count(), 0);
+    await recipe.locator('summary').click();
+    const dialog = page.locator('#dtray[open]');
+    assert.ok(await dialog.locator('.steps ol li').count() > 0);
+    await page.locator('#dish-detail-close').click();
+    await recipe.evaluate(el => { el.open = true; });
+    await page.waitForFunction(() => document.querySelector('#results details.tile[open] .steps ol li'));
+    await page.evaluate(() => renderResults());
+    assert.ok(await recipe.locator('.steps ol li').count() > 0);
+  } finally { await context.close(); }
+});
+
+test('community video code loads once when opening Reels', async () => {
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  try {
+    await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, route => route.abort());
+    let loads = 0;
+    await context.route('**/recipe-reels.js', route => {
+      loads++;
+      return route.fulfill({
+        contentType: 'text/javascript',
+        body: 'document.getElementById("reels-feed").textContent = "Community videos ready";',
+      });
+    });
+    const page = await context.newPage();
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    assert.equal(loads, 0);
+    await page.locator('.tabbar [data-view="reels"]').click();
+    await page.getByText('Community videos ready').waitFor();
+    await page.evaluate(() => setView('recipes'));
+    await page.locator('.tabbar [data-view="reels"]').click();
+    assert.equal(loads, 1);
+    assert.equal(await page.locator('#reels-upload-open').isEnabled(), true);
+  } finally { await context.close(); }
 });
 
 test('ingredient photo failures preserve the fallback and selection badge', async () => {
@@ -552,7 +736,7 @@ test('mobile dish and time selections and advanced filters preserve the controls
     const regionChoices = dialog.locator('.mf-region-choices .mf-choice');
     const positions = buttons => buttons.map(button => [button.offsetLeft, button.offsetTop]);
     const before = await regionChoices.evaluateAll(positions);
-    for (const option of ['r|Punjabi', 'o|Daily', 'h|Light']) {
+    for (const option of ['r|Punjabi', 'o|Daily']) {
       const choice = dialog.locator(`[data-mf-option="${option}"]`);
       await choice.tap();
       assert.equal(await choice.getAttribute('aria-pressed'), 'true');
@@ -560,7 +744,7 @@ test('mobile dish and time selections and advanced filters preserve the controls
     assert.deepEqual(await regionChoices.evaluateAll(positions), before);
     await dialog.locator('[data-mf-apply]').tap();
     assert.equal(await dialog.isVisible(), false);
-    assert.equal(await more.locator('.mf-count').innerText(), '3');
+    assert.equal(await more.locator('.mf-count').innerText(), '2');
     assert.equal(await trigger.evaluate(button => button.isConnected), true);
     await more.tap();
     await dialog.locator('[data-mf-reset]').tap();
@@ -720,7 +904,7 @@ test('the cart rotates 1–2 missing-ingredient dishes in a two-column mobile gr
 });
 
 test('the home carousel rotates, supports manual navigation and opens Christmas recipes', async () => {
-  const {page, context} = await open({width: 390, height: 844}, {reducedMotion: 'no-preference', hasTouch: true});
+  const {page, context} = await open({width: 390, height: 844}, {reducedMotion: 'no-preference', hasTouch: true, serviceWorkers: 'block'});
   try {
     const dots = page.locator('.hero-dot');
     assert.equal(await dots.count(), 4);
@@ -761,7 +945,8 @@ test('the home carousel rotates, supports manual navigation and opens Christmas 
     await cooler.getByRole('button', {name:'View recipe'}).tap();
     assert.equal(await page.locator('#dish-title').innerText(), 'Christmas Orange Mint Cooler');
     const modal = page.locator('#dtray');
-    await modal.getByRole('button', {name:'हिन्दी', exact:true}).tap();
+    await modal.locator('[data-recipe-language="hi"]').tap();
+    await page.waitForFunction(() => /\p{Script=Devanagari}/u.test(document.querySelector('#dtray .steps ol').textContent));
     assert.match(await modal.locator('.steps ol').innerText(), /[अ-ह]/);
     await modal.getByRole('button', {name:'English', exact:true}).tap();
     assert.equal(await modal.locator('.steps ol').locator('..').getAttribute('lang'), 'en');
@@ -838,7 +1023,7 @@ test('cart recomputes exact alternatives under vegetarian and Christmas filters'
         dish('Holiday rice', ['milk', 'rice', 'peas']), dish('Egg curry', ['eggs']),
         dish('Daily oats', ['oats'], 'Daily')
       ];
-      nonveg = false; OS = {Christmas: 1}; TS = {}; RS = {}; HS = {};
+      nonveg = false; OS = {Christmas: 1}; TS = {}; RS = {};
       have = {carrot: 1}; cart = {}; cartMeals = [];
       setView('order');
     });
@@ -912,14 +1097,13 @@ test('v28 installed cart upgrades and can finish a saved dish offline', async ()
 
 test('Hindi cart controls remain tappable at 320 and 390 pixels with a failed photo', async () => {
   for (const width of [320, 390]) {
-    const {page, context} = await open({width, height: 844}, {isMobile: true, hasTouch: true});
+    const {page, context} = await open({width, height: 844}, {isMobile: true, hasTouch: true, serviceWorkers: 'block'});
     try {
       await page.evaluate(() => {
         const recipe = MEALS.find(m => m[0] === 'Gajar Halwa');
         MEALS = [recipe];
-        TS = {}; OS = {}; RS = {}; HS = {};
+        TS = {}; OS = {}; RS = {};
         have = {carrot: 1, sugar: 1}; cart = {}; cartMeals = [];
-        HI[recipe[0]] = 'गाजर और दूध से बना पारंपरिक भारतीय हलवा';
         IMG[pslug(recipe[0])] = 'missing-cart-regression.webp';
         setLang('hi'); setView('order');
       });
@@ -929,6 +1113,7 @@ test('Hindi cart controls remain tappable at 320 and 390 pixels with a failed ph
       assert.equal(await photo.count(), 1);
       await photo.waitFor({state:'hidden'});
       assert.equal(await card.locator('.cart-thumbnail').isVisible(), true);
+      await page.waitForFunction(() => document.querySelector('.cart-dish-name').textContent.includes('हलवा'));
       assert.match(await card.locator('.cart-dish-name').textContent(), /हलवा/);
       const buttons = card.locator('button');
       assert.equal(await buttons.count(), 4);

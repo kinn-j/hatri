@@ -94,9 +94,9 @@ function renderActiveCollection() {
   const occasion = winter ? "Winter" : "Christmas";
   const includeNonVeg = winter && $("winter-nonveg").checked;
   const groups = new Map();
-  const label = (en, hi) => escapeHTML(T(en, hi));
-  const titles = {Soup: ["Soups", "सूप"], Baked: ["Cakes & baking", "केक और बेकिंग"], Drink: ["Drinks", "पेय"], Sweet: ["Sweets", "मिठाइयाँ"], Snack: ["Snacks", "नाश्ता"], Main: ["Mains", "मुख्य व्यंजन"]};
-  const ingredients = ids => ids.map(id => escapeHTML(nmx(id))).join(", ") || T("None", "कोई नहीं");
+  const label = escapeHTML;
+  const titles = {Soup: "Soups", Baked: "Cakes & baking", Drink: "Drinks", Sweet: "Sweets", Snack: "Snacks", Main: "Mains"};
+  const ingredients = ids => ids.map(id => escapeHTML(nmx(id))).join(", ") || ("None");
 
   MEALS.forEach((recipe, index) => {
     if (!recipe[8].includes(occasion) || (winter && !includeNonVeg && !isVegetarianDish(recipe))) return;
@@ -108,25 +108,25 @@ function renderActiveCollection() {
     const missing = dish.x.filter(id => !cartQuantity(id));
     const optional = dish.oh.concat(dish.ox);
     const added = cartDishComplete(dish.n, dish.ing, dish.x);
-    const pantry = `<p><b>${label("In your pantry", "पैंट्री में")}</b> · ${ingredients(dish.h)}</p>
-      <p><b>${label("Still to add", "जोड़ना बाकी")}</b> · ${ingredients(missing)}</p>
-      ${onList.length ? '<p><b>'+label("On shopping list", "खरीदारी सूची में")+'</b> · '+ingredients(onList)+'</p>' : ''}
-      ${optional.length ? '<p class="sub">'+label("Optional", "वैकल्पिक")+' · '+ingredients(optional)+'</p>' : ''}`;
-    const cartAction = `${dish.x.length ? `<button class="btn primary sm" data-cart-add-dish="${index}" ${added ? "disabled" : ""}>${added ? label("Added ✓", "जोड़ा गया ✓") : missing.length ? label("Add missing ingredients", "बाकी सामग्री जोड़ें") : label("Add dish to cart", "व्यंजन कार्ट में जोड़ें")}</button>` : '<span class="chip have">'+label("Ready to cook", "बनाने के लिए तैयार")+'</span>'}`;
+    const pantry = `<p><b>${label("In your pantry")}</b> · ${ingredients(dish.h)}</p>
+      <p><b>${label("Still to add")}</b> · ${ingredients(missing)}</p>
+      ${onList.length ? '<p><b>'+label("On shopping list")+'</b> · '+ingredients(onList)+'</p>' : ''}
+      ${optional.length ? '<p class="sub">'+label("Optional")+' · '+ingredients(optional)+'</p>' : ''}`;
+    const cartAction = `${dish.x.length ? `<button class="btn primary sm" data-cart-add-dish="${index}" ${added ? "disabled" : ""}>${added ? label("Added ✓") : missing.length ? label("Add missing ingredients") : label("Add dish to cart")}</button>` : '<span class="chip have">'+label("Ready to cook")+'</span>'}`;
     if (!winter) {
       groups.get(category).push(`<article class="tile">
-        <button type="button" class="christmas-opener" data-open-dish="${index}" aria-haspopup="dialog" aria-controls="dtray" aria-label="${label("View recipe", "रेसिपी देखें")} · ${label(dish.n, HI[dish.n] || dish.n)}">
-          ${dishTilePhoto(dish)}<div class="tx"><h3>${label(dish.n, HI[dish.n] || dish.n)}</h3><small>${label(...(titles[category] || [category, HI[category] || category]))}</small></div>
+        <button type="button" class="christmas-opener" data-open-dish="${index}" aria-haspopup="dialog" aria-controls="dtray" aria-label="${label("View recipe")} · ${label(dish.n)}">
+          ${dishTilePhoto(dish)}<div class="tx"><h3>${label(dish.n)}</h3><small>${label(titles[category] || category)}</small></div>
         </button>
         <div class="christmas-pantry">${pantry}${cartAction}</div></article>`);
       return;
     }
     groups.get(category).push(`<article class="card">
       ${photo ? recipeImage(photo, false) : ""}
-      <h3>${label(dish.n, HI[dish.n] || dish.n)}</h3>
-      ${winter && !dish.v ? '<p class="sub">'+label("Contains meat or egg", "मांस या अंडा शामिल है")+'</p>' : ""}
+      <h3>${label(dish.n)}</h3>
+      ${winter && !dish.v ? '<p class="sub">'+label("Contains meat or egg")+'</p>' : ""}
       ${pantry}
-      <div class="row"><button class="btn sm" data-open-dish="${index}" aria-haspopup="dialog" aria-controls="dtray">${label("View recipe", "रेसिपी देखें")}</button>
+      <div class="row"><button class="btn sm" data-open-dish="${index}" aria-haspopup="dialog" aria-controls="dtray">${label("View recipe")}</button>
       ${cartAction}</div>
     </article>`);
   });
@@ -135,7 +135,7 @@ function renderActiveCollection() {
     return;
   }
   renderHTML($(collection + "-recipes"), Array.from(groups, ([category, cards]) =>
-    '<h2>'+label(...(titles[category] || [category, HI[category] || category]))+'</h2><div class="collection-grid">'+cards.join("")+'</div>'
+    '<h2>'+label(titles[category] || category)+'</h2><div class="collection-grid">'+cards.join("")+'</div>'
   ).join(""));
 }
 
