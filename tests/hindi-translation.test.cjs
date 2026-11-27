@@ -66,6 +66,9 @@ test('built-in Hindi UI, region, recipe names and accessibility work during a Go
   assert.equal(h.HatriTranslation.lookup('Aloo Matar'), 'आलू मटर');
   assert.match(h.HatriTranslation.lookup('Ingredients'), /सामग्री/);
   assert.match(h.HatriTranslation.lookup('Serves 4'), /4 लोगों/);
+  assert.equal(h.HatriTranslation.lookup('Need Milk, Ghee, Sugar'), 'चाहिए: दूध, घी, चीनी');
+  assert.equal(h.HatriTranslation.lookup('1 found · Your active filters apply'), '1 व्यंजन मिले · आपके चुने हुए फ़िल्टर लागू हैं');
+  assert.equal(h.HatriTranslation.lookup('⏱ 65 min'), '⏱ 65 मिनट');
   assert.match(h.HatriTranslation.lookup('1 cup buckwheat groats'), /\p{Script=Devanagari}/u);
   assert.match(h.HatriTranslation.lookup('Wash, peel and grate 500 g carrots. Measure 500 ml full-fat milk, 2 tbsp ghee and 3–4 tbsp sugar (adjust to taste).'), /\p{Script=Devanagari}/u);
   h.HatriTranslation.setLanguage('hi');

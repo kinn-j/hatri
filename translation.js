@@ -121,6 +121,11 @@ globalThis.HatriTranslation = (() => {
     "Suggest a salad":"सलाद सुझाएँ", "Add protein":"प्रोटीन जोड़ें",
     "Time I have (prep + cook)":"तैयारी और पकाने के लिए उपलब्ध समय",
     "More options":"और विकल्प", "None":"कोई नहीं", "Any":"कोई भी",
+    "Vegetarian":"शाकाहारी", "Non-vegetarian":"मांसाहारी", "Everything is at home":"सारी सामग्री घर में है",
+    "Your active filters apply":"आपके चुने हुए फ़िल्टर लागू हैं", "Cook right now":"अभी पकाएँ",
+    "Almost there":"बस थोड़ी सामग्री और चाहिए", "Plan ahead":"पहले से तैयारी करें",
+    "Needs a bigger shop":"और सामग्री खरीदनी होगी", "See the dishes":"व्यंजन देखें",
+    "Whole meal":"पूरा भोजन", "More meal dishes":"भोजन के और व्यंजन",
     "Cook chicken to 74°C (165°F) in the thickest part, away from bone.":"चिकन के सबसे मोटे हिस्से में, हड्डी से दूर, अंदरूनी तापमान 74°C (165°F) तक पकाएँ।",
     "Cook fish to 63°C (145°F) in the thickest part.":"मछली के सबसे मोटे हिस्से का अंदरूनी तापमान 63°C (145°F) तक पकाएँ।",
     "Cook prawns until the flesh is pearly and opaque throughout.":"झींगे तब तक पकाएँ जब तक उनका गूदा पूरी तरह अपारदर्शी और मोती जैसा न हो जाए।",
@@ -156,6 +161,25 @@ globalThis.HatriTranslation = (() => {
     if (regions) return `क्षेत्र (${regions[2]} में से ${regions[1]} चुने हुए)`;
     const duration = /^(\d+(?:\.\d+)?) (min|hr)$/.exec(source);
     if (duration) return `${duration[1]} ${duration[2] === 'min' ? 'मिनट' : 'घंटे'}`;
+    const itemCount = /^(\d+) (?:dishes|dish)$/.exec(source);
+    if (itemCount) return `${itemCount[1]} व्यंजन`;
+    const foundCount = /^(\d+) found$/.exec(source);
+    if (foundCount) return `${foundCount[1]} व्यंजन मिले`;
+    const buy = /^\+(\d+) to buy$/.exec(source);
+    if (buy) return `खरीदने के लिए ${buy[1]} चीज़ें`;
+    const needed = /^Need (.+)$/.exec(source);
+    if (needed) {
+      const items = needed[1].split(/,\s*/);
+      const names = items.map(item => offline.get(item) || packaged.get(item));
+      if (names.every(Boolean)) return `चाहिए: ${names.join(', ')}`;
+    }
+    const withTime = /^(?:⏱\s*)?(\d+) min$/.exec(source);
+    if (withTime) return `⏱ ${withTime[1]} मिनट`;
+    if (source.includes(' · ')) {
+      const parts = source.split(' · ');
+      const translations = parts.map(part => part === source ? null : builtIn(part));
+      if (translations.every(Boolean)) return translations.join(' · ');
+    }
     if (!recipeTitles.has(source)) return null;
     // For romanized dish titles, a partial native-language name is preferable
     // to a completely English label. Never apply this to cooking directions.
