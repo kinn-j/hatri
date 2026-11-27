@@ -1461,7 +1461,9 @@ Object.assign(STEPS,{"Gulab Jamun": {"en": ["Knead crumbled mawa with a spoon of
 var LANG="en";try{LANG=localStorage.getItem("rasoi-lang")||"en"}catch(e){}
 var translationUrl=new URL("./translation.js",location.href);
 if(new URL("./",location.href).pathname.endsWith("/Raman_Rasoi_Google_Login_Configured/"))translationUrl=new URL("../translation.js",location.href);
-var translationReady=import(translationUrl.href);
+var hindiCatalogUrl=new URL("./hindi-catalog.js",location.href);
+if(new URL("./",location.href).pathname.endsWith("/Raman_Rasoi_Google_Login_Configured/"))hindiCatalogUrl=new URL("../hindi-catalog.js",location.href);
+var translationReady=import(hindiCatalogUrl.href).then(function(){return import(translationUrl.href)});
 function setLang(value){
   LANG=value==="hi"?"hi":"en";
   try{localStorage.setItem("rasoi-lang",LANG)}catch(e){}
@@ -1472,7 +1474,6 @@ function setLang(value){
   $("langBtn").replaceChildren(label);
   translationReady.then(function(){HatriTranslation.seedCatalog(MEALS);HatriTranslation.setLanguage(LANG)},function(){toast("Hindi language files could not be loaded.")});
 }
-document.addEventListener("hatri:translation-error",function(){toast("Google Translate is temporarily unavailable. Retrying?")});
 $("langBtn").addEventListener("click",function(){setLang(LANG==="hi"?"en":"hi")});
 (async function(){
   if(!window.claude||!claude.use)return;
