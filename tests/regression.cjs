@@ -99,6 +99,60 @@ test('app boots with bounded results and usable mobile layouts', async () => {
   }
 });
 
+test('Back to top appears from the third screen of suggestions on mobile and desktop', async () => {
+  for (const width of [390, 1366]) {
+    const {page, context} = await open({width, height: 844}, {
+      serviceWorkers:'block',
+      reducedMotion: width === 390 ? 'reduce' : 'no-preference',
+    });
+    try {
+      const button = page.getByRole('button', {name:'Back to top', includeHidden:true});
+      const scrollToSuggestionPage = delta => page.evaluate(offset => {
+        const heading = document.getElementById('suggestions-title');
+        const pageThree = window.scrollY + heading.getBoundingClientRect().top +
+          2 * document.documentElement.clientHeight;
+        window.scrollTo(0, Math.ceil(pageThree) + offset);
+      }, delta);
+      const waitForVisibility = visible => page.waitForFunction(expected => {
+        return (document.getElementById('suggestions-up').getClientRects().length > 0) === expected;
+      }, visible);
+
+      assert.equal(await button.isVisible(), false, 'hidden on the first screen');
+      await scrollToSuggestionPage(-10);
+      await waitForVisibility(false);
+      await scrollToSuggestionPage(10);
+      await waitForVisibility(true);
+      await scrollToSuggestionPage(900);
+      assert.equal(await button.isVisible(), true, 'visible beyond the third screen');
+      await scrollToSuggestionPage(-10);
+      await waitForVisibility(false);
+      await scrollToSuggestionPage(10);
+      await waitForVisibility(true);
+
+      await button.focus();
+      await page.keyboard.press('Enter');
+      await page.waitForFunction(() => window.scrollY === 0);
+      await waitForVisibility(false);
+      assert.equal(await page.locator('.nav .logo').evaluate(el => el === document.activeElement), true);
+
+      await scrollToSuggestionPage(10);
+      await waitForVisibility(true);
+      await page.locator('.tabbar [data-view="order"]').click();
+      await waitForVisibility(false);
+
+      if (width === 390) {
+        await page.keyboard.press('Escape');
+        await context.route(translationPattern, route => route.abort());
+        await page.evaluate(() => setLang('hi'));
+        await page.getByRole('heading', {name:'सुझाव', exact:true}).waitFor();
+        // Translating the page can shift the heading while the browser anchors the scroll position.
+        await scrollToSuggestionPage(300);
+        await page.getByRole('button', {name:'पेज के ऊपर जाएँ'}).waitFor();
+      }
+    } finally { await context.close(); }
+  }
+});
+
 test('all 1096+ recipes have categories, match Excel, and have no total browsing cap', async () => {
   const {page, context} = await open({width:390,height:844},{serviceWorkers:'block'});
   try {
