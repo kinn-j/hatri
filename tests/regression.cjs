@@ -142,8 +142,11 @@ test('Back to top appears from the third screen of suggestions on mobile and des
 
       if (width === 390) {
         await page.keyboard.press('Escape');
+        await context.route(translationPattern, route => route.abort());
         await page.evaluate(() => setLang('hi'));
-        await scrollToSuggestionPage(10);
+        await page.getByRole('heading', {name:'सुझाव', exact:true}).waitFor();
+        // Translating the page can shift the heading while the browser anchors the scroll position.
+        await scrollToSuggestionPage(300);
         await page.getByRole('button', {name:'पेज के ऊपर जाएँ'}).waitFor();
       }
     } finally { await context.close(); }
