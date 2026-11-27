@@ -68,6 +68,13 @@ test('built-in Hindi UI, region, recipe names and accessibility work during a Go
   assert.match(h.HatriTranslation.lookup('Serves 4'), /4 लोगों/);
   assert.equal(h.HatriTranslation.lookup('Need Milk, Ghee, Sugar'), 'चाहिए: दूध, घी, चीनी');
   assert.equal(h.HatriTranslation.lookup('1 found · Your active filters apply'), '1 व्यंजन मिले · आपके चुने हुए फ़िल्टर लागू हैं');
+  assert.equal(h.HatriTranslation.lookup('100 of 1096 dishes shown'), '1096 में से 100 व्यंजन दिखाए गए');
+  assert.equal(h.HatriTranslation.lookup('Show 100 more dishes'), '100 और व्यंजन दिखाएँ');
+  assert.equal(h.HatriTranslation.lookup('100 of 1096 dishes · more load as you scroll'), '1096 में से 100 व्यंजन · नीचे स्क्रॉल करने पर और दिखेंगे');
+  assert.equal(h.HatriTranslation.lookup('1096 dishes · 100 shown'), '1096 व्यंजन · 100 दिखाए गए');
+  assert.equal(h.HatriTranslation.lookup('Show all 996 remaining dishes'), 'बाकी सभी 996 व्यंजन दिखाएँ');
+  assert.equal(h.HatriTranslation.lookup('Non-vegetarian'), 'मांसाहारी');
+  assert.match(h.HatriTranslation.lookup('All catalog dishes in your current Veg/Hostel Mode. Time, region and occasion filters are paused.'), /\p{Script=Devanagari}/u);
   assert.equal(h.HatriTranslation.lookup('⏱ 65 min'), '⏱ 65 मिनट');
   assert.match(h.HatriTranslation.lookup('1 cup buckwheat groats'), /\p{Script=Devanagari}/u);
   assert.match(h.HatriTranslation.lookup('Wash, peel and grate 500 g carrots. Measure 500 ml full-fat milk, 2 tbsp ghee and 3–4 tbsp sugar (adjust to taste).'), /\p{Script=Devanagari}/u);
