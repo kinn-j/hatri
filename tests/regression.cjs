@@ -117,7 +117,7 @@ test('Hindi translation does not corrupt late CSS or leave account button visibl
   await context.close();
 });
 
-test('Google Translate localizes Pahadi, new UI text and accessibility labels, and restores English', async () => {
+test('Hindi localizes Pahadi, new UI text and accessibility labels, and restores English', async () => {
   const requests = [];
   const {page, context} = await open(undefined, {serviceWorkers: 'block'}, requests);
   try {
@@ -149,11 +149,11 @@ test('Google Translate localizes Pahadi, new UI text and accessibility labels, a
     await page.locator('#langBtn').click();
     assert.equal(await page.locator('#late-translation').textContent(), 'Pahadi');
     assert.equal(await page.locator('#late-translation').getAttribute('aria-label'), 'Pahadi');
-    assert.ok(requests.some(request => request.includes('Pahadi')));
+    assert.equal(await page.evaluate(() => HatriTranslation.lookup('Pahadi')), 'पहाड़ी');
   } finally { await context.close(); }
 });
 
-test('Hindi searches use cached catalog translations and keep entered queries local', async () => {
+test('Hindi searches use built-in catalog translations and keep entered queries local', async () => {
   const requests = [];
   const {page, context} = await open(undefined, {serviceWorkers: 'block'}, requests);
   try {
@@ -163,14 +163,34 @@ test('Hindi searches use cached catalog translations and keep entered queries lo
     const recipe = page.locator('#results [data-recipe="Gajar%20Halwa"] summary');
     await recipe.first().waitFor();
     await page.waitForFunction(() => document.querySelector('#results [data-recipe="Gajar%20Halwa"] summary').textContent.includes('हलवा'));
-    await page.waitForFunction(() =>
-      JSON.parse(localStorage.getItem('hatri-google-hi-v1') || '[]').some(([source]) => source === 'Gajar Halwa'));
-    assert.ok(requests.some(request => request.includes('Gajar Halwa')));
+    assert.equal(await page.evaluate(() => HatriTranslation.lookup('Gajar Halwa')), 'गाजर का हलवा');
+    assert.ok(requests.every(request => !request.includes(query)), 'search terms stay on the device');
     assert.ok(requests.every(request => !request.includes(query)));
     await context.route(translationPattern, route => route.abort());
     await page.reload({waitUntil: 'domcontentloaded'});
     await page.locator('#rq').fill(query);
     await page.waitForFunction(() => document.querySelector('#results [data-recipe="Gajar%20Halwa"] summary')?.textContent.includes('हलवा'));
+  } finally { await context.close(); }
+});
+
+test('Hindi essentials work offline and survive reload; English restores cleanly', async () => {
+  const {page, context} = await open(undefined, {serviceWorkers: 'block'});
+  try {
+    await context.route(translationPattern, route => route.abort());
+    await page.locator('#langBtn').click();
+    await page.waitForFunction(() => document.querySelector('h2')?.textContent.includes('सामग्री') ||
+      document.querySelector('#rq')?.getAttribute('placeholder')?.includes('छोले'));
+    assert.equal(await page.locator('#rq').getAttribute('placeholder'), '"छोले भटूरे" खोजें');
+    assert.equal(await page.locator('#nvBtn').getAttribute('aria-label'), 'शाकाहारी मोड');
+    assert.equal(await page.locator('#hostelBtn').getAttribute('aria-label'), 'हॉस्टल मोड');
+    await page.locator('#rq').fill('गाजर');
+    await page.locator('#results [data-recipe="Gajar%20Halwa"] summary').first().waitFor();
+    await page.waitForFunction(() => document.querySelector('#results [data-recipe="Gajar%20Halwa"] summary')?.textContent.includes('गाजर का हलवा'));
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(() => window.MFREADY === true && document.querySelector('#nvBtn')?.getAttribute('aria-label') === 'शाकाहारी मोड');
+    await page.locator('#langBtn').click();
+    assert.equal(await page.locator('#nvBtn').getAttribute('aria-label'), 'Veg mode');
+    assert.equal(await page.locator('#rq').getAttribute('placeholder'), 'Search "chole bhature"');
   } finally { await context.close(); }
 });
 

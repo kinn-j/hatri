@@ -3276,11 +3276,9 @@ function setLang(value){
     button.textContent=languageName(next);
   });
   document.querySelectorAll("[data-localized]").forEach(function(element){element.lang=LANG});
+  HatriTranslation.seedCatalog(MEALS);
   HatriTranslation.setLanguage(LANG);
 }
-document.addEventListener("hatri:translation-error",function(){
-  toast("Google Translate is temporarily unavailable. Retrying…");
-});
 document.addEventListener("click",function(event){
   var button=event.target.closest("[data-recipe-language]");
   if(!button)return;
