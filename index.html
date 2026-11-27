@@ -214,6 +214,9 @@ main#planner{grid-template-columns:1fr;max-width:900px}
 .tabbar button i{font-style:normal;font-size:20px}.tabbar button.on{color:var(--accent);font-weight:600}
 #cbadge:not(:empty){position:absolute;top:0;left:calc(50% + 5px);background:var(--accent);color:#fff;border-radius:9px;font-size:10px;padding:0 5px;min-width:16px;text-align:center}
 .fab{position:fixed;right:14px;bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:31;width:52px;height:52px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:24px;box-shadow:0 4px 14px rgba(0,0,0,.25);align-items:center;justify-content:center}
+.suggestions-up{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:31;width:44px;height:44px;place-items:center;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--accent);box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer}
+body[data-v="recipes"]:not(.sh-pantry,.sh-plan,.sh-order) .suggestions-up:not([hidden]){display:grid}
+.suggestions-up:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .nextbar{margin-top:12px}.nextbar .btn{width:100%;padding:12px;font-size:15px}
 .install{align-items:center;gap:8px;background:var(--accent-bg);color:var(--text);font-size:12.5px;padding:8px 12px}.install .x{margin-left:auto;font-size:20px}
 *{-webkit-tap-highlight-color:transparent}html{-webkit-text-size-adjust:100%}
@@ -537,7 +540,12 @@ body[data-v="table"] [data-vs="table"]{display:block}
       </div>
       <p class="note">One burner? Cook one thing at a time. We only show dishes you can make with just these. Little frying is OK; deep-frying dishes are hidden.</p>
     </div>
-    <div class="ttabs" id="ttabs"></div><div class="trow"><button class="pkb" data-view="pantry">🧺 <span class="en">Pantry</span> <b id="pkCount"></b></button><button data-view="plan">⚙️ <span class="en">Filters</span><b id="fcount"></b></button></div><div class="achips" id="achips"></div></div><div id="pantrySlides"></div><div id="slides"></div><div class="row" style="justify-content:space-between;margin:8px 0 0"><h2 class="sh" style="margin:0">Suggestions</h2><button class="btn sm" data-shuffle="1">🔀 Shuffle</button></div><div id="pick"></div><div id="results" style="margin-top:8px"></div></section>
+    <div class="ttabs" id="ttabs"></div><div class="trow"><button class="pkb" data-view="pantry">🧺 <span class="en">Pantry</span> <b id="pkCount"></b></button><button data-view="plan">⚙️ <span class="en">Filters</span><b id="fcount"></b></button></div><div class="achips" id="achips"></div></div><div id="pantrySlides"></div><div id="slides"></div>
+    <div class="row" style="justify-content:space-between;margin:8px 0 0"><h2 class="sh" id="suggestions-title" style="margin:0">Suggestions</h2><button class="btn sm" data-shuffle="1">🔀 Shuffle</button></div>
+    <button class="suggestions-up" id="suggestions-up" type="button" aria-label="Back to top" hidden>
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m-6 6 6-6 6 6"/></svg>
+    </button>
+    <div id="pick"></div><div id="results" style="margin-top:8px"></div></section>
 </main>
 <main id="reels-page" aria-labelledby="reels-title"><div class="reels-top"><div><h1 id="reels-title">Hatri Reels</h1><p>Cook, share, discover</p></div></div><button class="reels-plus" id="reels-upload-open" type="button" aria-label="Upload a recipe video">+</button><div class="reels-feed" id="reels-feed" aria-live="polite"></div></main>
 <dialog id="reels-upload-dialog" class="reels-dialog" aria-labelledby="reels-upload-title"><form class="reels-form" id="reels-upload-form"><h2 id="reels-upload-title">Share your recipe</h2><p class="note">Upload a short vertical video. Public posts are visible to everyone.</p><label for="reels-title-input">Recipe name</label><input id="reels-title-input" name="title" maxlength="80" required placeholder="e.g. Aloo paratha"><label for="reels-caption-input">Caption</label><textarea id="reels-caption-input" name="caption" maxlength="240" placeholder="What makes this recipe special?"></textarea><label for="reels-video-input">Video</label><button class="btn" type="button" id="reels-video-pick" aria-describedby="reels-video-name">Choose video</button><span id="reels-video-name" role="status">No video selected</span><input id="reels-video-input" name="video" type="file" accept="video/mp4,video/webm,video/quicktime" hidden><p class="note" id="reels-upload-status" aria-live="polite"></p><div class="reels-progress"><b id="reels-upload-progress"></b></div><div class="row"><button class="btn" type="button" id="reels-upload-cancel">Cancel</button><button class="btn primary" type="submit" id="reels-upload-submit">Publish video</button></div></form></dialog>
@@ -4576,6 +4584,27 @@ body.searching .sh,body.searching [data-shuffle]{display:none!important}
       reelsLoad=null;
     });
   });
+})();
+(function(){
+  var button=$("suggestions-up"),title=$("suggestions-title"),results=$("results");
+  var frame;
+  function updateVisibility(){
+    frame=undefined;
+    var twoPages=2*document.documentElement.clientHeight;
+    button.toggleAttribute("hidden",title.getBoundingClientRect().top>-twoPages||results.getBoundingClientRect().bottom<=0);
+  }
+  function scheduleUpdate(){
+    if(frame===undefined)frame=requestAnimationFrame(updateVisibility);
+  }
+  window.addEventListener("scroll",scheduleUpdate,{passive:true});
+  window.addEventListener("resize",scheduleUpdate);
+  window.addEventListener("pageshow",scheduleUpdate);
+  new ResizeObserver(scheduleUpdate).observe($("planner"));
+  button.addEventListener("click",function(){
+    document.querySelector(".nav .logo").focus({preventScroll:true});
+    window.scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth"});
+  });
+  scheduleUpdate();
 })();
 // Register the already-bundled offline shell on HTTPS and localhost.
 if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){/* Online use still works if offline support is blocked. */})})}

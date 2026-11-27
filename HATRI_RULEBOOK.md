@@ -10,6 +10,8 @@ Use the same recipe identity across categories and languages. Reserve dishes onl
 
 Show up to 50 complete six-dish meal sets for the Meals filter, including the featured meal. For individual dishes, show up to 100 matching dishes per filter selection across all readiness groups combined. Apply the same dish limit to search and cart suggestions. Rank eligible matches before applying either limit. Show all qualifying matches when fewer are available.
 
+On the Cook tab, show a Back to top button after the user scrolls two screen heights past the Suggestions heading. Hide it in the first two screen heights and outside the results. Activating it returns to the top of Cook.
+
 ## My Table cooking shortlist
 
 Every individual recipe and six-dish meal suggestion must offer an **Add to Table** action independently of the shopping cart, including ready-to-cook items. A selected meal is saved as one complete, themed six-dish set with six distinct recipe identities. A user may also add an individual recipe, even if the same recipe is part of a selected meal. Repeatedly choosing the same item toggles its selection rather than creating duplicates. The Table page must show all saved selections together, allow opening recipes and removing individual entries, and never change cart ingredients or pantry selections. Save the shortlist locally and through existing signed-in state synchronization; clear it on account switch or sign-out with the other user-specific data.
