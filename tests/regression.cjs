@@ -302,6 +302,27 @@ test('a six-dish meal is one saved Table selection and individual recipes stay i
   } finally { await context.close(); }
 });
 
+test('five- and four-dish meals can both be saved to Table and survive reload', async () => {
+  const {page,context}=await open({width:390,height:844},{serviceWorkers:'block'});
+  try {
+    for(const size of [5,4]) {
+      const meal=page.locator(`#results details.mtile:has(.mos.n${size})`).first();
+      assert.ok(await meal.count(),`${size}-dish fallback suggestions are available`);
+      await meal.locator('summary .table-add').click();
+    }
+    await page.locator('.tabbar [data-view="table"]').click();
+    assert.equal(await page.locator('#table-list .table-meal').count(),2);
+    assert.deepEqual(await page.locator('#table-list .table-meal').evaluateAll(cards =>
+      cards.map(card => card.querySelectorAll('.table-dish').length).sort()),[4,5]);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>window.MFREADY===true);
+    await page.locator('.tabbar [data-view="table"]').click();
+    assert.equal(await page.locator('#table-list .table-meal').count(),2);
+    assert.deepEqual(await page.locator('#table-list .table-meal').evaluateAll(cards =>
+      cards.map(card => card.querySelectorAll('.table-dish').length).sort()),[4,5]);
+  } finally {await context.close()}
+});
+
 test('Hindi translation does not corrupt late CSS or leave account button visible', async () => {
   const {page, context} = await open();
   await page.locator('#langBtn').click();
@@ -579,7 +600,7 @@ test('recipe details cover the entire live catalog and render measured methods i
   }
 });
 
-test('whole meals show every possible themed six-dish set and clearly separate the ready subset', async () => {
+test('whole meals show themed six-, five- and four-dish sets and clearly separate the ready subset', async () => {
   for (const width of [320, 1024]) {
     const {page, context} = await open({width, height: 844});
     try {
@@ -592,13 +613,19 @@ test('whole meals show every possible themed six-dish set and clearly separate t
       assert.equal(await cards.count(), total,'do not cap the rendered complete meal list');
       assert.equal(await section.getAttribute('data-total-meals'),String(total));
       assert.match(await section.locator(':scope > h2').innerText(),new RegExp(`${total} complete sets`));
+      const sizes=await page.evaluate(() => [6,5,4].map(n=>Object.values(MEALK).filter(m=>m.items.length===n).length));
+      assert.equal(sizes.reduce((sum,n)=>sum+n,0),total);
+      assert.ok(sizes[0]>=25,'six-dish suggestions remain available first');
+      assert.ok(sizes[1]>0&&sizes[2]>0,'exhausted rice and curd courses fall back to five and four dishes');
+      assert.match(await section.locator('.meal-sizes').innerText(),new RegExp(`${sizes[0]} 6-dish.*${sizes[1]} 5-dish.*${sizes[2]} 4-dish`));
       const ready=await page.evaluate(() => Object.values(MEALK).filter(meal=>meal.miss.length===0).length);
       assert.match(await section.locator('.meal-summary').innerText(),new RegExp(`${ready} ready with your pantry`));
       const audit = await page.evaluate(() => Object.values(MEALK).every(({items,theme}) =>
-        items.length === 6 && new Set(items.map(d => d.n)).size === 6 &&
-        items.slice(0, 2).every(d => regionOf(d.recipe) === theme && course(d.n) === 'Main') &&
-        course(items[2].n) === 'Bread' && mealRole(items[3]) === 'Rice' &&
-        items[4].ing.includes('curd') && course(items[5].n) === 'Sweet'));
+        items.length >= 4 && items.length <= 6 && new Set(items.map(d => d.n)).size === items.length &&
+        items.slice(0, 2).every(d => mealTheme(d) === theme && course(d.n) === 'Main') &&
+        course(items[2].n) === 'Bread' && course(items[items.length-1].n) === 'Sweet' &&
+        (items.length === 6 ? mealRole(items[3]) === 'Rice' && mealRole(items[4]) === 'Curd' :
+         items.length === 5 ? mealRole(items[3]) === 'Curd' : true)));
       assert.equal(audit, true);
       const allDishKeys = await page.evaluate(() => Object.values(MEALK).flatMap(meal =>
         meal.items.concat(meal.salad || []).map(dish => mealDishKey(dish.n))));
