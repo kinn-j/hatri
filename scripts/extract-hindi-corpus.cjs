@@ -61,6 +61,7 @@ for (const [name, value] of Object.entries(detailCatalog)) detail(name, value);
 const sources = [
   ['quick-north-recipes.js', 'QUICK_NORTH_RECIPES'],
   ['street-food-recipes.js', 'STREET_FOOD_RECIPES'],
+  ['north-chaat-recipes.js', 'NORTH_CHAAT_CATALOG'],
   ['rajasthani-recipes.js', 'RAJASTHANI_RECIPES'],
   ['seasonal-recipes.js', 'SEASONAL_RECIPES'],
   ['international-recipes.js', 'INTERNATIONAL_RECIPES'],
