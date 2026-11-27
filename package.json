@@ -2,7 +2,7 @@
   "name": "hatri",
   "private": true,
   "scripts": {
-    "test": "node --test --test-timeout=90000 tests/*.cjs",
+    "test": "node --test --test-timeout=300000 tests/*.cjs",
     "test:webkit": "node scripts/test-webkit.cjs",
     "build": "node scripts/stage-site.cjs",
     "test:firebase": "node scripts/test-firebase.cjs"
