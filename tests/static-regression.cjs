@@ -95,7 +95,7 @@ test('the app and recipe catalog use English source text with one runtime transl
 
 test('meal pairing rules exclude incompatible sauces and cross-cuisine staples', () => {
   const c = fn('function pairOK(', 'function mealTime(', {
-    course: n => /Roti|Chapati|Bread/.test(n) ? 'Bread' : /Sauce|Soup/.test(n) ? 'Side' : 'Main',
+    course: n => /Roti|Chapati|Bread|Paratha/.test(n) ? 'Bread' : /Sauce|Soup/.test(n) ? 'Side' : 'Main',
     REG: ['Rajasthani','Punjabi'], regionOf: () => 'Italian', onlyV: () => false,
     isV: () => false
   });
@@ -103,6 +103,8 @@ test('meal pairing rules exclude incompatible sauces and cross-cuisine staples',
   assert.equal(c.pairOK(main, {n: 'Pizza Sauce', cu: 'Italian'}), false);
   assert.equal(c.pairOK(main, {n: 'Italian Garlic Bread', cu: 'Italian'}), false);
   assert.equal(c.pairOK({n: 'Sarson da Saag', cu: 'Punjabi'}, {n: 'Makki di Roti', cu: 'Punjabi'}), true);
+  assert.equal(c.pairOK(main, {n: 'Carrot Paratha',cu:'International / National'}), true);
+  assert.equal(c.pairOK(main, {n: 'Beetroot Paratha',cu:'International / National'}), true);
 });
 
 test('whole meals exhaust distinct courses before reusing any dish', () => {
@@ -119,10 +121,10 @@ test('whole meals exhaust distinct courses before reusing any dish', () => {
     tmax: 0, fitsTime: () => true, wProt: false, wSide: true, pslug: n => n.toLowerCase()
   });
   const meals = c.buildMeals();
-  assert.equal(meals.length, 2);
-  assert.ok(meals.every(meal => meal.items.length === 6));
+  assert.equal(meals.length, 4,'continue with four-dish sets once the curd course runs out');
+  assert.deepEqual(Array.from(meals,meal=>meal.items.length),[6,6,4,4]);
   const keys = meals.flatMap(meal => meal.items.concat(meal.salad || []).map(d => c.pslug(d.n)));
-  assert.equal(keys.length, 13);
+  assert.equal(keys.length, 21);
   assert.equal(new Set(keys).size, keys.length);
 
   for (const role of ['Main', 'Bread', 'Rice', 'Raita', 'Sweet']) {
@@ -132,6 +134,30 @@ test('whole meals exhaust distinct courses before reusing any dish', () => {
     }
   }
   assert.ok(c.buildMeals().length > 50, 'the available complete meals are not cut off at 50');
+});
+
+test('whole meals fall back from six to five and finally four dishes without repeating recipes', () => {
+  const dishes=[];
+  for (const [role,count] of Object.entries({Main:10,Bread:5,Rice:1,Raita:2,Sweet:5})) {
+    for(let n=0;n<count;n++)dishes.push({n:role+' '+n,ing:['curd'],recipe:{},x:[],p:1,c:1});
+  }
+  const c=fn('function mealTime(', 'function mealTileHTML(', {
+    score:()=>dishes,course:name=>name.split(' ')[0],isLong:()=>false,
+    pairOK:()=>true,regionOf:()=> 'Punjabi',REG:['Punjabi'],INTL:'International',
+    tmax:0,fitsTime:()=>true,wProt:false,wSide:false,
+    pslug:name=>name.toLowerCase()
+  });
+  const meals=c.buildMeals();
+  assert.deepEqual(Array.from(meals,meal=>meal.items.length),[6,5,4,4,4]);
+  const all=meals.flatMap(m=>m.items.map(d=>d.n));
+  assert.equal(new Set(all).size,all.length);
+  for(const meal of meals){
+    assert.equal(meal.items.filter(d=>d.n.startsWith('Main ')).length,2);
+    assert.equal(meal.items.filter(d=>d.n.startsWith('Bread ')).length,1);
+    assert.equal(meal.items.filter(d=>d.n.startsWith('Sweet ')).length,1);
+    assert.equal(meal.items.filter(d=>d.n.startsWith('Rice ')).length,meal.items.length===6?1:0);
+    assert.equal(meal.items.filter(d=>d.n.startsWith('Raita ')).length,meal.items.length>=5?1:0);
+  }
 });
 
 test('whole meals retry a faster accompaniment when the first choice cannot complete six courses', () => {
@@ -148,6 +174,40 @@ test('whole meals retry a faster accompaniment when the first choice cannot comp
   assert.equal(meals.length,1,'try another bread instead of silently losing the whole meal');
   assert.equal(meals[0].items[2].n,'Bread Fast');
   assert.equal(new Set(meals[0].items.map(d=>d.n)).size,6);
+});
+
+test('whole meals search beyond six cheap but incompatible rice choices', () => {
+  const item=(name,prep,missing=[])=>({n:name,ing:['curd'],recipe:{},x:missing,p:prep,c:1});
+  const dishes=[item('Main A',1),item('Main B',1),item('Bread A',1),
+    ...Array.from({length:6},(_,i)=>item('Rice Slow '+i,5)),
+    item('Rice Fast',1,['tomato']),item('Raita A',1),item('Sweet A',1)];
+  const c=fn('function mealTime(', 'function mealTileHTML(', {
+    score:()=>dishes,course:name=>name.split(' ')[0],isLong:()=>false,
+    pairOK:()=>true,regionOf:()=> 'Punjabi',REG:['Punjabi'],INTL:'International',
+    tmax:10,fitsTime:minutes=>minutes<=10,wProt:false,wSide:false,
+    pslug:name=>name.toLowerCase()
+  });
+  const meals=c.buildMeals();
+  assert.equal(meals.length,1,'the seventh viable option must not be silently excluded');
+  assert.equal(meals[0].items[3].n,'Rice Fast');
+});
+
+test('whole meals reallocate scarce region-compatible rice to maximize complete meals', () => {
+  const item=(name,region,missing=[])=>({n:name,ing:['curd'],recipe:{region},cu:region,x:missing,p:1,c:1});
+  const dishes=[item('Main A1','A'),item('Main A2','A'),item('Main B1','B'),item('Main B2','B'),
+    item('Rice Universal','Everyday'),item('Rice A','A'),item('Bread A','A'),item('Bread B','B'),
+    item('Raita A','A'),item('Raita B','B'),item('Sweet A','A'),item('Sweet B','B')];
+  const c=fn('function mealTime(', 'function mealTileHTML(', {
+    score:()=>dishes,course:name=>name.split(' ')[0],isLong:()=>false,
+    pairOK:(main,dish,role)=>role!=='Rice'||dish.n!=='Rice A'||main.recipe.region==='A',
+    regionOf:recipe=>recipe.region,REG:['A','B'],INTL:'International',
+    tmax:0,fitsTime:()=>true,wProt:false,wSide:false,
+    pslug:name=>name.toLowerCase()
+  });
+  const meals=c.buildMeals();
+  assert.equal(meals.length,2,'reserve the region-specific rice for its only valid main pair');
+  assert.equal(new Set(meals.flatMap(m=>m.items.map(d=>d.n))).size,12);
+  assert.ok(meals.every(meal=>meal.items.slice(0,2).every(d=>d.recipe.region===meal.theme)));
 });
 
 test('diet, search, unlimited shopping suggestions and clear-all code guards are present', () => {

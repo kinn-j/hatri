@@ -1274,10 +1274,18 @@ function renderResults(){
   if(sel.meal){
     var listed=meals.filter(function(meal){return meal.key!==lastMeal});
     var ready=meals.filter(function(meal){return !meal.miss.length}).length;
-    html+="<section class='meal-sets' data-total-meals='"+meals.length+"'><h2>"+("6-dish meals")+" <small>· "+meals.length+" "+("complete sets")+"</small></h2>"+
+    var counts=[6,5,4].map(function(n){return meals.filter(function(m){return m.items.length===n}).length});
+    html+="<section class='meal-sets' data-total-meals='"+meals.length+"'><h2>"+("Whole meals")+" <small>· "+meals.length+" "+("complete sets")+"</small></h2>"+
+      "<p class='sub meal-sizes'>"+counts.map(function(count,i){return count+" "+(6-i)+"-dish"}).join(" · ")+"</p>"+
       "<p class='sub meal-summary'>"+ready+" "+("ready with your pantry")+" · "+(meals.length-ready)+" "+("need more ingredients")+
       (restr(RS,rIds())?" · "+("Region filter active"):"")+"</p>"+
-      (meals.length?suggestionGroups(listed,true):"<p class='sub'>"+("No complete six-dish meals match these filters.")+"</p>");
+      (meals.length?[6,5,4].map(function(n){
+        var group=listed.filter(function(meal){return meal.items.length===n});
+        return group.length?"<div class='meal-size-group'><h3>"+n+"-dish meals · "+group.length+"</h3>"+
+          (n===5?"<p class='sub'>Rice omitted after six-dish combinations are exhausted.</p>":
+           n===4?"<p class='sub'>Rice and curd omitted after longer combinations are exhausted.</p>":"")+
+          suggestionGroups(group,true)+"</div>":"";
+      }).join(""):"<p class='sub'>"+("No complete meals match these filters.")+"</p>");
     html+="</section>";
   }
   var totalDishes=dishes.length,pageSize=dishPage("browse:"+JSON.stringify([sel,TS,OS,RS,nonveg,hostel,app]));
@@ -2717,6 +2725,9 @@ function pairOK(a,b,role){var cb=course(b.n);
  if(b.n==="Coconut Chutney")return a.cu==="South Indian";
  if(b.n==="Lahsun Chutney")return a.cu==="Rajasthani";
  if(b.n==="Chapati (Roti)"||b.n==="Steamed Rice")return true;
+ // Both are ordinary Indian flatbreads, even though their recipe catalog
+ // labels currently use the generic International / National collection.
+ if(cb==="Bread"&&(b.n==="Carrot Paratha"||b.n==="Beetroot Paratha"))return true;
  // Regional mains can be served with other Indian thali accompaniments.
  if(role==="Curd")return true;
  if(role==="Rice")return !/risotto|fried rice/i.test(b.n)||a.cu===b.cu;
@@ -2728,6 +2739,13 @@ function missOf(it){var u={};it.forEach(function(m){m.x.forEach(function(i){u[i]
 function mealRole(dish){
   var name=dish.n,role=course(name);
   if(name==="Ragi Mudde")return "Complete";
+  // These rice-based one-pot dishes are substantial rice accompaniments, even
+  // though the ordinary recipe carousel correctly classifies them as complete dishes.
+  if(role==="Complete"&&["Veg Fried Rice","Veg Risotto"].includes(name)&&
+    dish.ing.some(function(id){return id==="rice"||id==="basmatirice"||id==="arboriorice"}))return "Rice";
+  // A yogurt-based side can accompany a thali without being classified as
+  // raita in the ordinary dish-type carousel.
+  if(dish.ing.includes("curd")&&["Dahi Poha","Dahi Samak","Kala Chana Dahi Chaat"].includes(name))return "Curd";
   if(dish.ing.includes("curd")&&/raita|chaas|chhach|buttermilk|lassi|kadhi|mor kuzhambu|dahi (?:tikhari|arbi|aloo|ke kebab)|shrikhand|mishti doi|fruit & curd cup/i.test(name))return "Curd";
   if(role==="Complete"&&dish.ing.some(id=>["rice","basmatirice","samak"].includes(id))&&
     /pulao|biryani|khichdi|khichuri|pongal|bisi bele|pakhala|curd rice|rice cooker/i.test(name))return "Rice";
@@ -2742,65 +2760,121 @@ function mealDishKey(name){
   var key=pslug(name);
   return mealAliases[key]||key;
 }
+function mealTheme(dish){
+  var region=regionOf(dish.recipe);
+  // Generic everyday Indian dal/sabzi recipes were previously discarded as
+  // "International / National". They make useful related everyday meals, but
+  // unrelated international dishes must not be paired into a fake region.
+  return region===INTL?(["Everyday","Instant Pot"].includes(dish.cu)?"Everyday":null):region;
+}
 function buildMeals(){
-  var pools={Main:[],Bread:[],Rice:[],Curd:[],Sweet:[],Salad:[]},meals=[],keys=new Map();
+  var pools={Main:[],Bread:[],Rice:[],Curd:[],Sweet:[],Salad:[]},keys=new Map(),unique={};
+  Object.keys(pools).forEach(function(role){unique[role]=new Set()});
   score().forEach(function(dish){
     if(isLong(dish))return;
     var role=mealRole(dish);
     if(role==="Sweet"&&/spread|sauce|dressing/i.test(dish.n))return;
     if(!pools[role])return;
-    keys.set(dish,mealDishKey(dish.n));
+    var key=mealDishKey(dish.n);
+    if(unique[role].has(key))return;
+    unique[role].add(key);
+    keys.set(dish,key);
     pools[role].push(dish);
   });
-  MEALK={};
-  var used=new Set();
-  // When a first-choice side would strand the meal, try other matches before
-  // abandoning the main. A dish is still reserved only after all six courses fit.
-  function choices(main,items,role,region,limit){
-    var missing=new Set(missOf(items)),selected=new Set(items.map(function(item){return keys.get(item)})),options=[];
-    var needsProtein=role==="Main"&&wProt&&sumP(items)<2;
-    for(var dish of pools[role]){
-      var key=keys.get(dish);
-      if(used.has(key)||selected.has(key))continue;
-      var local=regionOf(dish.recipe)===region;
-      if(!local&&(role==="Main"||!REG.includes(region)))continue;
-      if(!pairOK(main,dish,role))continue;
-      if(tmax&&mealTime(items.concat(dish))>tmax)continue;
-      var extra=dish.x.filter(function(id){return !missing.has(id)}).length;
-      var cost=extra*10+(local?0:5);
-      if(needsProtein&&rtype(dish.n)!=="dal")cost+=3;
-      if(options.length===limit&&cost>=options[options.length-1].cost)continue;
-      var at=options.findIndex(function(option){return cost<option.cost});
-      options.splice(at<0?options.length:at,0,{dish:dish,cost:cost});
-      if(options.length>limit)options.pop();
+  var groups={};
+  pools.Main.forEach(function(dish){
+    var theme=mealTheme(dish);
+    if(theme)(groups[theme]=groups[theme]||[]).push(dish);
+  });
+  // Every meal needs two mains, bread and sweet. Rice runs out first, then
+  // curd; neither is mandatory once longer meal combinations are exhausted.
+  // This is a course-availability bound, not an artificial result limit.
+  var theoretical=Math.min(Math.floor(pools.Main.length/2),pools.Bread.length,
+    pools.Sweet.length),best=[];
+  if(!theoretical){MEALK={};return best}
+  // Try alternate allocations: the first convenient accompaniment may be the
+  // only local choice for a later meal. Maximize the count before pantry score.
+  for(var variant=0;variant<4;variant++){
+    var used=new Set(),meals=[];
+    var mains=pools.Main.filter(function(d){return !!mealTheme(d)&&groups[mealTheme(d)].length>=2});
+    if(variant===1)mains.reverse();
+    if(variant===2||variant===3)mains.sort(function(a,b){
+      var n=groups[mealTheme(a)].length-groups[mealTheme(b)].length;
+      return variant===2?n:-n;
+    });
+    function choices(main,items,role,theme){
+      var missing=new Set(missOf(items)),selected=new Set(items.map(function(item){return keys.get(item)})),options=[];
+      var needsProtein=role==="Main"&&wProt&&sumP(items)<2;
+      for(var dish of pools[role]){
+        var key=keys.get(dish);
+        if(used.has(key)||selected.has(key))continue;
+        var local=mealTheme(dish)===theme;
+        if(role==="Main"&&!local)continue;
+        if(role!=="Main"&&!local&&!REG.includes(theme)&&theme!=="Everyday")continue;
+        if(!pairOK(main,dish,role))continue;
+        if(tmax&&mealTime(items.concat(dish))>tmax)continue;
+        var extra=dish.x.filter(function(id){return !missing.has(id)}).length;
+        var cost=extra*10+(local?0:(variant===1?8:4));
+        if(needsProtein&&rtype(dish.n)!=="dal")cost+=3;
+        if(role==="Main"&&/\bdal\b/i.test(main.n)===/\bdal\b/i.test(dish.n))cost+=2;
+        options.push({dish:dish,cost:cost});
+      }
+      options.sort(function(a,b){return a.cost-b.cost});
+      if(variant===1||variant===3)options.reverse();
+      // No top-six (or any other numeric) companion cutoff: try every valid
+      // alternative before abandoning an otherwise possible complete meal.
+      return options.map(function(option){return option.dish});
     }
-    return options.map(function(option){return option.dish});
-  }
-  function complete(main,items,region,step){
-    var roles=["Main","Bread","Rice","Curd","Sweet"];
-    if(step===roles.length)return fitsTime(mealTime(items))?items:null;
-    for(var dish of choices(main,items,roles[step],region,6)){
-      var result=complete(main,items.concat(dish),region,step+1);
-      if(result)return result;
+    function complete(main,items,theme,roles,step){
+      if(step===roles.length)return fitsTime(mealTime(items))?items:null;
+      for(var dish of choices(main,items,roles[step],theme)){
+        var result=complete(main,items.concat(dish),theme,roles,step+1);
+        if(result)return result;
+      }
+      return null;
     }
-    return null;
+    // Complete all feasible six-dish meals before switching to five, then four.
+    // Two mains, bread and sweet remain compulsory at every tier.
+    for(var roles of [["Rice","Curd","Bread","Sweet"],["Curd","Bread","Sweet"],["Bread","Sweet"]]){
+      for(var main of mains){
+        var theme=mealTheme(main);
+        if(used.has(keys.get(main)))continue;
+        if(roles.some(function(role){return !pools[role].some(function(d){return !used.has(keys.get(d))})}))break;
+        var found=null;
+        for(var second of choices(main,[main],"Main",theme)){
+          found=complete(main,[main,second],theme,roles,0);
+          if(found)break;
+        }
+        if(!found)continue;
+        var byRole={};found.slice(2).forEach(function(dish){byRole[mealRole(dish)]=dish});
+        var items=[main,found[1],byRole.Bread];
+        if(byRole.Rice)items.push(byRole.Rice);
+        if(byRole.Curd)items.push(byRole.Curd);
+        items.push(byRole.Sweet);
+        var meal={items:items,theme:theme,miss:missOf(items),t:mealTime(items),
+          key:items.map(function(m){return m.n}).join(" + ")};
+        items.forEach(function(dish){used.add(keys.get(dish))});
+        meals.push(meal);
+        if(meals.length===theoretical)break;
+      }
+      if(meals.length===theoretical)break;
+    }
+    var missingTotal=function(list){return list.reduce(function(sum,m){return sum+m.miss.length},0)};
+    var fullCount=function(list){return list.filter(function(m){return m.items.length===6}).length};
+    if(meals.length>best.length||(meals.length===best.length&&
+      (fullCount(meals)>fullCount(best)||(fullCount(meals)===fullCount(best)&&missingTotal(meals)<missingTotal(best)))))best=meals;
   }
-  for(var main of pools.Main){
-    var region=regionOf(main.recipe);
-    if(region===INTL||used.has(keys.get(main)))continue;
-    if(["Bread","Rice","Curd","Sweet"].some(function(role){return !pools[role].some(function(dish){return !used.has(keys.get(dish))})}))break;
-    var items=complete(main,[main],region,0);
-    if(!items)continue;
-    var time=mealTime(items);
-    var key=items.map(function(m){return m.n}).join(" + ");
-    var meal={items:items,theme:region,miss:missOf(items),t:time,key:key};
-    if(wSide)meal.salad=choices(main,items,"Salad",region,1)[0];
-    items.forEach(function(m){used.add(keys.get(m))});
-    if(meal.salad)used.add(keys.get(meal.salad));
-    MEALK[key]=meal;meals.push(meal);
+  // Optional salads are allocated only after all required courses are secured.
+  if(wSide){
+    var reserved=new Set(best.flatMap(function(m){return m.items.map(function(d){return keys.get(d)})}));
+    best.forEach(function(meal){
+      var salad=pools.Salad.find(function(d){return !reserved.has(keys.get(d))&&pairOK(meal.items[0],d,"Salad")});
+      if(salad){meal.salad=salad;reserved.add(keys.get(salad))}
+    });
   }
-  meals.sort(function(a,b){return a.miss.length-b.miss.length||a.t-b.t});
-  return meals;
+  best.sort(function(a,b){return b.items.length-a.items.length||a.miss.length-b.miss.length||a.t-b.t});
+  MEALK={};best.forEach(function(meal){MEALK[meal.key]=meal});
+  return best;
 }
 // Clip one tile from the shared preview behind the full-size photo.
 function mealPreview(index){
@@ -3181,7 +3255,7 @@ function normalizeTableSelections(value){
     if(!item||typeof item!=="object")return false;
     var key;
     if(item.kind==="dish"&&typeof item.name==="string"&&item.name.length<=160)key="dish:"+item.name;
-    else if(item.kind==="meal"&&Array.isArray(item.names)&&item.names.length===6&&item.names.every(function(name){return typeof name==="string"&&name.length>0&&name.length<=160})&&new Set(item.names).size===6){
+    else if(item.kind==="meal"&&Array.isArray(item.names)&&item.names.length>=4&&item.names.length<=6&&item.names.every(function(name){return typeof name==="string"&&name.length>0&&name.length<=160})&&new Set(item.names).size===item.names.length){
       key="meal:"+tableMealIdentity(item.names);
       if(typeof item.theme!=="string")item.theme="Meal";
     }else return false;
@@ -3204,7 +3278,7 @@ function renderTable(){
     var names=item.kind==="dish"?[item.name]:item.names;
     var dishes=names.map(function(name){return MEALS.find(function(recipe){return recipe[0]===name})});
     var needed=new Set();dishes.forEach(function(recipe){if(recipe)requiredCartIngredients(recipe[5]).forEach(function(id){if(!have[id])needed.add(id)})});
-    var title=item.kind==="dish"?item.name:(item.theme||"Meal")+" · 6-dish meal";
+    var title=item.kind==="dish"?item.name:(item.theme||"Meal")+" · "+item.names.length+"-dish meal";
     var photos=names.map(function(name,i){
       var recipe=dishes[i],photo=IMG[pslug(name)],recipeIndex=MEALS.indexOf(recipe);
       return "<div class='table-dish'>"+(recipeIndex<0?"<span class='table-photo table-no-photo'>"+emo(name)+"</span>":"<button type='button' class='table-photo' data-open-dish='"+recipeIndex+"' aria-label='View "+escapeHTML(name)+" recipe'>"+(photo?recipeImage(photo):"<span>"+emo(name)+"</span>")+"</button>")+"<span>"+escapeHTML(dn(name))+"</span></div>";
@@ -4209,6 +4283,9 @@ main#planner>*,main#planner section,#results{min-width:0;max-width:100%}
 .mos.n1{grid-template:1fr/1fr}.mos.n2{grid-template:1fr/1fr 1fr}
 .mos.n3{grid-template:1fr 1fr/1.3fr 1fr}.mos.n3 .mc:first-child{grid-row:1/3}
 .mos.n6{grid-template:repeat(2,minmax(0,1fr))/repeat(3,minmax(0,1fr))}
+.mos.n5{grid-template:repeat(2,minmax(0,1fr))/repeat(6,minmax(0,1fr))}
+.mos.n5 .mc{grid-column:span 2}
+.mos.n5 .mc:nth-child(n+4){grid-column:span 3}
 .meal-caption{position:absolute;inset:auto 0 0;color:white;background:linear-gradient(transparent,rgba(0,0,0,.84));padding:12px 4px 4px;text-align:center;font-size:12px;line-height:1.15;font-weight:600}
 .mos.n4{grid-template:1fr 1fr/1fr 1fr}
 .mos .mc{overflow:hidden}

@@ -77,3 +77,22 @@ test('saved Table selections validate types and preserve distinct recipe identit
   ctx.renderTable();
   assert.match(ctx.tableMealButton({items:dishes.map(d => ({n:d[0]})),key:'ignored'}), /On Table/);
 });
+
+test('Table persists valid four- and five-dish meals without requiring six recipes', () => {
+  const {ctx,dishes,target}=setup();
+  const four=dishes.slice(0,4).map(d=>d[0]);
+  const five=dishes.slice(0,5).map(d=>d[0]);
+  const loaded=ctx.normalizeTableSelections([
+    {kind:'meal',names:four,theme:'Everyday'},
+    {kind:'meal',names:five,theme:'Punjabi'},
+    {kind:'meal',names:dishes.slice(0,3).map(d=>d[0]),theme:'Too small'},
+    {kind:'meal',names:four.concat(four),theme:'Repeated dishes'}
+  ]);
+  assert.equal(loaded.length,2);
+  ctx.tableSelections=loaded;
+  ctx.renderTable();
+  assert.match(target.innerHTML,/Everyday · 4-dish meal/);
+  assert.match(target.innerHTML,/Punjabi · 5-dish meal/);
+  assert.equal(ctx.tableHasMeal(four),true);
+  assert.equal(ctx.tableHasMeal(five),true);
+});
