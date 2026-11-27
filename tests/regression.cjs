@@ -7,7 +7,7 @@ const http = require('node:http');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { chromium, webkit } = require('playwright');
-const {execFile} = require('node:child_process');
+const {execFile, spawnSync} = require('node:child_process');
 const git = require('node:util').promisify(execFile);
 const previousRelease = 'fde94edb12e763c367ea64e937eb7e77f496de21';
 let servePreviousRelease = false;
@@ -97,6 +97,55 @@ test('app boots with bounded results and usable mobile layouts', async () => {
     assert.match(await hero.locator('.hero-slide').first().evaluate(el => getComputedStyle(el).backgroundImage), /hatri-pantry-header[.]webp/);
     await context.close();
   }
+});
+
+test('all 1096+ recipes have categories, match Excel, and can be browsed beyond 100', async () => {
+  const {page, context} = await open({width:390,height:844},{serviceWorkers:'block'});
+  try {
+    const audit = await page.evaluate(() => {
+      const valid = new Set(Object.keys(CLX));
+      const catalog = MEALS.map(m => ({name:m[0],categories:cats(m)}));
+      return {
+        catalog, count:categoryCounts().all, enabled:MEALS.filter(matchesModes).length,
+        invalid:catalog.filter(r => !r.categories.length || r.categories.some(c => !valid.has(c))),
+      };
+    });
+    assert.ok(audit.catalog.length >= 1096);
+    assert.deepEqual(audit.invalid,[], 'each recipe is assigned to a real category');
+    assert.equal(audit.count,audit.enabled,'All dishes category shows every dish allowed by Veg/Hostel Mode');
+
+    const checker=spawnSync('python3',[path.join(root,'scripts/check-catalog-workbook.py')],{
+      input:JSON.stringify(audit.catalog),encoding:'utf8',maxBuffer:8*1024*1024,
+    });
+    assert.equal(checker.status,0,(checker.stderr||'')+'\n'+(checker.stdout||''));
+
+    const filtered = await page.evaluate(() => {
+      Object.keys(TS).forEach(key=>delete TS[key]);TS.t1=1;
+      Object.keys(OS).forEach(key=>delete OS[key]);OS.Vrat=1;
+      Object.keys(RS).forEach(key=>delete RS[key]);RS.Rajasthani=1;
+      syncT();renderResults();
+      return {suggestions:MEALS.filter(m=>matchesFilters(m,false)).length,badge:categoryCounts().all};
+    });
+    assert.ok(filtered.suggestions<audit.enabled,'the advanced filters really narrow suggestions');
+    assert.equal(filtered.badge,audit.enabled,'the category counter is not reduced by advanced filters');
+
+    await page.locator('#slides [data-crs="all"]').click();
+    const initial=await page.evaluate(()=>({total:score(true).length,rendered:document.querySelectorAll('#results details.tile').length}));
+    assert.equal(initial.total,audit.enabled,'All dishes disregards time, region and occasion filters');
+    assert.equal(initial.rendered,100,'render only the first page to keep mobile fast');
+    await page.locator('#results [data-load-more]').click();
+    assert.equal(await page.locator('#results details.tile').count(),200);
+    assert.ok(await page.locator('#results [data-load-more]').isVisible());
+
+    await page.locator('#rq').fill('a');
+    const searched=await page.evaluate(()=>({shown:document.querySelectorAll('#results details.tile').length,
+      matching:MEALS.filter(m=>matchesModes(m)&&searchLabels(m).join(' ').toLowerCase().includes('a')).length}));
+    assert.equal(searched.shown,Math.min(100,searched.matching),'search starts at page one');
+    if(searched.matching>100){
+      await page.locator('#results [data-load-more]').click();
+      assert.equal(await page.locator('#results details.tile').count(),Math.min(200,searched.matching));
+    }
+  } finally { await context.close(); }
 });
 
 test('Add to Table selects recipes without changing the cart, persists, and can be removed', async () => {

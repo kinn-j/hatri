@@ -8,7 +8,9 @@ Use the same recipe identity across categories and languages. Reserve dishes onl
 
 ## Suggestion limits
 
-Show up to 50 complete six-dish meal sets for the Meals filter, including the featured meal. For individual dishes, show up to 100 matching dishes per filter selection across all readiness groups combined. Apply the same dish limit to search and cart suggestions. Rank eligible matches before applying either limit. Show all qualifying matches when fewer are available.
+Show up to 50 complete six-dish meal sets for the Meals filter, including the featured meal. For individual dishes, initially show up to 100 matching dishes per filter selection across all readiness groups combined; a **Show more** action must let users browse every remaining match in batches of 100 without duplicating dishes. Search results follow the same incremental browsing rule. Cart suggestions remain limited to 100. Rank eligible matches before applying the initial limit. Show all qualifying matches when fewer are available.
+
+Every unique dish must belong to at least one valid dish-type category. Category-card counts represent all catalog entries available in the current Veg/Hostel Mode, without limiting the count by time, region, occasion, or the number initially rendered. Choosing **All dishes** must show the complete catalog for the current Veg/Hostel Mode, regardless of saved time, region, and occasion filters. Veg Mode must never expose egg or non-vegetarian recipes. Keep the complete catalog discoverable through incremental browsing even when it exceeds 100 recipes.
 
 ## My Table cooking shortlist
 

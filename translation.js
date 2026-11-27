@@ -134,6 +134,8 @@ globalThis.HatriTranslation = (() => {
     "Almost there":"बस थोड़ी सामग्री और चाहिए", "Plan ahead":"पहले से तैयारी करें",
     "Needs a bigger shop":"और सामग्री खरीदनी होगी", "See the dishes":"व्यंजन देखें",
     "Whole meal":"पूरा भोजन", "More meal dishes":"भोजन के और व्यंजन",
+    "Full catalog search; Veg/Hostel Mode still applies":"पूरी व्यंजन सूची में खोज; शाकाहारी/हॉस्टल मोड लागू है",
+    "All catalog dishes in your current Veg/Hostel Mode. Time, region and occasion filters are paused.":"मौजूदा शाकाहारी/हॉस्टल मोड में सभी व्यंजन। समय, क्षेत्र और अवसर के फ़िल्टर अभी लागू नहीं हैं।",
     "Cook chicken to 74°C (165°F) in the thickest part, away from bone.":"चिकन के सबसे मोटे हिस्से में, हड्डी से दूर, अंदरूनी तापमान 74°C (165°F) तक पकाएँ।",
     "Cook fish to 63°C (145°F) in the thickest part.":"मछली के सबसे मोटे हिस्से का अंदरूनी तापमान 63°C (145°F) तक पकाएँ।",
     "Cook prawns until the flesh is pearly and opaque throughout.":"झींगे तब तक पकाएँ जब तक उनका गूदा पूरी तरह अपारदर्शी और मोती जैसा न हो जाए।",
@@ -171,6 +173,10 @@ globalThis.HatriTranslation = (() => {
     if (duration) return `${duration[1]} ${duration[2] === 'min' ? 'मिनट' : 'घंटे'}`;
     const itemCount = /^(\d+) (?:dishes|dish)$/.exec(source);
     if (itemCount) return `${itemCount[1]} व्यंजन`;
+    const shownCount = /^(\d+) of (\d+) dishes(?: shown)?$/.exec(source);
+    if (shownCount) return `${shownCount[2]} में से ${shownCount[1]} व्यंजन दिखाए गए`;
+    const moreCount = /^Show (\d+) more dishes$/.exec(source);
+    if (moreCount) return `${moreCount[1]} और व्यंजन दिखाएँ`;
     const foundCount = /^(\d+) found$/.exec(source);
     if (foundCount) return `${foundCount[1]} व्यंजन मिले`;
     const buy = /^\+(\d+) to buy$/.exec(source);

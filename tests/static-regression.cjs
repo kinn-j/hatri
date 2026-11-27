@@ -19,6 +19,40 @@ function fn(start, end, globals = {}) {
   return ctx;
 }
 
+test('category cards report catalog totals, not truncated suggestions or hidden advanced filters', () => {
+  const recipes = [['Aloo Jeera',1], ['Egg Curry',0], ['Chole Bhature',1]];
+  const c = fn('function categoryCounts(){', 'fit=function(', {
+    MEALS:recipes, matchesModes:m=>!!m[1], matchesFilters:()=>false,
+    cats:m=>m[0]==='Chole Bhature'?['Complete','Snack']:['Main'],
+    wholeMealDish:()=>true,
+  });
+  const counts = c.categoryCounts();
+  assert.equal(counts.all,2);
+  assert.equal(counts.Main,1);
+  assert.equal(counts.Snack,1);
+  assert.equal(counts.Complete,1);
+
+  const score = fn('function score(singleDishes){', 'function isLong(', {
+    sel:{all:1},crs:'all',MEALS:recipes,matchesModes:m=>!!m[1],
+    matchesFilters:()=>false,vratOnly:()=>false,dishState:m=>({n:m[0],x:[],h:[],tot:1}),
+    fit:()=>0,hsh:()=>0,inSel:()=>false,
+  });
+  assert.deepEqual(Array.from(score.score(true),m=>m.n), ['Aloo Jeera','Chole Bhature']);
+  score.sel={Main:1};
+  assert.equal(score.score(true).length,0,'ordinary filtered suggestions still honor active filters');
+});
+
+test('the complete catalog and search results can be browsed in groups of 100', () => {
+  const c=fn('var DISH_LIMIT=100,MEAL_LIMIT=50;', 'function searchText(', {});
+  assert.equal(c.dishPage('browse:all'),100);
+  assert.match(c.dishPageFooter(100,1096), /data-load-more='1'/);
+  assert.match(c.dishPageFooter(100,1096), /Show 100 more dishes/);
+  c.dishPageLimit+=100;
+  assert.equal(c.dishPage('browse:all'),200);
+  assert.equal(c.dishPage('search:paneer'),100,'a new query resets pagination');
+  assert.equal(c.dishPageFooter(1096,1096),'');
+});
+
 test('every inline script parses', () => {
   let count = 0;
   for (const match of src.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)) {
@@ -94,7 +128,7 @@ test('whole meals exhaust distinct courses before reusing any dish', () => {
 
 test('diet, search, suggestion limits and clear-all code guards are present', () => {
   assert.match(src, /NV=\[[^\]]*"chickenstock"/);
-  assert.match(src, /return matchesFilters\(m,false\);/);
+  assert.match(src, /return sel\.all\?matchesModes\(m\):matchesFilters\(m,false\);/);
   assert.match(src, /body\.classList\.toggle\("searching",!!rq\)/);
   assert.match(src, /cartDishes\(DISH_LIMIT\)/);
   assert.match(src, /L\.slice\(0,visible\)/);
