@@ -1,5 +1,5 @@
 /* Hatri website shell. Increase cache version when shipping changes. */
-const CACHE = 'hatri-v54-hindi-catalog';
+const CACHE = 'hatri-v55-hindi-catalog';
 const MEAL_PREVIEW = './images/meal-previews.webp?v=acabad01e62a';
 // Recipe photos retain their versioned URLs across app-shell releases.
 const PHOTO_CACHE = 'hatri-recipe-photos';

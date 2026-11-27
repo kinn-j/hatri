@@ -118,7 +118,7 @@ function renderActiveCollection() {
         <button type="button" class="christmas-opener" data-open-dish="${index}" aria-haspopup="dialog" aria-controls="dtray" aria-label="${label("View recipe")} · ${label(dish.n)}">
           ${dishTilePhoto(dish)}<div class="tx"><h3>${label(dish.n)}</h3><small>${label(titles[category] || category)}</small></div>
         </button>
-        <div class="christmas-pantry">${pantry}${cartAction}</div></article>`);
+        <div class="christmas-pantry">${pantry}${cartAction}${tableDishButton(recipe)}</div></article>`);
       return;
     }
     groups.get(category).push(`<article class="card">
@@ -127,7 +127,7 @@ function renderActiveCollection() {
       ${winter && !dish.v ? '<p class="sub">'+label("Contains meat or egg")+'</p>' : ""}
       ${pantry}
       <div class="row"><button class="btn sm" data-open-dish="${index}" aria-haspopup="dialog" aria-controls="dtray">${label("View recipe")}</button>
-      ${cartAction}</div>
+      ${cartAction}${tableDishButton(recipe)}</div>
     </article>`);
   });
   if (!winter) {
