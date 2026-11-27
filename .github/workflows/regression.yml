@@ -18,6 +18,33 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium webkit
+      - name: Install Playwright browsers and Linux dependencies
+        shell: bash
+        run: |
+          # GitHub's Ubuntu image includes an optional Microsoft APT source.
+          # A 403 from that source aborts Playwright's apt-get update before
+          # any regression test runs. Playwright needs Ubuntu packages, not
+          # the Microsoft feed, so disable it only on this ephemeral runner.
+          for source in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+            [[ -f "$source" ]] || continue
+            if grep -Fq 'packages.microsoft.com/ubuntu/24.04/prod' "$source"; then
+              echo "Disabling unrelated APT source: $source"
+              sudo mv "$source" "$RUNNER_TEMP/$(basename "$source").disabled"
+            fi
+          done
+
+          # Retry only the setup step for transient package/CDN failures;
+          # application test failures still fail the job immediately.
+          for attempt in 1 2 3; do
+            if npx playwright install --with-deps chromium webkit; then
+              exit 0
+            fi
+            if [[ "$attempt" -eq 3 ]]; then
+              echo 'Playwright installation failed after three attempts' >&2
+              exit 1
+            fi
+            echo "Playwright setup failed (attempt $attempt); retrying..."
+            sleep 5
+          done
       - run: npm test
       - run: npm run test:webkit
