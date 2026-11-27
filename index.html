@@ -4629,8 +4629,9 @@ body.searching .sh,body.searching [data-shuffle]{display:none!important}
   var frame;
   function updateVisibility(){
     frame=undefined;
-    var twoPages=2*document.documentElement.clientHeight;
-    button.toggleAttribute("hidden",title.getBoundingClientRect().top>-twoPages||results.getBoundingClientRect().bottom<=0);
+    // Enter the second viewport of Suggestions, not the third.
+    var secondPage=document.documentElement.clientHeight;
+    button.toggleAttribute("hidden",title.getBoundingClientRect().top>-secondPage||results.getBoundingClientRect().bottom<=0);
   }
   function scheduleUpdate(){
     if(frame===undefined)frame=requestAnimationFrame(updateVisibility);

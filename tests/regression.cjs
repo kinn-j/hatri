@@ -99,7 +99,7 @@ test('app boots with bounded results and usable mobile layouts', async () => {
   }
 });
 
-test('Back to top appears from the third screen of suggestions on mobile and desktop', async () => {
+test('Back to top appears from the second screen of suggestions on mobile and desktop', async () => {
   for (const width of [390, 1366]) {
     const {page, context} = await open({width, height: 844}, {
       serviceWorkers:'block',
@@ -109,9 +109,9 @@ test('Back to top appears from the third screen of suggestions on mobile and des
       const button = page.getByRole('button', {name:'Back to top', includeHidden:true});
       const scrollToSuggestionPage = delta => page.evaluate(offset => {
         const heading = document.getElementById('suggestions-title');
-        const pageThree = window.scrollY + heading.getBoundingClientRect().top +
-          2 * document.documentElement.clientHeight;
-        window.scrollTo(0, Math.ceil(pageThree) + offset);
+        const pageTwo = window.scrollY + heading.getBoundingClientRect().top +
+          document.documentElement.clientHeight;
+        window.scrollTo(0, Math.ceil(pageTwo) + offset);
       }, delta);
       const waitForVisibility = visible => page.waitForFunction(expected => {
         return (document.getElementById('suggestions-up').getClientRects().length > 0) === expected;
@@ -123,7 +123,7 @@ test('Back to top appears from the third screen of suggestions on mobile and des
       await scrollToSuggestionPage(10);
       await waitForVisibility(true);
       await scrollToSuggestionPage(900);
-      assert.equal(await button.isVisible(), true, 'visible beyond the third screen');
+      assert.equal(await button.isVisible(), true, 'visible throughout the second screen');
       await scrollToSuggestionPage(-10);
       await waitForVisibility(false);
       await scrollToSuggestionPage(10);

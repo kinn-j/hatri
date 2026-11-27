@@ -16,7 +16,7 @@ Every unique dish must belong to at least one valid **dish-type** category in th
 
 Hostel recipes must also belong to the same ordinary dish-type categories as all other recipes and retain their internal vegetarian/non-vegetarian classifications. Hostel Mode is an additional equipment filter; switching it off restores the same Hostel recipes to the ordinary categories, not a separate exclusive catalog. Category-card counts represent all catalog entries available in the current Veg/Hostel Mode, without limiting the count by time, region, occasion, or the number initially rendered. Choosing **All dishes** must show the complete catalog for the current Veg/Hostel Mode, regardless of saved time, region, and occasion filters. Keep every match discoverable as users scroll even when it exceeds 100 recipes.
 
-On the Cook tab, show a Back to top button after the user scrolls two screen heights past the Suggestions heading. Hide it in the first two screen heights and outside the results. Activating it returns to the top of Cook.
+On the Cook tab, show a Back to top button as soon as the user enters the **second screen of Suggestions** (one viewport height below the Suggestions heading). Hide it during the first screen and outside the results. Activating it returns to the top of Cook.
 
 ## My Table cooking shortlist
 
