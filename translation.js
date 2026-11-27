@@ -20,6 +20,8 @@ globalThis.HatriTranslation = (() => {
     "Sign in with Google":"गूगल से साइन इन करें", "Log out":"लॉग आउट", "Profile and settings":"प्रोफ़ाइल और सेटिंग्स",
     "Cook":"पकाएँ", "Kitchen":"रसोई", "Reels":"रील्स", "Shopping list":"खरीदारी की सूची",
     "Table":"खाने की योजना", "My Table":"मेरी खाने की योजना", "🍽️ My Table":"🍽️ मेरी खाने की योजना",
+    "Some instructions are in English while Hindi translation is unavailable.":"हिंदी अनुवाद उपलब्ध न होने तक कुछ निर्देश अंग्रेज़ी में हैं।",
+    "Back to Cook":"पकाने पर लौटें", "Retry":"फिर कोशिश करें",
     "Add to Table":"खाने की योजना में जोड़ें", "+ Add to Table":"+ खाने की योजना में जोड़ें", "✓ On Table":"✓ योजना में है",
     "Added to Table":"खाने की योजना में जोड़ा", "Removed from Table":"योजना से हटाया",
     "Everything you've chosen to cook, in one place.":"जो व्यंजन बनाना चाहते हैं, वे सब एक जगह।",
@@ -260,10 +262,23 @@ globalThis.HatriTranslation = (() => {
     if (record(node, attribute) !== entry || entry.source == null) return;
     if (translated == null) {
       write(node, attribute, entry.source);
-      return;
+    } else {
+      entry.output = entry.source.replace(entry.source.trim(), () => translated);
+      write(node, attribute, entry.output);
     }
-    entry.output = entry.source.replace(entry.source.trim(), () => translated);
-    write(node, attribute, entry.output);
+    if (!attribute && node.parentElement?.tagName === "LI") {
+      const list = node.parentElement.closest("[data-localized]");
+      if (!list) return;
+      node.parentElement.lang = language === "hi" && translated !== entry.source.trim() &&
+        /\p{Script=Devanagari}/u.test(translated || "") ? "hi" : "en";
+      const complete = language === "hi" && [...list.querySelectorAll("li")].every(item => item.lang === "hi");
+      list.lang = complete ? "hi" : "en";
+      const fallback = list.querySelector("[data-translation-fallback]");
+      if (fallback) {
+        const hidden = language !== "hi" || complete;
+        if (fallback.hidden !== hidden) fallback.hidden = hidden;
+      }
+    }
   }
 
   function persist() {
@@ -379,8 +394,11 @@ globalThis.HatriTranslation = (() => {
     if (target(node, attribute) === "en") return apply(node, attribute, entry, null);
     const source = entry.source?.trim();
     if (!source || !/\p{Script=Latin}/u.test(source) || /^(?:https?:\/\/|@\S+$|\S+@\S+$)/i.test(source)) return;
-    const ready = cache.get(source) || builtIn(source);
+    const catalogLine = !attribute && node.parentElement?.matches("[data-localized] li");
+    const ready = catalogLine ? packaged.get(source) : cache.get(source) || builtIn(source);
     if (ready) return apply(node, attribute, entry, ready);
+    // If an older Hindi pack is installed, keep missing recipe lines in English.
+    if (catalogLine) return apply(node, attribute, entry, null);
     const priority = nearViewport(attribute ? node : node.parentElement);
     if (entry.waiting) {
       if (priority && background.delete(source)) urgent.add(source);

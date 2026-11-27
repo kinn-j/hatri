@@ -4,7 +4,7 @@ https://kinn-j.github.io/hatri/
 
 ## Testing
 
-Install the test dependencies with `npm ci`, then run `npx playwright install --with-deps chromium webkit`. Run `npm test` for all source and Chromium tests, and `npm run test:webkit` for WebKit cart and recipe photo checks. Set `HATRI_BROWSER_PATH` to use a compatible system browser. The PWA upgrade test serves the November 23 v28 commit from Git history and switches the same origin to the working tree. Use a full clone for this test.
+Install the test dependencies with `npm ci`, then run `npx playwright install --with-deps chromium webkit`. Run `npm test` for the source and Chromium tests, and `npm run test:webkit` for the full WebKit browser suite. Set `HATRI_BROWSER_PATH` to use a compatible system browser. The PWA upgrade test serves the November 23 v28 commit from Git history and switches the same origin to the working tree. Use a full clone for this test. The local Firebase authorization and publishing checks are documented in [Firebase setup](AUTH_SETUP.md).
 
 GitHub Actions runs these checks on pull requests and pushes to main. The web and installed mobile apps share the same PWA. Actual Android and iOS installation and standalone display still need device verification.
 
@@ -25,19 +25,16 @@ planner’s occasion filters. See the [50 new dishes](WINTER_RECIPES.md).
 - `manifest.webmanifest` — installable-app configuration.
 - `sw.js` — basic offline caching for site shell and previously visited images.
 
-## Deploy free via GitHub Pages
+## Publish the site
 
-1. Create a GitHub **public** repository (or use an existing public repository).
-2. Upload the **contents of this folder to the repository root** (not an extra containing folder).
-3. In GitHub Settings → Pages, choose **Deploy from a branch**, branch `main`, folder `/ (root)`, and Save.
-4. GitHub will publish your site at `https://USERNAME.github.io/REPOSITORY/`.
-5. Changes pushed to `main` will trigger publication. The app uses relative paths to support project-site subdirectories.
-
-Alternatively, connect this repo to Cloudflare Pages / Netlify. It requires no build command; use the repository root as the publish directory.
+Run `npm run build` and publish the resulting `dist/` folder. The build includes
+only the website files, bundles Firebase locally, and adds a content security
+policy. See [deployment instructions](README_DEPLOY.md) for hosting and
+[Firebase setup](AUTH_SETUP.md) for backend deployment and migration.
 
 ## Test locally
 
-Run `python -m http.server 8000` from this folder and visit `http://localhost:8000`.
+Build the site and run `python -m http.server 8000 --bind 127.0.0.1 --directory dist`. Visit `http://127.0.0.1:8000`.
 
 ## Known limitations
 

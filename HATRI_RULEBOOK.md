@@ -8,6 +8,8 @@ Use the same recipe identity across categories and languages. Reserve dishes onl
 
 Do not cap the meal generator or the rendered meal list at four, fifty, or any other number. Try alternative accompaniments when a first pairing cannot complete the applicable tier, without repeating dishes anywhere in the suggestion set. The **ready to cook** meal subsection includes only meals with zero missing pantry ingredients; it is not the entire collection. Always display the total number of complete meal sets, the six-/five-/four-dish breakdown, and ready versus shopping counts. List six-dish sets first, then five-dish sets, then four-dish sets, while retaining pantry-readiness grouping within each tier. Respect explicitly selected region, time, diet and Hostel filters, and indicate when a region filter narrows the meal list.
 
+Time filters count soaking that cannot overlap ordinary prep. Whole-meal estimates allow soaking for separate dishes to happen in parallel.
+
 Optimize the **total number of non-repeating meals first**, with six-dish meals preferred when counts tie, and pantry convenience afterward. Consider every eligible accompaniment instead of truncating each course to a small top-N shortlist. Retry alternative allocations and reserve recipes only after a complete match; optional salads must never reduce the number of complete meals. Keep international accompaniments with compatible cuisines and group generic Indian dal/sabzi dishes into meaningful everyday meals rather than mislabeling them as international. Audit unique eligible mains, breads, rice, curd dishes and sweets whenever meal counts seem unexpectedly low. The final four-dish availability upper bound is the minimum of half the main count (rounded down), the bread count and the sweet count; regional and time compatibility can reduce the actual maximum. Never inflate meal counts by repeating dishes or treating sweet rice puddings, millet dishes or unrelated cuisines as an ordinary rice accompaniment.
 
 ## Complete suggestions and diet categories
@@ -24,6 +26,8 @@ On the Cook tab, show a Back to top button as soon as the user enters the **seco
 
 Every individual recipe and four-/five-/six-dish meal suggestion must offer an **Add to Table** action independently of the shopping cart, including ready-to-cook items. A selected meal is saved as one complete, themed set with four, five or six distinct recipe identities. A user may also add an individual recipe, even if the same recipe is part of a selected meal. Repeatedly choosing the same item toggles its selection rather than creating duplicates. The Table page must show all saved selections together, allow opening recipes and removing individual entries, and never change cart ingredients or pantry selections. Save the shortlist locally and through existing signed-in state synchronization; clear it on account switch or sign-out with the other user-specific data.
 
+The order of dishes does not change a saved meal's identity. Independent preference changes should survive edits from another tab or device. Backup codes include the current planner filters and accept older pantry and cart backups.
+
 ## Recipe filters
 
 Recipe cards, filters, and the recipe catalog omit heaviness ratings. Ignore saved heaviness selections when loading preferences and omit them when saving preferences.
@@ -32,6 +36,14 @@ Recipe cards, filters, and the recipe catalog omit heaviness ratings. Ignore sav
 
 Author app text and recipe content in English and retain stable recipe and ingredient IDs across all languages. All published recipe names, measured ingredient lines, and cooking steps must have a packaged Hindi translation in `hindi-catalog.js` before release. App navigation, accessibility labels, regions, filters, ingredient names, and recipe text must work in Hindi with Google Translate completely unavailable. The Hindi pack must be loaded and cached with the app shell; do not use a network call for catalog content. When source instructions change, regenerate and review their translations before merging, with automated coverage tests to identify missing source text. Machine translations are drafts: review numerical quantities, temperature, timing, negation and food-safety terminology. Never silently replace a missing or unsafe method with an invented Hindi instruction. Keep account identities and form entries verbatim. Hindi search uses packaged and cached catalog terms and keeps the entered query on the device. Reserve optional runtime translation for uncataloged or user-generated content, with failure cooldown.
 
+Mark any untranslated instructions as English and identify the fallback to the reader. Voice search is offered only when speech recognition is available on-device for the chosen language. Community video titles, captions, and credits remain verbatim.
+
 ## Community recipe videos
 
 Community recipe videos are public once published. A signed-in user may upload an MP4, WebM, or MOV video up to 100 MB, with the binary stored in Firebase Storage and only its metadata stored in Firestore. Anonymous users may browse public videos but may not upload, edit, or delete posts. The feed shows one video per viewport, advances by vertical scroll, and loads at most 30 newest posts per initial query.
+
+Keep drafts and staging files private. The backend validates the declared size, format, and uploaded file header before publication. Cancel stops an upload before publication. A cook can start up to five uploads per UTC day, with at least 30 seconds between starts. A credit is optional and defaults to Hatri cook. Published records exclude account identifiers. Viewers can open a direct post link, use native playback controls and creator-provided captions, and signed-in users can report a post. Creators can edit their metadata and remove their posts.
+
+## Activity sharing
+
+Activity sharing is opt-in per browser and account. The server checks consent, deduplicates named events, and limits recorded events per account. Typed and dictated recipe queries are excluded. Activity records expire after 90 days.

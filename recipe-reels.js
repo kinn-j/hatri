@@ -1,19 +1,10 @@
-import { getApp, getApps, initializeApp } from 'https://www.gstatic.com/firebasejs/13.3.0/firebase-app.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js';
-import { addDoc, collection, getFirestore, limit, onSnapshot, orderBy, query, serverTimestamp } from 'https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js';
-import { connectStorageEmulator, getDownloadURL, getStorage, ref, uploadBytesResumable } from 'https://www.gstatic.com/firebasejs/13.3.0/firebase-storage.js';
+import { getApp } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js';
+import { collection, doc, getDoc, getFirestore, limit, onSnapshot, orderBy, query, where } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-functions.js';
+import { functions } from './auth.js';
 
-const CONFIG = {
-  apiKey: 'AIzaSyAWl1eHaT9tbHqGWvfve4OkoVYJFEo2Se4',
-  authDomain: 'hatri-5b44d.firebaseapp.com', projectId: 'hatri-5b44d',
-  appId: '1:253486795611:web:34655e72cb5fa7217d687e',
-  storageBucket: 'hatri-5b44d.firebasestorage.app'
-};
-const app = getApps().length ? getApp() : initializeApp(CONFIG);
-const auth = getAuth(app), db = getFirestore(app), storage = getStorage(app);
-if (location.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(location.hostname)) {
-  connectStorageEmulator(storage, location.hostname, 9199);
-}
+const app = getApp(), auth = getAuth(app), db = getFirestore(app);
 const feed = document.getElementById('reels-feed');
 const dialog = document.getElementById('reels-upload-dialog');
 const form = document.getElementById('reels-upload-form');
@@ -21,85 +12,365 @@ const videoInput = document.getElementById('reels-video-input');
 const videoName = document.getElementById('reels-video-name');
 const status = document.getElementById('reels-upload-status');
 const progress = document.getElementById('reels-upload-progress');
+const openUpload = document.getElementById('reels-upload-open');
+const cancel = document.getElementById('reels-upload-cancel');
+const publish = document.getElementById('reels-upload-submit');
+const mine = document.getElementById('reels-mine');
+const manageDialog = document.getElementById('reels-manage-dialog');
+const manageForm = manageDialog.querySelector('form');
 const MAX_BYTES = 100 * 1024 * 1024;
-let signedInUser = null;
+const extensions = {mp4:'video/mp4', webm:'video/webm', mov:'video/quicktime'};
+const cards = new Map();
+let signedInUser, activeUpload, unsubscribe, wantedFeed, managing, generation = 0;
+let ownFeed = false;
 
-function text(value) { return typeof value === 'string' ? value : ''; }
-function empty(message = 'No community videos yet. Be the first cook to share one!') {
-  feed.replaceChildren();
-  const wrap = document.createElement('div'); wrap.className = 'reels-empty';
-  const card = document.createElement('div'); card.className = 'card';
-  const title = document.createElement('h1'); title.textContent = 'Community recipes';
-  const copy = document.createElement('p'); copy.textContent = message;
-  card.append(title, copy); wrap.append(card); feed.append(wrap);
+const call = async (name, data) => (await httpsCallable(functions, name)(data)).data;
+function action(label, handler) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'btn sm';
+  button.textContent = label;
+  button.addEventListener('click', handler);
+  return button;
 }
-function button(label, icon, action) {
-  const b = document.createElement('button'); b.type = 'button'; b.title = label; b.setAttribute('aria-label', label); b.textContent = icon;
-  b.addEventListener('click', action); return b;
+function storageURL(value) {
+  const url = new URL(value);
+  if (url.origin !== 'https://storage.googleapis.com' || url.username || url.password) throw Error('Video host is unavailable.');
+  return url.href;
 }
-function render(items) {
-  feed.replaceChildren();
-  if (!items.length) { empty(); return; }
-  items.forEach(item => {
-    const card = document.createElement('article'); card.className = 'reel-card';
-    const video = document.createElement('video');
-    video.src = text(item.videoUrl); video.muted = true; video.loop = true; video.playsInline = true; video.preload = 'none';
-    video.addEventListener('click', () => video.paused ? video.play() : video.pause());
-    const copy = document.createElement('div'); copy.className = 'reel-copy';
-    const author = document.createElement('div'); author.className = 'reel-author';
-    const creator = text(item.creatorName);
-    if (creator) author.translate = false;
-    author.textContent = '@' + (creator || 'Hatri cook');
-    const title = document.createElement('h2'); title.textContent = text(item.title) || 'Recipe video';
-    const caption = document.createElement('p'); caption.textContent = text(item.caption);
-    const meta = document.createElement('div'); meta.className = 'reel-meta'; meta.textContent = 'Public recipe · Tap video to pause';
-    copy.append(author, title, caption, meta);
-    const actions = document.createElement('div'); actions.className = 'reel-actions';
-    actions.append(button('Share recipe', '↗', async () => {
-      const share = { title: title.textContent, text: caption.textContent, url: location.href };
-      try { if (navigator.share) await navigator.share(share); else await navigator.clipboard.writeText(location.href); } catch (_) { /* cancelled */ }
-    }));
-    card.append(video, copy, actions); feed.append(card);
+function message(text, retry) {
+  render([]);
+  const wrap = document.createElement('div');
+  wrap.className = 'reels-empty';
+  const card = document.createElement('div');
+  card.className = 'card';
+  const copy = document.createElement('p');
+  copy.setAttribute('role', 'status');
+  copy.textContent = text;
+  card.append(copy);
+  if (retry) card.append(action('Retry', retry));
+  wrap.append(card);
+  feed.replaceChildren(wrap);
+}
+function profile() {
+  window.toast?.('Sign in with Google to continue.');
+  document.querySelector('[data-rr-profile-open]')?.click();
+}
+function openManagement(kind, entry) {
+  if (!signedInUser) return profile();
+  managing = {kind, entry, uid:signedInUser.uid};
+  manageForm.reset();
+  manageForm.querySelector('[data-reel-management-status]').textContent = '';
+  for (const group of manageForm.querySelectorAll('[data-reel-management]')) {
+    const selected = group.dataset.reelManagement === kind;
+    group.hidden = !selected;
+    for (const field of group.querySelectorAll('input,select,textarea')) field.disabled = !selected;
+  }
+  manageDialog.querySelector('h2').textContent = {edit:'Edit video',delete:'Remove video',report:'Report video'}[kind];
+  if (kind === 'edit') {
+    for (const key of ['title','caption','credit']) manageForm.elements.namedItem(key).value = entry.item[key] || '';
+  }
+  manageDialog.showModal();
+}
+manageForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const job = managing;
+  if (!job || job.uid !== signedInUser?.uid) return;
+  const submit = manageForm.querySelector('[type=submit]');
+  submit.disabled = true;
+  const fields = Object.fromEntries(new FormData(manageForm));
+  try {
+    const data = {id:job.entry.item.id, action:job.kind, ...fields};
+    await call(job.kind === 'report' ? 'reportReel' : 'manageReel', data);
+    if (job.kind === 'edit' && wantedFeed?.startsWith('post:')) loadFeed();
+    if (job.kind === 'delete' && wantedFeed?.startsWith('post:')) message('This video has been removed.');
+    if (managing === job) manageDialog.close();
+    window.toast?.(job.kind === 'report' ? 'Report sent.' : job.kind === 'delete' ? 'Video removed.' : 'Video updated.');
+  } catch (error) {
+    if (managing === job) manageForm.querySelector('[data-reel-management-status]').textContent = error.message || 'Try again.';
+  } finally { submit.disabled = false; }
+});
+manageDialog.querySelector('[data-reel-manage-cancel]').addEventListener('click', () => manageDialog.close());
+
+function refreshActions(entry, isOwner) {
+  for (const button of entry.actions.querySelectorAll('[data-reel-owner]')) button.remove();
+  if (!isOwner) return;
+  for (const [key,label] of [['edit','Edit'],['delete','Remove']]) {
+    const button = action(label, () => openManagement(key,entry));
+    button.dataset.reelOwner = '';
+    entry.actions.append(button);
+  }
+}
+function makeCard(item) {
+  const card = document.createElement('article');
+  card.className = 'reel-card';
+  const video = document.createElement('video');
+  video.muted = true;
+  video.loop = true;
+  video.playsInline = true;
+  video.preload = 'none';
+  video.controls = true;
+  const copy = document.createElement('div');
+  copy.className = 'reel-copy';
+  const author = document.createElement('div');
+  author.className = 'reel-author';
+  const title = document.createElement('h2'), caption = document.createElement('p');
+  author.translate = title.translate = caption.translate = false;
+  const playError = document.createElement('p');
+  playError.setAttribute('role','status');
+  playError.hidden = true;
+  copy.append(author,title,caption,playError);
+  const actions = document.createElement('div');
+  actions.className = 'reel-actions';
+  const entry = {card,video,author,title,caption,playError,actions,item};
+  const share = action('Share', async () => {
+    const url = new URL(location.href);
+    url.searchParams.delete('reels');
+    url.searchParams.set('reel', entry.item.id);
+    url.hash = '';
+    try {
+      if (navigator.share) await navigator.share({title:title.textContent, text:caption.textContent, url:url.href});
+      else if (navigator.clipboard) { await navigator.clipboard.writeText(url.href); window.toast?.('Video link copied.'); }
+      else window.prompt('Copy this video link',url.href);
+    } catch (error) {
+      if (error.name !== 'AbortError') window.prompt('Copy this video link',url.href);
+    }
   });
-  const observer = new IntersectionObserver(entries => entries.forEach(entry => {
-    const video = entry.target.querySelector('video');
-    if (entry.isIntersecting) video.play().catch(() => {}); else video.pause();
-  }), { root: feed, threshold: 0.65 });
-  feed.querySelectorAll('.reel-card').forEach(card => observer.observe(card));
+  share.setAttribute('aria-label','Share recipe');
+  actions.append(share, action('Report', () => openManagement('report',entry)));
+  const retry = action('Retry video', () => {
+    entry.expires = 0;
+    playVisible(entry);
+  });
+  retry.hidden = true;
+  entry.retry = retry;
+  actions.append(retry);
+  video.addEventListener('error', () => {
+    if (!video.src) return;
+    playError.hidden = retry.hidden = false;
+    playError.textContent = 'Could not play this video.';
+  });
+  card.append(video,copy,actions);
+  observer.observe(card);
+  return entry;
 }
+function updateCard(entry, item) {
+  const {video, author, title, caption} = entry;
+  entry.item = item;
+  author.textContent = item.credit || 'Hatri cook';
+  title.textContent = item.title || 'Recipe video';
+  caption.textContent = item.caption || '';
+  video.setAttribute('aria-label',title.textContent);
+  if (entry.subtitles === item.subtitles && entry.subtitleLanguage === item.subtitleLanguage) return;
+  video.querySelector('track')?.remove();
+  if (entry.captionURL) URL.revokeObjectURL(entry.captionURL);
+  entry.subtitles = item.subtitles;
+  entry.subtitleLanguage = item.subtitleLanguage;
+  if (item.subtitles) {
+    const track = document.createElement('track');
+    track.kind = 'captions';
+    track.srclang = item.subtitleLanguage === 'hi' ? 'hi' : 'en';
+    track.label = track.srclang === 'hi' ? 'हिंदी' : 'English';
+    entry.captionURL = URL.createObjectURL(new Blob([item.subtitles],{type:'text/vtt'}));
+    track.src = entry.captionURL;
+    video.append(track);
+  }
+}
+async function playVisible(entry) {
+  if (entry.loading) return;
+  entry.playError.hidden = entry.retry.hidden = true;
+  if (!entry.expires || entry.expires < Date.now() + 15_000 || entry.viewer !== signedInUser?.uid) {
+    entry.loading = true;
+    const viewer = signedInUser?.uid;
+    try {
+      const result = await call('playReel',{id:entry.item.id});
+      if (cards.get(entry.item.id) !== entry || viewer !== signedInUser?.uid) return;
+      const url = storageURL(result.url);
+      if (entry.video.src !== url) entry.video.src = url;
+      entry.expires = result.expires;
+      entry.viewer = viewer;
+      refreshActions(entry,result.owner);
+    } catch (error) {
+      entry.playError.textContent = error.message || 'Could not play this video.';
+      entry.playError.hidden = entry.retry.hidden = false;
+      return;
+    } finally { entry.loading = false; }
+  }
+  if (entry.visible) await entry.video.play().catch(() => {});
+}
+const observer = new IntersectionObserver(entries => entries.forEach(({target,isIntersecting}) => {
+  const entry = cards.get(target.dataset.videoId);
+  if (!entry) return;
+  entry.visible = isIntersecting;
+  if (isIntersecting) playVisible(entry);
+  else entry.video.pause();
+}),{root:feed,threshold:0.65});
 
-onAuthStateChanged(auth, user => { signedInUser = user; });
-onSnapshot(query(collection(db, 'publicRecipeVideos'), orderBy('createdAt', 'desc'), limit(30)), snapshot => {
-  render(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(item => item.status === 'published'));
-}, error => empty(error.code === 'permission-denied' ? 'Public videos are not enabled yet. Publish the Firestore rules, then refresh.' : 'Could not load community videos.'));
+function render(items) {
+  const keep = new Set(items.map(item => item.id));
+  const anchor = [...cards.values()].find(entry => entry.visible && keep.has(entry.item.id));
+  const before = anchor?.card.getBoundingClientRect().top;
+  feed.querySelector('.reels-empty')?.remove();
+  for (const [id,entry] of cards) {
+    if (keep.has(id)) continue;
+    observer.unobserve(entry.card);
+    entry.video.pause();
+    entry.video.removeAttribute('src');
+    entry.video.load();
+    if (entry.captionURL) URL.revokeObjectURL(entry.captionURL);
+    entry.card.remove();
+    cards.delete(id);
+  }
+  let cursor = feed.firstElementChild;
+  for (const item of items) {
+    let entry = cards.get(item.id);
+    if (!entry) {
+      entry = makeCard(item);
+      entry.card.dataset.videoId = item.id;
+      cards.set(item.id,entry);
+    }
+    updateCard(entry,item);
+    if (entry.card !== cursor) feed.insertBefore(entry.card,cursor);
+    cursor = entry.card.nextElementSibling;
+  }
+  if (anchor && before !== undefined) feed.scrollTop += anchor.card.getBoundingClientRect().top - before;
+}
+function loadFeed() {
+  const token = ++generation;
+  unsubscribe?.();
+  unsubscribe = null;
+  const link = new URL(location.href).searchParams.get('reel');
+  const linkId = link && /^[A-Za-z0-9_-]{16,80}$/.test(link) ? link : null;
+  const scope = linkId && !ownFeed ? 'post:' + linkId : ownFeed ? 'own:' + signedInUser?.uid : 'public';
+  if (wantedFeed !== scope) { render([]); feed.scrollTop = 0; }
+  wantedFeed = scope;
+  const failed = error => {
+    if (generation === token) message(linkId && error.code === 'permission-denied' ? 'This video is unavailable.' : 'Could not load community videos.',loadFeed);
+  };
+  if (scope.startsWith('post:')) {
+    getDoc(doc(db,'publicRecipeVideos',linkId)).then(snapshot => {
+      if (generation !== token) return;
+      if (snapshot.exists()) render([{...snapshot.data(),id:snapshot.id}]);
+      else message('This video is unavailable.');
+    }).catch(failed);
+    return;
+  }
+  const queries = ownFeed
+    ? [collection(db,'reelDrafts'),where('ownerUid','==',signedInUser.uid)]
+    : [collection(db,'publicRecipeVideos'),where('version','==',2)];
+  unsubscribe = onSnapshot(query(...queries,where('status','==','published'),orderBy('publishedAt','desc'),limit(30)), snapshot => {
+    if (generation !== token) return;
+    if (snapshot.empty) message(ownFeed ? 'You have no published videos.' : 'No community videos yet.');
+    else render(snapshot.docs.map(record => ({...record.data(),id:record.id})));
+  },failed);
+}
+mine.addEventListener('click', () => {
+  if (!signedInUser) return profile();
+  ownFeed = !ownFeed;
+  mine.textContent = ownFeed ? 'Community feed' : 'My videos';
+  loadFeed();
+});
+function syncFeed() {
+  if (document.body.dataset.v === 'reels') loadFeed();
+  else {
+    ++generation;
+    unsubscribe?.();
+    unsubscribe = null;
+    for (const entry of cards.values()) { entry.visible = false; entry.video.pause(); }
+  }
+}
+document.addEventListener('hatri:view-change',syncFeed);
+
+function stopUpload() {
+  if (activeUpload?.publishing) return false;
+  if (activeUpload) {
+    activeUpload.cancelled = true;
+    activeUpload.request?.abort();
+  }
+  return true;
+}
+onAuthStateChanged(auth,user => {
+  if (signedInUser?.uid !== user?.uid) {
+    stopUpload();
+    if (manageDialog.open) manageDialog.close();
+    for (const entry of cards.values()) refreshActions(entry,false);
+  }
+  signedInUser = user;
+  if (!user && ownFeed) { ownFeed = false; mine.textContent = 'My videos'; }
+  if (document.body.dataset.v === 'reels') {
+    if (wantedFeed) syncFeed();
+    for (const entry of cards.values()) if (entry.visible) playVisible(entry);
+  }
+});
 
 function showVideoName() {
   const file = videoInput.files[0];
   videoName.translate = !file;
   videoName.textContent = file?.name || 'No video selected';
 }
-document.getElementById('reels-video-pick').addEventListener('click', () => videoInput.click());
-videoInput.addEventListener('change', showVideoName);
-document.getElementById('reels-upload-open').addEventListener('click', () => {
-  if (!signedInUser) { window.toast?.('Sign in with Google from your profile before uploading.'); document.querySelector('[data-rr-profile-open]')?.click(); return; }
-  form.reset(); showVideoName(); status.textContent = ''; progress.style.width = '0%'; dialog.showModal();
+videoInput.addEventListener('change',showVideoName);
+document.getElementById('reels-video-pick').addEventListener('click',() => videoInput.click());
+openUpload.addEventListener('click',() => {
+  if (!signedInUser) return profile();
+  if (activeUpload) return;
+  form.reset();
+  showVideoName();
+  status.textContent = '';
+  progress.value = 0;
+  dialog.showModal();
 });
-document.getElementById('reels-upload-cancel').addEventListener('click', () => dialog.close());
-form.addEventListener('submit', async event => {
+cancel.addEventListener('click',() => { if (stopUpload()) dialog.close(); });
+dialog.addEventListener('cancel',event => { if (!stopUpload()) event.preventDefault(); });
+
+function transfer(job, policy, file) {
+  return new Promise((resolve,reject) => {
+    const data = new FormData();
+    for (const [key,value] of Object.entries(policy.fields)) data.append(key,value);
+    data.append('file',file);
+    const xhr = job.request = new XMLHttpRequest();
+    xhr.open('POST',storageURL(policy.url));
+    xhr.upload.onprogress = event => { if (event.lengthComputable) progress.value = event.loaded / event.total; };
+    xhr.onload = () => xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(Error('Upload failed. Try again.'));
+    xhr.onerror = () => reject(Error('Could not connect to video storage.'));
+    xhr.onabort = () => reject(new DOMException('Upload cancelled.','AbortError'));
+    xhr.send(data);
+  });
+}
+form.addEventListener('submit',async event => {
   event.preventDefault();
-  if (!signedInUser) { status.textContent = 'Please sign in first.'; return; }
-  const file = videoInput.files[0];
-  if (!file || !/^video\/(mp4|webm|quicktime)$/.test(file.type)) { status.textContent = 'Choose an MP4, WebM, or MOV video.'; return; }
-  if (file.size > MAX_BYTES) { status.textContent = 'Videos must be 100 MB or smaller.'; return; }
-  const publish = form.querySelector('[type="submit"]'); publish.disabled = true; status.textContent = 'Uploading video…';
+  if (!signedInUser || activeUpload) return;
+  const data = new FormData(form), file = videoInput.files[0], captionFile = form.elements.namedItem('subtitles').files[0];
+  const contentType = file && (Object.values(extensions).includes(file.type) ? file.type : extensions[file.name.split('.').pop().toLowerCase()]);
+  if (!file || !contentType || !file.size || file.size > MAX_BYTES) {
+    status.textContent = 'Choose a non-empty MP4, WebM, or MOV video up to 100 MB.';
+    return;
+  }
+  if (captionFile && captionFile.size > 24_576) { status.textContent = 'Choose a WebVTT caption file up to 24 KB.'; return; }
+  const job = activeUpload = {uid:signedInUser.uid};
+  publish.disabled = openUpload.disabled = true;
+  status.textContent = 'Preparing upload…';
   try {
-    const post = await addDoc(collection(db, 'publicRecipeVideos'), { ownerUid: signedInUser.uid, creatorName: signedInUser.displayName || 'Hatri cook', title: form.title.value.trim(), caption: form.caption.value.trim(), status: 'uploading', createdAt: serverTimestamp() });
-    const upload = uploadBytesResumable(ref(storage, `communityVideos/${signedInUser.uid}/${post.id}`), file, { contentType: file.type, customMetadata: { postId: post.id } });
-    await new Promise((resolve, reject) => { upload.on('state_changed', snap => { progress.style.width = `${Math.round(snap.bytesTransferred / snap.totalBytes * 100)}%`; }, reject, resolve); });
-    const videoUrl = await getDownloadURL(upload.snapshot.ref);
-    const { updateDoc, doc } = await import('https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js');
-    await updateDoc(doc(db, 'publicRecipeVideos', post.id), { videoUrl, status: 'published', sizeBytes: file.size, contentType: file.type });
-    status.textContent = 'Published!'; setTimeout(() => dialog.close(), 500);
-  } catch (error) { status.textContent = error.code === 'permission-denied' ? 'Permission denied. Check Firebase rules.' : 'Upload failed. Please try again.'; }
-  finally { publish.disabled = false; }
+    const subtitles = captionFile ? await captionFile.text() : '';
+    if (job.cancelled || job.uid !== signedInUser?.uid) return;
+    const {id,policy} = await call('startReel',{title:data.get('title'),caption:data.get('caption'),
+      credit:data.get('credit'),subtitleLanguage:data.get('subtitleLanguage'),subtitles,contentType,sizeBytes:file.size});
+    job.id = id;
+    if (job.cancelled || job.uid !== signedInUser?.uid) return;
+    status.textContent = 'Uploading video…';
+    await transfer(job,policy,file);
+    if (job.cancelled || job.uid !== signedInUser?.uid) return;
+    job.publishing = cancel.disabled = true;
+    status.textContent = 'Checking and publishing video…';
+    await call('publishReel',{id});
+    job.done = true;
+    dialog.close();
+    window.toast?.('Video published.');
+  } catch (error) {
+    if (!job.cancelled) status.textContent = error.message || 'Upload failed. Try again.';
+  } finally {
+    if (job.id && !job.done && job.uid === signedInUser?.uid) await call('cancelReel',{id:job.id}).catch(() => {});
+    if (activeUpload === job) activeUpload = null;
+    openUpload.disabled = publish.disabled = cancel.disabled = false;
+  }
 });
+syncFeed();

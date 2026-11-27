@@ -3,6 +3,8 @@
 Thumbs.db
 *.log
 node_modules/
+dist/
+.venv/
 .agents/
 .claude/
 skills-lock.json
