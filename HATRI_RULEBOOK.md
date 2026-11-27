@@ -28,7 +28,14 @@ Every individual recipe and four-/five-/six-dish meal suggestion must offer an *
 
 Recipe cards, filters, and the recipe catalog omit heaviness ratings. Ignore saved heaviness selections when loading preferences and omit them when saving preferences.
 
+## Adding recipes and ingredients
+
+For future recipe additions, generate or source a **dedicated, accurate photo file for every new dish**, not a photo borrowed from a different dish. Every new ingredient gets a separate recognizable ingredient photo; audit existing pantry IDs without image mappings and close those gaps in the same change. Store the image files in the repository, wire the first-render image paths and update the Excel image fields before opening a PR.
+
+Every request to add a dish means a complete catalog entry: stable English dish ID, appropriate region and dish-type category, vegetarian/non-vegetarian classification, accurate pantry ingredient IDs, measured ingredient quantities, tested cooking directions, an image that depicts the dish, a packaged Hindi dish name/ingredient lines/cooking method, and a matching dated row in `docs/Hatri_Recipe_Catalog.xlsx` on both the dish and recipe tabs. New ingredient IDs must be included in the pantry selector with an actual ingredient image and Hindi name; prefer an existing canonical ID when the ingredient is already represented. Validate uniqueness against the full catalog and verify all referenced image paths and offline Hindi coverage before raising a PR. Do not substitute an unrelated dish picture merely to fill a photo slot. Reusing an existing photo is acceptable only where it accurately depicts the same food or a visually equivalent presentation; clearly disclose photo reuse when reporting the addition.
+
 ## Language
+
 
 Author app text and recipe content in English and retain stable recipe and ingredient IDs across all languages. All published recipe names, measured ingredient lines, and cooking steps must have a packaged Hindi translation in `hindi-catalog.js` before release. App navigation, accessibility labels, regions, filters, ingredient names, and recipe text must work in Hindi with Google Translate completely unavailable. The Hindi pack must be loaded and cached with the app shell; do not use a network call for catalog content. When source instructions change, regenerate and review their translations before merging, with automated coverage tests to identify missing source text. Machine translations are drafts: review numerical quantities, temperature, timing, negation and food-safety terminology. Never silently replace a missing or unsafe method with an invented Hindi instruction. Keep account identities and form entries verbatim. Hindi search uses packaged and cached catalog terms and keeps the entered query on the device. Reserve optional runtime translation for uncataloged or user-generated content, with failure cooldown.
 
