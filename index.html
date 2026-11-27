@@ -1162,7 +1162,9 @@ function dishState(m){
 function score(singleDishes){
   var wholeMeal=!!sel.meal&&!singleDishes;
   var allDishes=wholeMeal||sel.all||(crs==="meal"&&vratOnly());
-  return MEALS.filter(function(m){return matchesFilters(m,wholeMeal)&&(allDishes||inSel(m))}).map(dishState)
+  // Browsing "All dishes" is a complete catalog view. Preserve diet/equipment
+  // safety modes, but do not let saved time, region or occasion filters hide it.
+  return MEALS.filter(function(m){return (sel.all?matchesModes(m):matchesFilters(m,wholeMeal))&&(allDishes||inSel(m))}).map(dishState)
     .sort(function(a,b){return a.x.length-b.x.length||(b.h.length/b.tot)-(a.h.length/a.tot)||fit(b)-fit(a)||hsh(a.n)-hsh(b.n)});
 }
 function isLong(m){return m.s&&m.s[0]>=240}
@@ -1192,7 +1194,28 @@ function card(m,expanded){
    m.oh.map(function(i){return "<span class='chip have' style='background:transparent;border:1px solid var(--ok)'>"+NAME[i]+" · optional</span>"}).join("")+
    m.ox.map(function(i){return "<button class='chip opt' data-oi='"+i+"'>"+(cart[i]?"✓ ":"+ ")+NAME[i]+" · optional</button>"}).join("")+"</div></div>";
 }
-var DISH_LIMIT=100,MEAL_LIMIT=50;
+// Rendering is progressive for mobile performance, but every matching recipe
+// remains available: there is no maximum number of dishes or meal suggestions.
+var DISH_BATCH=100,dishPageKey="",dishPageLimit=DISH_BATCH,dishPageObserver=null;
+function dishPage(key){
+  if(dishPageKey!==key){dishPageKey=key;dishPageLimit=DISH_BATCH}
+  return dishPageLimit;
+}
+function dishPageFooter(visible,total){
+  return visible<total?"<div class='load-more' data-more-sentinel='1'><p class='sub'>"+visible+" of "+total+" dishes · more load as you scroll</p><button type='button' class='btn primary' data-load-more='1'>Show all "+(total-visible)+" remaining dishes</button></div>":"";
+}
+function observeMoreDishes(){
+  if(dishPageObserver){dishPageObserver.disconnect();dishPageObserver=null}
+  var sentinel=$("results").querySelector("[data-more-sentinel]");
+  if(!sentinel||typeof IntersectionObserver==="undefined")return;
+  dishPageObserver=new IntersectionObserver(function(entries){
+    if(!entries.some(function(entry){return entry.isIntersecting}))return;
+    dishPageObserver.disconnect();dishPageObserver=null;
+    dishPageLimit+=DISH_BATCH;
+    renderResults();
+  },{rootMargin:"600px 0px"});
+  dishPageObserver.observe(sentinel);
+}
 function searchText(text){return (text+" "+(HatriTranslation.lookup(text)||"")).toLowerCase()}
 function searchLabels(m){
   var reel=RECIPE_REELS[m[0]],keywords=MEASURED_RECIPES[m[0]]?.keywords;
@@ -1215,10 +1238,10 @@ function warmHindiSearch(query,labels,refresh){
 }
 function renderSearch(r,q){renderHTML($("pick"),"");var tk=q.split(/\s+/).filter(Boolean);
   if(/\p{Script=Devanagari}/u.test(q))warmHindiSearch(q,MEALS.flatMap(searchLabels),renderResults);
-  var vratMatches=vratOnly()?new Set(score(true).map(function(m){return m.recipe})):null;
+  var vratMatches=!sel.all&&vratOnly()?new Set(score(true).map(function(m){return m.recipe})):null;
   var L=MEALS.filter(function(m){
     if(vratMatches)return vratMatches.has(m);
-    return matchesFilters(m,false);
+    return sel.all?matchesModes(m):matchesFilters(m,false);
   }).map(function(m){
     var nm=searchText(m[0]);
     var hay=searchLabels(m).map(searchText).join(" ");
@@ -1228,8 +1251,8 @@ function renderSearch(r,q){renderHTML($("pick"),"");var tk=q.split(/\s+/).filter
     return dish;
   }).filter(Boolean);
   L.sort(function(a,b){return (b.nm-a.nm)||(a.x.length-b.x.length)});var tot=L.length;
-  var visible=Math.min(tot,DISH_LIMIT);
-  renderHTML(r,"<div class='sec'><h2>"+("Search results")+"</h2><small>"+tot+" "+("found")+" · "+("Your active filters apply")+"</small></div>"+(L.length?("<div class='tgrid'>"+L.slice(0,visible).map(function(dish){return tileHTML(dish)}).join("")+"</div>"):"<div class='card empty'>"+("No recipes match your search and filters. Try another name or reset filters.")+"</div>"))}
+  var visible=Math.min(tot,dishPage("search:"+q+":"+JSON.stringify([sel,TS,OS,RS,nonveg,hostel,app])));
+  renderHTML(r,"<div class='sec'><h2>"+("Search results")+"</h2><small>"+tot+" "+("found")+" · "+(sel.all?"Full catalog search; Veg/Hostel Mode still applies":("Your active filters apply"))+"</small></div>"+(L.length?("<div class='tgrid'>"+L.slice(0,visible).map(function(dish){return tileHTML(dish)}).join("")+"</div>"+dishPageFooter(visible,tot)):"<div class='card empty'>"+("No recipes match your search and filters. Try another name or reset filters.")+"</div>"));observeMoreDishes()}
 function renderResults(){
   renderTop();
   var r=$("results"),rq=($("rq")&&$("rq").value||"").trim().toLowerCase();
@@ -1237,13 +1260,7 @@ function renderResults(){
   if(rq){renderSearch(r,rq);return}
   var vrat=vratOnly(),dishes=score(true),meals=sel.meal?buildMeals():[];
   var title=vrat?("Vrat dishes"):("Browse recipes");
-  var featuredDish=lastPick&&dishes.some(function(dish){return dish.n===lastPick});
-  if(sel.meal&&!(vrat&&crs==="meal")){
-    var paired=new Set();
-    meals.forEach(function(meal){meal.items.concat(meal.salad||[]).forEach(function(dish){paired.add(mealDishKey(dish.n))})});
-    dishes=dishes.filter(function(dish){return !paired.has(mealDishKey(dish.n))});
-    if(!vrat&&crs==="meal")title=meals.length?("More meal dishes"):("Meal dishes");
-  }
+  if(sel.meal&&!(vrat&&crs==="meal")&&!vrat&&crs==="meal")title="Meal dishes";
   var html="",openTiles=new Set(Array.from(r.querySelectorAll("details.tile[open]"),function(tile){return tile.dataset.recipe}));
   if(!Object.keys(have).length)html="<div class='card' style='display:flex;gap:10px;align-items:center;justify-content:space-between'><span class='sub'>Pick ingredients to see what you can cook right now</span><button class='btn sm primary' data-view='pantry'>Pick ingredients</button></div>";
   if(meals.length){
@@ -1251,10 +1268,12 @@ function renderResults(){
     html+="<section class='meal-sets'><h2>"+("6-dish meals")+"</h2>"+suggestionGroups(listed,true);
     html+="</section>";
   }
-  dishes=dishes.filter(function(dish){return dish.n!==lastPick}).slice(0,DISH_LIMIT-(featuredDish?1:0));
-  if(dishes.length)html+="<div class='sec'><h2>"+title+"</h2><small>"+dishes.length+" "+("dishes")+"</small></div>"+suggestionGroups(dishes,false,openTiles);
-  else if(!meals.length&&!featuredDish)html+="<p class='card empty'>"+(vrat?("No vrat dishes match these filters."):("No dishes match these filters."))+"</p>";
-  renderHTML(r,html);renderPick(meals);
+  var totalDishes=dishes.length,pageSize=dishPage("browse:"+JSON.stringify([sel,TS,OS,RS,nonveg,hostel,app]));
+  var visibleDishes=dishes.slice(0,pageSize);
+  if(visibleDishes.length)html+="<div class='sec'><h2>"+title+"</h2><small>"+totalDishes+" "+("dishes")+" · "+visibleDishes.length+" shown</small></div>"+
+    (sel.all?"<p class='sub'>All catalog dishes in your current Veg/Hostel Mode. Time, region and occasion filters are paused.</p>":"")+suggestionGroups(visibleDishes,false,openTiles)+dishPageFooter(visibleDishes.length,totalDishes);
+  else if(!meals.length)html+="<p class='card empty'>"+(vrat?("No vrat dishes match these filters."):("No dishes match these filters."))+"</p>";
+  renderHTML(r,html);renderPick(meals);observeMoreDishes();
 }
 function suggestionGroups(items,meals,openTiles){
   var ready=[],nearby=[],soak=[],shopping=[];
@@ -1280,7 +1299,8 @@ function suggestionGroups(items,meals,openTiles){
 function all(){renderModes();renderCuis();renderIngs();renderResults();renderCart();renderKitchen();renderTable();save()}
 document.addEventListener("click",function(e){
   var t=e.target.closest("button");if(!t)return;
-  if(t.dataset.tableDish!==undefined){e.preventDefault();var recipe=MEALS[Number(t.dataset.tableDish)];if(recipe)changeTableSelection({kind:"dish",name:recipe[0]})}
+  if(t.dataset.loadMore!==undefined){dishPageLimit=Infinity;renderResults();e.preventDefault()}
+  else if(t.dataset.tableDish!==undefined){e.preventDefault();var recipe=MEALS[Number(t.dataset.tableDish)];if(recipe)changeTableSelection({kind:"dish",name:recipe[0]})}
   else if(t.dataset.tableMeal!==undefined){e.preventDefault();var meal=MEALK[decodeURIComponent(t.dataset.tableMeal)];if(meal)changeTableSelection({kind:"meal",names:meal.items.map(function(item){return item.n}),theme:meal.theme})}
   else if(t.dataset.tableRemove!==undefined){var index=Number(t.dataset.tableRemove);if(Number.isInteger(index)&&index>=0&&index<tableSelections.length){tableSelections.splice(index,1);renderTable();renderResults();save();toast("Removed from Table")}}
   else if(t.dataset.occ){occ=t.dataset.occ;renderCuis();renderResults()}
@@ -2520,8 +2540,10 @@ function isVegetarianDish(m){
     return NV.indexOf(id.replace(/\?$/, ""))>=0||id.replace(/\?$/, "")==="gelatin";
   });
 }
+function dietCategory(m){return isVegetarianDish(m)?"Veg":"NonVeg"}
 function matchesModes(m){
-  return (nonveg||isVegetarianDish(m))&&(!hostel||hostOK(m[0]));
+  // Hostel is an optional equipment filter, never a separate diet or catalog.
+  return (nonveg||dietCategory(m)==="Veg")&&(!hostel||hostOK(m[0]));
 }
 function renderModes(){
   $("nvBtn").setAttribute("aria-checked",!nonveg);
@@ -2622,6 +2644,11 @@ var sel={meal:1};
 function resetCategories(category){sel={};sel[category]=1;crs=category}
 function pickCrs(v){
   if(v==="all"){resetCategories("all");return}
+  // Selecting non-veg must also unlock non-veg dishes in Veg Mode.
+  if(v==="NonVeg"&&!nonveg){nonveg=true;renderModes()}
+  // Replace the default Whole meal selection when picking a diet category;
+  // otherwise the new category unexpectedly includes all meal courses too.
+  if((v==="Veg"||v==="NonVeg")&&sel.meal&&Object.keys(sel).length===1){resetCategories(v);return}
   delete sel.all;
   if(sel[v])delete sel[v];else sel[v]=1;
   var selected=Object.keys(sel);
@@ -2631,7 +2658,7 @@ function pickCrs(v){
 function inSel(m){return Object.keys(sel).some(function(k){return k==="NoCook"?isNoCook(m):k==="Chaat"?(m[6]==="Street & chaat"||/chaat/i.test(m[0])):course(m[0])===k})}
 function isNoCook(m){return (m[3]===0&&!/chai|kadha|coffee|cappuccino|hot chocolate|doodh|ambli|affogato|espresso|\btea\b/i.test(m[0]))||!!(window.NCSET&&NCSET[m[0]])||/coffee (float|frappe)|dalgona|cold coffee|iced (latte|mocha)|cold brew/i.test(m[0])&&m[3]===0}
 
-var CRS=[["meal","🍽️ Whole meal"],["Main","🥘 Curry / sabzi / dal"],["Bread","🫓 Roti / paratha"],["Rice","🍚 Rice"],["Complete","🍲 One-pot meal"],["Sweet","🍮 Sweet"],["Side","🥣 Chutney & sides"],["Snack","🥪 Snack / breakfast"],["Chaat","🥗 Chaat"],["NoCook","🧊 No-cook"],["Pickle","🥫 Pickles & jams"],["Baked","🍰 Baking"],["Drink","🥤 Drinks"],["all","All dishes"]];
+var CRS=[["meal","🍽️ Whole meal"],["Veg","🥬 Vegetarian"],["NonVeg","🍗 Non-vegetarian"],["Main","🥘 Curry / sabzi / dal"],["Bread","🫓 Roti / paratha"],["Rice","🍚 Rice"],["Complete","🍲 One-pot meal"],["Sweet","🍮 Sweet"],["Side","🥣 Chutney & sides"],["Snack","🥪 Snack / breakfast"],["Chaat","🥗 Chaat"],["NoCook","🧊 No-cook"],["Pickle","🥫 Pickles & jams"],["Baked","🍰 Baking"],["Drink","🥤 Drinks"],["all","All dishes"]];
 function categoryLabel(option){
   var label=(option[1]);
   return option[0]==="all"?label:label.slice(label.indexOf(" ")+1);
@@ -2756,7 +2783,7 @@ function buildMeals(){
     MEALK[key]=meal;meals.push(meal);
   }
   meals.sort(function(a,b){return a.miss.length-b.miss.length||a.t-b.t});
-  return meals.slice(0,MEAL_LIMIT);
+  return meals;
 }
 // Clip one tile from the shared preview behind the full-size photo.
 function mealPreview(index){
@@ -3332,7 +3359,7 @@ function renderCart(){
   var groupsHTML=groups.length?"<section class='cart-selected'><h3>"+("Dishes in your cart")+"</h3>"+cards+"</section>":"";
   var looseHTML=loose.length?"<section class='cart-loose'><h3>"+("Other shopping items")+"</h3><ul class='cart-items'>"+
     loose.map(function(item){return cartItemRow(item[0],-1,false)}).join("")+"</ul></section>":"";
-  var dishes=cartDishes(DISH_LIMIT);
+  var dishes=cartDishes(Infinity);
   var suggestions=dishes.length?"<section class='cart-suggestion' aria-labelledby='cart-suggestion-title'>"+
     "<h3 id='cart-suggestion-title'>"+("More dishes to shop for")+"</h3>"+
     "<p class='cart-needed-label'>"+("Just 1–2 more ingredients per dish, using what you already have or plan to buy")+"</p>"+
@@ -3816,8 +3843,9 @@ function photoFor(k){
   var L=((nonveg&&PREFNV[k])||[]).concat(PREF[k]||[]);
   for(var i=0;i<L.length;i++){if(IMG[L[i]])return IMG[L[i]]}
   for(var recipe of MEALS){
-    if(nonveg?isVegetarianDish(recipe):!isVegetarianDish(recipe))continue;
-    if(k!=="all"&&k!=="meal"&&!cats(recipe).includes(k))continue;
+    if(k==="Veg"&&!isVegetarianDish(recipe)||k==="NonVeg"&&isVegetarianDish(recipe))continue;
+    if(k!=="Veg"&&k!=="NonVeg"&&(nonveg?isVegetarianDish(recipe):!isVegetarianDish(recipe)))continue;
+    if(k!=="all"&&k!=="meal"&&k!=="Veg"&&k!=="NonVeg"&&!cats(recipe).includes(k))continue;
     var id=IMG[pslug(recipe[0])];if(id)return id;
   }
   return null}
@@ -3937,13 +3965,16 @@ function catsRaw(m){var n=m[0],l=n.toLowerCase(),a=[course(n)],c=a[0];
 function buildCats(){CATC={};MBY={};MEALS.forEach(function(m){CATC[m[0]]=catsRaw(m);MBY[m[0]]=m})}
 function cats(m){if(!MFREADY)return catsRaw(m);if(!CATC)buildCats();return CATC[m[0]]||catsRaw(m)}
 function catsN(n){if(!MFREADY||!CATC)buildCats();return CATC[n]||[]}
-inSel=function(m){return (!!sel.meal&&wholeMealDish(m[0]))||cats(m).some(function(k){return !!sel[k]})};
+inSel=function(m){return (!!sel.meal&&wholeMealDish(m[0]))||!!sel[dietCategory(m)]||cats(m).some(function(k){return !!sel[k]})};
 function categoryCounts(){
-  var counts={all:0,meal:0},vrat=vratOnly();
+  // Category tiles describe the catalog, not the current recommendation slice.
+  // Otherwise a saved short time window can make "All dishes" read as 143/1096.
+  var counts={all:0,meal:0,Veg:0,NonVeg:0};
   for(var recipe of MEALS){
-    if(!matchesFilters(recipe,false))continue;
+    if(!matchesModes(recipe))continue;
     counts.all++;
-    if(vrat||wholeMealDish(recipe[0]))counts.meal++;
+    counts[dietCategory(recipe)]++;
+    if(wholeMealDish(recipe[0]))counts.meal++;
     for(var category of cats(recipe))counts[category]=(counts[category]||0)+1;
   }
   return counts;
