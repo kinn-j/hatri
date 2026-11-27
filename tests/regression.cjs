@@ -99,6 +99,58 @@ test('app boots with bounded results and usable mobile layouts', async () => {
   }
 });
 
+test('Add to Table selects recipes without changing the cart, persists, and can be removed', async () => {
+  const {page, context} = await open({width: 375, height: 844}, {serviceWorkers:'block'});
+  try {
+    await page.locator('#rq').fill('aloo jeera');
+    const tile = page.locator('#results details.tile').first();
+    assert.ok(await tile.count(), 'an individual recipe is visible');
+    const selectedName = await tile.locator('.tx b').innerText();
+    await tile.locator('summary .table-add').click();
+    assert.equal(await page.locator('#dtray').evaluate(dialog => dialog.open), false, 'the Table action must not open recipe details');
+    assert.equal(await tile.evaluate(details => details.open), false, 'the Table action must not expand its tile');
+    assert.equal(await page.locator('#tbadge').innerText(), '1');
+    assert.equal(await tile.locator('summary .table-add').getAttribute('aria-pressed'), 'true');
+    assert.deepEqual(await page.evaluate(() => ({cart:cart,cartMeals:cartMeals})), {cart:{},cartMeals:[]}, 'Table does not modify shopping list');
+    await page.locator('.tabbar [data-view="table"]').click();
+    assert.equal(await page.locator('[data-vs="table"]').isVisible(), true);
+    assert.ok((await page.locator('#table-list').innerText()).includes(selectedName));
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(() => window.MFREADY === true);
+    await page.locator('.tabbar [data-view="table"]').click();
+    assert.equal(await page.locator('#table-list .table-selection').count(), 1, 'selection survives reload');
+    await page.locator('[data-table-remove="0"]').click();
+    assert.equal(await page.locator('#table-list .table-selection').count(), 0);
+    assert.equal(await page.locator('#tbadge').innerText(), '');
+  } finally { await context.close(); }
+});
+
+test('a six-dish meal is one saved Table selection and individual recipes stay independent', async () => {
+  const {page, context} = await open({width: 390, height: 844}, {serviceWorkers:'block'});
+  try {
+    const meal = page.locator('#results details.mtile').first();
+    assert.ok(await meal.count(), 'a complete meal suggestion exists');
+    const mealNames = await page.evaluate(() => {
+      const key = decodeURIComponent(document.querySelector('#results details.mtile').dataset.mk);
+      return MEALK[key].items.map(item => item.n);
+    });
+    assert.equal(mealNames.length, 6);
+    assert.equal(new Set(mealNames).size, 6);
+    await meal.locator('summary .table-add').click();
+    assert.equal(await meal.evaluate(details => details.open), false, 'adding a meal must not expand it');
+    await page.evaluate(() => { changeTableSelection({kind:'dish',name:tableSelections[0].names[0]}); });
+    assert.equal(await page.locator('#tbadge').innerText(), '2');
+    await page.locator('.tabbar [data-view="table"]').click();
+    assert.equal(await page.locator('#table-list .table-selection').count(), 2);
+    assert.equal(await page.locator('#table-list .table-meal .table-dish').count(), 6);
+    await page.locator('#table-list [data-table-remove="0"]').click();
+    assert.equal(await page.locator('#table-list .table-selection').count(), 1);
+    assert.equal(await page.locator('#table-list .table-meal').count(), 0);
+    assert.match(await page.locator('#table-list').innerText(), /Individual dish/i);
+    assert.deepEqual(await page.evaluate(() => ({cart:cart,cartMeals:cartMeals})), {cart:{},cartMeals:[]});
+  } finally { await context.close(); }
+});
+
 test('Hindi translation does not corrupt late CSS or leave account button visible', async () => {
   const {page, context} = await open();
   await page.locator('#langBtn').click();
