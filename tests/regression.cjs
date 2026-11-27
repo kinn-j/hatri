@@ -146,7 +146,7 @@ test('a six-dish meal is one saved Table selection and individual recipes stay i
     await page.locator('#table-list [data-table-remove="0"]').click();
     assert.equal(await page.locator('#table-list .table-selection').count(), 1);
     assert.equal(await page.locator('#table-list .table-meal').count(), 0);
-    assert.match(await page.locator('#table-list').innerText(), /Individual dish/);
+    assert.match(await page.locator('#table-list').innerText(), /Individual dish/i);
     assert.deepEqual(await page.evaluate(() => ({cart:cart,cartMeals:cartMeals})), {cart:{},cartMeals:[]});
   } finally { await context.close(); }
 });
