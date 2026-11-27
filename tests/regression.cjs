@@ -99,7 +99,7 @@ test('app boots with bounded results and usable mobile layouts', async () => {
   }
 });
 
-test('all 1096+ recipes have categories, match Excel, and can be browsed beyond 100', async () => {
+test('all 1096+ recipes have categories, match Excel, and have no total browsing cap', async () => {
   const {page, context} = await open({width:390,height:844},{serviceWorkers:'block'});
   try {
     const audit = await page.evaluate(() => {
@@ -132,20 +132,67 @@ test('all 1096+ recipes have categories, match Excel, and can be browsed beyond 
     await page.locator('#slides [data-crs="all"]').click();
     const initial=await page.evaluate(()=>({total:score(true).length,rendered:document.querySelectorAll('#results details.tile').length}));
     assert.equal(initial.total,audit.enabled,'All dishes disregards time, region and occasion filters');
-    assert.equal(initial.rendered,100,'render only the first page to keep mobile fast');
+    assert.equal(initial.rendered,100,'progressively render the first batch to keep mobile fast');
+    await page.locator('#results [data-more-sentinel]').scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => document.querySelectorAll('#results details.tile').length >= 200);
+    assert.ok(await page.locator('#results [data-load-more]').isVisible(),'show-all fallback remains available');
     await page.locator('#results [data-load-more]').click();
-    assert.equal(await page.locator('#results details.tile').count(),200);
-    assert.ok(await page.locator('#results [data-load-more]').isVisible());
+    assert.equal(await page.locator('#results details.tile').count(),audit.enabled,'every allowed dish can be rendered');
+    assert.equal(await page.locator('#results [data-more-sentinel]').count(),0,'no hidden later page');
 
     await page.locator('#rq').fill('a');
     const searched=await page.evaluate(()=>({shown:document.querySelectorAll('#results details.tile').length,
       matching:MEALS.filter(m=>matchesModes(m)&&searchLabels(m).join(' ').toLowerCase().includes('a')).length}));
-    assert.equal(searched.shown,Math.min(100,searched.matching),'search starts at page one');
+    assert.equal(searched.shown,Math.min(100,searched.matching),'search progressively loads matches');
     if(searched.matching>100){
       await page.locator('#results [data-load-more]').click();
-      assert.equal(await page.locator('#results details.tile').count(),Math.min(200,searched.matching));
+      assert.equal(await page.locator('#results details.tile').count(),searched.matching,'search has no result cap');
     }
   } finally { await context.close(); }
+});
+
+test('vegetarian/non-vegetarian categories cover every recipe including Hostel dishes', async () => {
+  const {page, context} = await open({width:390,height:844},{serviceWorkers:'block'});
+  try {
+    const catalog=await page.evaluate(() => {
+      const veg=MEALS.filter(isVegetarianDish), nonvegRecipes=MEALS.filter(m=>!isVegetarianDish(m));
+      const hostelRecipes=MEALS.filter(m=>HOSTEL[m[0]]);
+      return {total:MEALS.length,veg:veg.length,nonveg:nonvegRecipes.length,
+        hostel:hostelRecipes.length,hostelVeg:hostelRecipes.filter(isVegetarianDish).length,
+        hostelNonVeg:hostelRecipes.filter(m=>!isVegetarianDish(m)).length,
+        hostelNames:Object.keys(HOSTEL).filter(name=>!MEALS.some(m=>m[0]===name)),
+        before:categoryCounts()};
+    });
+    assert.equal(catalog.veg+catalog.nonveg,catalog.total,'every recipe belongs to exactly one diet');
+    assert.deepEqual(catalog.hostelNames,[],'every Hostel recipe belongs to the full catalog');
+    assert.ok(catalog.hostelVeg>0 && catalog.hostelNonVeg>0,'both diets have Hostel recipes');
+    assert.equal(catalog.before.Veg,catalog.veg);
+    assert.equal(catalog.before.NonVeg,0,'Veg Mode hides non-veg until selected');
+
+    await page.locator('#slides [data-crs="NonVeg"]').click();
+    const nv=await page.evaluate(()=>({mode:nonveg,selected:sel.NonVeg,count:score(true).length,
+      allNonVeg:score(true).every(dish=>!dish.v),counts:categoryCounts()}));
+    assert.equal(nv.mode,true,'non-veg category automatically enables non-veg recipes');
+    assert.equal(nv.selected,1);
+    assert.equal(nv.count,catalog.nonveg);
+    assert.equal(nv.allNonVeg,true);
+    assert.equal(nv.counts.Veg+nv.counts.NonVeg,catalog.total);
+
+    await page.locator('#slides [data-crs="Veg"]').click();
+    const both=await page.evaluate(()=>({count:score(true).length,veg:score(true).filter(d=>d.v).length,
+      nv:score(true).filter(d=>!d.v).length}));
+    assert.equal(both.count,catalog.total,'both diet categories include every dish');
+    assert.equal(both.veg,catalog.veg);
+    assert.equal(both.nv,catalog.nonveg);
+
+    await page.evaluate(()=>{hostel=true;app={K:1,R:1,I:1,T:1,N:1};renderModes();renderResults()});
+    const filtered=await page.evaluate(()=>({names:score(true).map(m=>m.n),counts:categoryCounts()}));
+    assert.equal(filtered.names.length,catalog.hostel,'Hostel Mode includes every Hostel recipe with equipment');
+    assert.equal(filtered.counts.Veg,catalog.hostelVeg);
+    assert.equal(filtered.counts.NonVeg,catalog.hostelNonVeg);
+    await page.evaluate(()=>{hostel=false;renderModes();renderResults()});
+    assert.equal(await page.evaluate(()=>score(true).length),catalog.total,'Hostel dishes remain in normal diet categories');
+  } finally {await context.close();}
 });
 
 test('Add to Table selects recipes without changing the cart, persists, and can be removed', async () => {
@@ -952,7 +999,7 @@ test('the cart rotates 1–2 missing-ingredient dishes in a two-column mobile gr
     });
     const suggestion = page.locator('.cart-suggestion');
     const dishes = suggestion.locator('.cart-dish-card');
-    assert.equal(await dishes.count(), Math.min(100, await page.evaluate(() => cartDishes(Infinity).length)));
+    assert.equal(await dishes.count(), await page.evaluate(() => cartDishes(Infinity).length));
     const firstTwo = await dishes.evaluateAll(cards => cards.slice(0, 2).map(el => ({
       x: Math.round(el.getBoundingClientRect().left),
       y: Math.round(el.getBoundingClientRect().top),
@@ -986,8 +1033,8 @@ test('the cart rotates 1–2 missing-ingredient dishes in a two-column mobile gr
     await dishes.first().locator('.cart-add-dish').tap();
     const after = await dishes.locator('.cart-dish-name').allTextContents();
     assert.equal(after.includes(before[0]), false, 'selected dish disappears');
-    assert.equal(new Set(after).size, Math.min(100, await page.evaluate(() => cartDishes(Infinity).length)));
-    assert.ok(after.some(name => !before.includes(name)), 'a new eligible dish appears');
+    assert.equal(new Set(after).size, await page.evaluate(() => cartDishes(Infinity).length));
+    assert.ok(after.every(name => name !== before[0]), 'selected dish is removed without trimming the remaining suggestions');
     assert.equal(await page.locator('.cart-group').filter({hasText: before[0]}).count(), 1);
     assert.deepEqual(await page.evaluate(ids => ids.map(id => cartQuantity(id)), firstNeeded),
       firstNeeded.map(() => 1));
@@ -1041,7 +1088,7 @@ test('the cart rotates 1–2 missing-ingredient dishes in a two-column mobile gr
     assert.equal(await page.locator('#cbadge').textContent(), '');
     assert.equal(await page.locator('#cartCount').textContent(), '');
     assert.equal(await order.count(), 0);
-    assert.equal(await dishes.count(), Math.min(100, await page.evaluate(() => cartDishes(Infinity).length)), 'an empty cart offers new shopping suggestions');
+    assert.equal(await dishes.count(), await page.evaluate(() => cartDishes(Infinity).length), 'an empty cart offers all eligible shopping suggestions');
   } finally {
     await context.close();
   }
