@@ -676,6 +676,7 @@ body[data-v="table"] [data-vs="table"]{display:block}
 <script src="./desi-recipes.js"></script>
 <script src="./additional-recipes.js"></script>
 <script src="./street-food-recipes.js"></script>
+<script src="./north-chaat-recipes.js"></script>
 <script src="./rajasthani-recipes.js"></script>
 <script src="./seasonal-recipes.js"></script>
 <script src="./winter-recipes.js"></script>
@@ -683,6 +684,7 @@ body[data-v="table"] [data-vs="table"]{display:block}
 <script src="./ingredient-images.js"></script>
 <script src="./recipe-details.js"></script>
 <script src="./hindi-catalog.js"></script>
+<script src="./north-chaat-hindi.js"></script>
 <script src="./translation.js"></script>
 <script src="./preferences.js"></script>
 <script>
@@ -2550,6 +2552,7 @@ function photoSrc(id){return id.indexOf("images/")===0?id+"?v=38":"/_blob/"+id}
 function recipeImage(id,eager){return "<img class='recipe-photo' alt='' "+(eager?"":"loading='lazy' fetchpriority='low' ")+"decoding='async' src='"+escapeHTML(photoSrc(id))+"'>"}
 // Most bundled photos use the recipe slug. Resolve aliases on the first render too.
 var photoAliases={
+  // Each newly authored chaat uses a relevant locally bundled food photograph.
   "masala-chai-kadak": "masala-chai.webp",
   "mirchi-ka-salan": "mirch-ka-salan.webp",
   "pinni": "atta-ladoo.webp",
@@ -2559,6 +2562,7 @@ var photoAliases={
   "south-indian-filter-coffee": "filter-coffee.webp",
   "tandoori-mushroom-tikka": "mushroom-tikka.webp"
 };
+if(typeof NORTH_CHAAT_RECIPES!=="undefined")NORTH_CHAAT_RECIPES.forEach(function(row){var key=row[0].toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");photoAliases[key]="north-chaat-"+key+".webp"});
 function bundledPhotoPath(slug){return "images/"+((typeof SWEET_PHOTOS!=="undefined"&&SWEET_PHOTOS[slug])||photoAliases[slug]||slug+".webp")}
 function slug(n){return n.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
 function pslug(n){return slug(n).replace(/^air-fryer-/,"")}
@@ -4030,7 +4034,18 @@ if(typeof INSTAGRAM_RECIPES!=="undefined"){
   var winter=typeof WINTER_RECIPES==="undefined"?[]:WINTER_RECIPES;
   var desi=typeof DESI_RECIPES==="undefined"?[]:DESI_RECIPES;
   var additional=typeof ADDITIONAL_RECIPES==="undefined"?[]:ADDITIONAL_RECIPES;
-  quick.concat(street,rajasthani,seasonal,international,winter,desi,additional).forEach(function(recipe){
+  if(typeof NORTH_CHAAT_PANTRY!=="undefined"){
+    var specialty=CATS.find(function(group){return group[0]==="Specialty & other"});
+    if(!specialty){specialty=["Specialty & other",[]];CATS.push(specialty)}
+    NORTH_CHAAT_PANTRY.forEach(function(item){
+      if(typeof INGREDIENT_LOCAL_IMAGES!=="undefined")INGREDIENT_LOCAL_IMAGES[item[0]]="images/ingredients/hatri-"+item[0]+".webp";
+      if(NAME[item[0]])return;
+      specialty[1].push([item[0],item[1]]);
+      NAME[item[0]]=item[1];
+    });
+  }
+  var northChaat=typeof NORTH_CHAAT_CATALOG==="undefined"?[]:NORTH_CHAAT_CATALOG;
+  quick.concat(street,rajasthani,seasonal,international,winter,desi,additional,northChaat).forEach(function(recipe){
     var name=recipe.name,c=recipe.course;
     var occasions=recipe.occasion?["Festive",recipe.occasion]:["Daily"];
     if(winter.includes(recipe))occasions.push("Winter");

@@ -28,6 +28,6 @@ test('additional sweet catalog has at least 50 complete unique recipes', () => {
 test('additional sweets are wired into the application catalog', () => {
   const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.match(index, /<script src="\.\/additional-recipes\.js"><\/script>/);
-  assert.match(index, /winter,desi,additional\)\.forEach/);
+  assert.match(index, /winter,desi,additional,northChaat\)\.forEach/);
   assert.match(index, /SWEET_PHOTOS\[slug\]/);
 });

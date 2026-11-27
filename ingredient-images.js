@@ -325,3 +325,16 @@ var INGREDIENT_LOCAL_IMAGES = {
   "soya": "images/ingredients/soya.webp",
   "tinda": "images/ingredients/tinda.webp"
 };
+// Locally bundled photography for previously unmapped catalog ingredients.
+// Keep one real ingredient image per ID so the pantry never falls back to emoji.
+[
+  "groundginger","applejuice","parsnip","leek","kale","bathua",
+  "lotusroot","pigeonpeas","brusselssprouts","butternut","dill",
+  "galangal","makrutleaves","lemongrass","vegstock","ricevinegar",
+  "maplesyrup","bayleaf","brownsugar","tomatopaste","pear","lime",
+  "avocado","cheddar","gruyere","whitebeans","splitpeas",
+  "pearlbarley","arborio","tortillas","puffpastry","wheatnoodles",
+  "wakame","gond","redwine","beef","masoorwhole","zucchini",
+  "cookedfavabeans","egglessmayonnaise","feta","shortgrainrice",
+  "misopaste","glassnoodles","ricepaper","couscous"
+].forEach(function(id){INGREDIENT_LOCAL_IMAGES[id]="images/ingredients/hatri-"+id+".webp"});

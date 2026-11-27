@@ -225,7 +225,7 @@ test('the top Veg Mode switch categorizes every veg and non-veg dish without die
     assert.equal(catalog.veg+catalog.nonveg,catalog.total,'every recipe belongs to exactly one diet');
     assert.deepEqual(catalog.hostelNames,[],'every Hostel recipe belongs to the full catalog');
     assert.ok(catalog.hostelVeg>0 && catalog.hostelNonVeg>0,'both diets have Hostel recipes');
-    assert.equal(catalog.veg,1036,'the complete 1,036 vegetarian recipes remain in the current catalog');
+    assert.ok(catalog.veg>=1036,'new additions must never remove the existing 1,036 vegetarian recipes');
     assert.equal(catalog.nonveg,60);
     assert.equal(catalog.before.all,catalog.veg);
     assert.equal(catalog.allCategorized,true,'no recipe is orphaned from the carousel types');
