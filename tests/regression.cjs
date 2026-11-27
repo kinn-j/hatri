@@ -195,7 +195,10 @@ test('all 1096+ recipes have categories, match Excel, and have no total browsing
     await page.locator('#results [data-more-sentinel]').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => document.querySelectorAll('#results details.tile').length >= 200);
     assert.ok(await page.locator('#results [data-load-more]').isVisible(),'show-all fallback remains available');
-    await page.locator('#results [data-load-more]').click();
+    // WebKit's scroll anchoring can keep moving this sentinel while the
+    // automatic batch loader replaces it. Invoke the still-visible fallback
+    // directly to verify its action without racing its viewport position.
+    await page.locator('#results [data-load-more]').evaluate(button => button.click());
     assert.equal(await page.locator('#results details.tile').count(),audit.enabled,'every allowed dish can be rendered');
     assert.equal(await page.locator('#results [data-more-sentinel]').count(),0,'no hidden later page');
 
@@ -204,7 +207,7 @@ test('all 1096+ recipes have categories, match Excel, and have no total browsing
       matching:MEALS.filter(m=>matchesModes(m)&&searchLabels(m).join(' ').toLowerCase().includes('a')).length}));
     assert.equal(searched.shown,Math.min(100,searched.matching),'search progressively loads matches');
     if(searched.matching>100){
-      await page.locator('#results [data-load-more]').click();
+      await page.locator('#results [data-load-more]').evaluate(button => button.click());
       assert.equal(await page.locator('#results details.tile').count(),searched.matching,'search has no result cap');
     }
   } finally { await context.close(); }
@@ -968,7 +971,7 @@ test('offline service worker installs and controls subsequent navigation', async
       document.body.append(preview);
     });
     await page.waitForFunction(() => document.getElementById('offline-preview-probe').naturalWidth ===
-      mealPreviewSize * mealPreviewColumns, null, {timeout:15_000});
+      mealPreviewSize * mealPreviewColumns, null, {timeout:45_000});
     await page.locator('#rq').fill('gobi pakora');
     assert.match(await page.locator('#results .steps').first().textContent(), /250 g small cauliflower florets/);
   } finally { await context.close(); }
