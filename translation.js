@@ -2,6 +2,14 @@
 globalThis.HatriTranslation = (() => {
   const cacheKey = "hatri-google-hi-v1";
   const endpoint = "https://translate.googleapis.com/translate_a/single";
+  // Generated, versioned local translations for the full authored catalog.
+  // This is a lookup table, not a runtime network translation service.
+  const packaged = new Map();
+  for (const group of Object.values(globalThis.HATRI_HINDI_CATALOG || {})) {
+    for (const [source, hindi] of Object.entries(group)) {
+      if (typeof hindi === 'string' && hindi.trim()) packaged.set(source, hindi);
+    }
+  }
   // The unauthenticated Google endpoint sometimes serves a CAPTCHA/429 instead of
   // JSON. Keep essential navigation, filters and pantry labels usable without it.
   // English remains the canonical source; these are authored Hindi translations.
@@ -95,6 +103,7 @@ globalThis.HatriTranslation = (() => {
     "Almonds":"बादाम", "Cashews":"काजू", "Turmeric":"हल्दी", "Cumin":"जीरा",
     "Salt":"नमक", "Black pepper":"काली मिर्च", "Cinnamon":"दालचीनी", "Cardamom":"इलायची",
     "Gajar Halwa":"गाजर का हलवा", "Shahi Paneer":"शाही पनीर", "Aloo Gobi":"आलू गोभी",
+    "Aloo Matar":"आलू मटर", "Aloo Tamatar":"आलू टमाटर", "Aloo Jeera":"जीरा आलू",
     "Dal Tadka":"दाल तड़का", "Palak Paneer":"पालक पनीर", "Chole Bhature":"छोले भटूरे",
     "Rajma Chawal":"राजमा चावल", "Bhindi Masala":"भिंडी मसाला", "Matar Paneer":"मटर पनीर",
     "Masala Dosa":"मसाला डोसा", "Idli":"इडली", "Sambar":"सांभर", "Gulab Jamun":"गुलाब जामुन",
@@ -102,6 +111,35 @@ globalThis.HatriTranslation = (() => {
     "Aloo Paratha":"आलू पराठा", "Methi Matar Malai":"मेथी मटर मलाई",
     "Uttarakhand Mandua Cheela":"उत्तराखंड मडुआ चीला", "Pahadi Mandua Cheela":"पहाड़ी मडुआ चीला"
   }));
+  // Recipe-detail and filter labels are assembled at runtime, so a static HTML
+  // extraction cannot inventory them. Keep these high-traffic phrases local too.
+  for (const [source, hindi] of Object.entries({
+    "Ingredients":"सामग्री", "Method":"बनाने की विधि", "Recipe":"व्यंजन",
+    "Serves":"परोसने की मात्रा", "Cook time":"पकाने का समय", "Prep time":"तैयारी का समय",
+    "Sign in to rate this recipe and save photos of your creation.":"इस व्यंजन को रेटिंग देने और अपनी तस्वीरें सहेजने के लिए साइन इन करें।",
+    "Your rating:":"आपकी रेटिंग:", "Add your photo":"अपनी तस्वीर जोड़ें",
+    "AI-generated dish image":"एआई से बनाई गई व्यंजन की तस्वीर",
+    "Watch on Instagram":"इंस्टाग्राम पर देखें", "Written recipe":"लिखित विधि", "Recipe reference":"व्यंजन का स्रोत",
+    "Use sendha namak and ingredients permitted by your household’s fasting practice.":"व्रत में सेंधा नमक और अपने घर की परंपरा के अनुसार मान्य सामग्री इस्तेमाल करें।",
+    "The method is currently unavailable.":"बनाने की विधि अभी उपलब्ध नहीं है।",
+    "Sign in to keep your ratings and photos.":"अपनी रेटिंग और तस्वीरें सहेजने के लिए साइन इन करें।",
+    "Nothing saved yet — rate a recipe or add a photo of something you cooked.":"अभी कुछ सहेजा नहीं है। किसी व्यंजन को रेटिंग दें या अपनी बनाई चीज़ की तस्वीर जोड़ें।",
+    "What do you want to make?":"आप क्या बनाना चाहते हैं?",
+    "Tap more than one to combine, e.g. Snack + Drink":"एक से अधिक विकल्प चुन सकते हैं, जैसे नाश्ता और पेय।",
+    "Suggest a salad":"सलाद सुझाएँ", "Add protein":"प्रोटीन जोड़ें",
+    "Time I have (prep + cook)":"तैयारी और पकाने के लिए उपलब्ध समय",
+    "More options":"और विकल्प", "None":"कोई नहीं", "Any":"कोई भी",
+    "Vegetarian":"शाकाहारी", "Non-vegetarian":"मांसाहारी", "Everything is at home":"सारी सामग्री घर में है",
+    "Your active filters apply":"आपके चुने हुए फ़िल्टर लागू हैं", "Cook right now":"अभी पकाएँ",
+    "Almost there":"बस थोड़ी सामग्री और चाहिए", "Plan ahead":"पहले से तैयारी करें",
+    "Needs a bigger shop":"और सामग्री खरीदनी होगी", "See the dishes":"व्यंजन देखें",
+    "Whole meal":"पूरा भोजन", "More meal dishes":"भोजन के और व्यंजन",
+    "Cook chicken to 74°C (165°F) in the thickest part, away from bone.":"चिकन के सबसे मोटे हिस्से में, हड्डी से दूर, अंदरूनी तापमान 74°C (165°F) तक पकाएँ।",
+    "Cook fish to 63°C (145°F) in the thickest part.":"मछली के सबसे मोटे हिस्से का अंदरूनी तापमान 63°C (145°F) तक पकाएँ।",
+    "Cook prawns until the flesh is pearly and opaque throughout.":"झींगे तब तक पकाएँ जब तक उनका गूदा पूरी तरह अपारदर्शी और मोती जैसा न हो जाए।",
+    "Cook ground goat or lamb to 71°C (160°F) in the centre.":"कीमा किए बकरे या मेमने के मांस को बीच में 71°C (160°F) तक पकाएँ।",
+    "Cook eggs until whites and yolks are firm. For mixed egg dishes, check for 71°C (160°F) in the centre.":"अंडे की सफेदी और जर्दी जमने तक पकाएँ। अंडे वाले मिश्रित व्यंजन के बीच में 71°C (160°F) तापमान जाँचें।"
+  })) offline.set(source, hindi);
   const recipeTerms = Object.assign(Object.create(null), {
     aloo:"आलू",gobi:"गोभी",dal:"दाल",paneer:"पनीर",masala:"मसाला",matar:"मटर",palak:"पालक",
     bhindi:"भिंडी",methi:"मेथी",gajar:"गाजर",halwa:"हलवा",chawal:"चावल",kheer:"खीर",roti:"रोटी",
@@ -124,6 +162,32 @@ globalThis.HatriTranslation = (() => {
   const recipeTitles = new Set();
   function builtIn(source) {
     if (offline.has(source)) return offline.get(source);
+    if (packaged.has(source)) return packaged.get(source);
+    const serves = /^Serves (\d+)$/.exec(source);
+    if (serves) return `${serves[1]} लोगों के लिए`;
+    const regions = /^Regions \((\d+) of (\d+) on\)$/.exec(source);
+    if (regions) return `क्षेत्र (${regions[2]} में से ${regions[1]} चुने हुए)`;
+    const duration = /^(\d+(?:\.\d+)?) (min|hr)$/.exec(source);
+    if (duration) return `${duration[1]} ${duration[2] === 'min' ? 'मिनट' : 'घंटे'}`;
+    const itemCount = /^(\d+) (?:dishes|dish)$/.exec(source);
+    if (itemCount) return `${itemCount[1]} व्यंजन`;
+    const foundCount = /^(\d+) found$/.exec(source);
+    if (foundCount) return `${foundCount[1]} व्यंजन मिले`;
+    const buy = /^\+(\d+) to buy$/.exec(source);
+    if (buy) return `खरीदने के लिए ${buy[1]} चीज़ें`;
+    const needed = /^Need (.+)$/.exec(source);
+    if (needed) {
+      const items = needed[1].split(/,\s*/);
+      const names = items.map(item => offline.get(item) || packaged.get(item));
+      if (names.every(Boolean)) return `चाहिए: ${names.join(', ')}`;
+    }
+    const withTime = /^(?:⏱\s*)?(\d+) min$/.exec(source);
+    if (withTime) return `⏱ ${withTime[1]} मिनट`;
+    if (source.includes(' · ')) {
+      const parts = source.split(' · ');
+      const translations = parts.map(part => part === source ? null : builtIn(part));
+      if (translations.every(Boolean)) return translations.join(' · ');
+    }
     if (!recipeTitles.has(source)) return null;
     // For romanized dish titles, a partial native-language name is preferable
     // to a completely English label. Never apply this to cooking directions.

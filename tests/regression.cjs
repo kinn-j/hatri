@@ -246,6 +246,28 @@ test('Hindi essentials work offline and survive reload; English restores cleanly
   } finally { await context.close(); }
 });
 
+test('Hindi recipe amounts and every cooking step render with Google Translate blocked', async () => {
+  const requests = [];
+  const {page, context} = await open(undefined, {serviceWorkers: 'block'}, requests);
+  try {
+    await context.route(translationPattern, route => route.abort());
+    await page.locator('#langBtn').click();
+    await page.locator('#rq').fill('gajar halwa');
+    await page.locator('#results [data-recipe="Gajar%20Halwa"] summary').first().click();
+    await page.waitForFunction(() => {
+      const steps = [...document.querySelectorAll('#dtray .steps ol li')];
+      const amounts = [...document.querySelectorAll('#dtray .steps ul li')];
+      return steps.length >= 3 && amounts.length >= 3 && [...steps, ...amounts]
+        .every(item => /\p{Script=Devanagari}/u.test(item.textContent));
+    });
+    assert.match(await page.locator('#dtray .steps ul').innerText(), /गाजर/);
+    assert.doesNotMatch(await page.locator('#dtray .steps ol').innerText(), /Peel and grate the carrots/);
+    assert.ok(requests.every(request => !request.includes('Gajar Halwa')));
+    await page.locator('#dtray [data-recipe-language="en"]').click();
+    await page.waitForFunction(() => document.querySelector('#dtray .steps ol')?.textContent.includes('Peel and grate the carrots'));
+  } finally { await context.close(); }
+});
+
 test('Google login package shares the runtime translator', async () => {
   const {page, context} = await open({width: 1366, height: 844});
   try {
@@ -382,7 +404,8 @@ test('recipe details cover the entire live catalog and render measured methods i
     await expectRecipe(recipe, false);
     await page.locator('#results details.tile > summary').first().click();
     await page.locator('#dtray [data-recipe-language="hi"]').click();
-    await page.waitForFunction(() => document.querySelector('#dtray .steps ol').textContent.includes('फूलगोभी'));
+    await page.waitForFunction(() => document.querySelector('#dtray .steps ul').textContent.includes('फूलगोभी') &&
+      /\p{Script=Devanagari}/u.test(document.querySelector('#dtray .steps ol').textContent));
     await expectRecipe(page.locator('#dtray .steps'), true);
     assert.equal(await page.locator('#dtray .steps ol').locator('..').getAttribute('lang'), 'hi');
     await page.locator('#dish-detail-close').click();
