@@ -20,7 +20,7 @@ function surface() {
     || body.dataset.collection || body.dataset.v || "recipes";
 }
 
-export function createActivityTracker(writeEvent) {
+export function createActivityTracker(writeEvent, updateConsent) {
   const setting = document.getElementById("rr-activity-setting");
   const checkbox = document.getElementById("rr-activity-sharing");
   let uid = null;
@@ -31,6 +31,17 @@ export function createActivityTracker(writeEvent) {
   let lastSurface;
   let lastEventAt = 0;
   let searchTimer;
+  let consent = Promise.resolve(false);
+  let clientId;
+  function syncConsent() {
+    if (!uid) { consent = Promise.resolve(false); return; }
+    try {
+      clientId = localStorage.getItem("hatri-activity-client") || crypto.randomUUID();
+      localStorage.setItem("hatri-activity-client", clientId);
+      const enabled = optedIn();
+      consent = Promise.resolve(updateConsent(uid, clientId, enabled)).then(() => enabled, () => false);
+    } catch { consent = Promise.resolve(false); }
+  }
   const consentKey = () => "hatri-activity-sharing:" + uid;
   const optedIn = () => {
     try { return !!uid && localStorage.getItem(consentKey()) === "yes"; }
@@ -52,7 +63,10 @@ export function createActivityTracker(writeEvent) {
     const activeSession = sessionId;
     const order = ++sequence;
     pending++;
-    writeEvent(account, { sessionId, sequence: order, event, surface: view, detail })
+    const payload = { sessionId, sequence: order, event, surface: view, detail };
+    consent.then(allowed => {
+      if (allowed && uid === account && optedIn()) return writeEvent(account, clientId, payload);
+    })
       .catch(error => {
         if (error.code === "permission-denied" && uid === account && sessionId === activeSession) {
           if (!blocked) console.warn("Hatri activity sharing needs the published Firestore rules.");
@@ -81,12 +95,20 @@ export function createActivityTracker(writeEvent) {
       else localStorage.removeItem(consentKey());
     } catch { checkbox.checked = optedIn(); }
     resetSession();
+    syncConsent();
     visit();
   });
   window.addEventListener("storage", event => {
     if (!uid || (event.key !== null && event.key !== consentKey())) return;
     checkbox.checked = optedIn();
     resetSession();
+    syncConsent();
+    visit();
+  });
+  window.addEventListener("online", () => {
+    if (!uid) return;
+    resetSession();
+    syncConsent();
     visit();
   });
 
@@ -115,6 +137,8 @@ export function createActivityTracker(writeEvent) {
       resetSession();
       setting.hidden = !uid;
       checkbox.checked = optedIn();
+      if (checkbox.checked) syncConsent();
+      else consent = Promise.resolve(false);
       visit();
     }
   };

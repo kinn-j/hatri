@@ -23,6 +23,7 @@ function setup() {
     have: { onion: 1 },
     cart: { tomato: 2 },
     cartMeals: [],
+    tableSelections: [],
     nonveg: false,
     NV: [],
     IMG: {},
@@ -198,7 +199,8 @@ test('an empty cart still suggests dishes requiring new ingredients', () => {
 test('dish grouping is included in local and cloud preference serialization', () => {
   assert.match(html, /JSON\.stringify\(\{have:have,cart:cart,cartMeals:cartMeals,/);
   assert.match(html, /function stateObj\(\)\{return \{have:have,cart:cart,cartMeals:cartMeals,/);
-  assert.match(html, /function applyState\(o\)\{have=o\.have\|\|\{\};cart=o\.cart\|\|\{\};cartMeals=/);
+  const applyState = html.slice(html.indexOf('function applyState(o)'), html.indexOf('function refreshStoredState('));
+  assert.match(applyState, /cartMeals=Array\.isArray\(o\.cartMeals\)/);
 });
 
 test('inline scripts remain syntactically valid', () => {

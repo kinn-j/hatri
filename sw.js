@@ -3,6 +3,41 @@ const CACHE = 'hatri-v62-north-chaat';
 const MEAL_PREVIEW = './images/meal-previews.webp?v=acabad01e62a';
 // Recipe photos retain their versioned URLs across app-shell releases.
 const PHOTO_CACHE = 'hatri-recipe-photos';
+const PHOTO_LIMIT = 240;
+const REMOTE_PHOTO_LIMIT = 60;
+const scope = new URL(self.registration.scope);
+const shellURL = new URL('index.html', scope);
+const isShellNavigation = url => url.pathname === scope.pathname || url.pathname === shellURL.pathname;
+let photoWrites = Promise.resolve();
+const photoOrder = new Map();
+async function trimPhotos(cache, limit, include, refreshed) {
+  let order = photoOrder.get(limit);
+  if (!order) {
+    order = new Set((await cache.keys()).map(request => request.url).filter(url => include(new URL(url))));
+    photoOrder.set(limit, order);
+  }
+  if (refreshed) {
+    const url = typeof refreshed === 'string' ? refreshed : refreshed.url;
+    order.delete(url);
+    order.add(url);
+  }
+  while (order.size > limit) {
+    const oldest = order.values().next().value;
+    await cache.delete(oldest);
+    order.delete(oldest);
+  }
+}
+function storePhoto(cache, key, response, limit, include) {
+  const write = photoWrites.then(async () => {
+    await cache.put(key, response);
+    await trimPhotos(cache,limit,include,key);
+  });
+  photoWrites = write.catch(() => {});
+  return write;
+}
+function isRemoteIngredient(url) {
+  return url.hostname==='huggingface.co' && url.pathname.startsWith('/datasets/ionicam/ingredient-atlas/resolve/main/images/');
+}
 function isBundledPhoto(url) {
   return url.href.startsWith(new URL('images/', self.registration.scope).href) &&
     /[.](webp|png|jpe?g|avif)$/i.test(url.pathname);
@@ -22,10 +57,11 @@ self.addEventListener('activate', event => {
       for (const request of await old.keys()) {
         if (!isBundledPhoto(new URL(request.url)) || await photos.match(request)) continue;
         const response = await old.match(request);
-        if (response && response.ok && /^image\//i.test(response.headers.get('content-type') || '')) await photos.put(request, response);
+        if (response && response.ok && /^image\//i.test(response.headers.get('content-type') || '')) await storePhoto(photos, request, response, PHOTO_LIMIT, isBundledPhoto);
       }
       await caches.delete(name);
     }
+    await trimPhotos(photos,PHOTO_LIMIT,isBundledPhoto);
     await self.clients.claim();
   })());
 });
@@ -34,12 +70,12 @@ self.addEventListener('fetch', event => {
   if(req.method!=='GET') return;
   const url=new URL(req.url);
   // Keep already-viewed ingredient photos available when the device is offline.
-  if(url.hostname==='huggingface.co' && url.pathname.startsWith('/datasets/ionicam/ingredient-atlas/resolve/main/images/')) {
+  if(isRemoteIngredient(url)) {
     event.respondWith(caches.open(CACHE).then(async cache => {
       const saved=await cache.match(req);
       try {
         const res=await fetch(req);
-        if(res.ok || res.type==='opaque') cache.put(req,res.clone());
+        if(res.ok || res.type==='opaque') await storePhoto(cache,req,res.clone(),REMOTE_PHOTO_LIMIT,isRemoteIngredient).catch(() => {});
         return res;
       } catch(e) { if(saved)return saved; throw e; }
     }));
@@ -63,7 +99,7 @@ self.addEventListener('fetch', event => {
           return saved || response;
         }
         if (cache) {
-          try { await cache.put(cacheKey, response.clone()); } catch { /* Storage may be full. */ }
+          try { await storePhoto(cache, cacheKey, response.clone(), PHOTO_LIMIT, isBundledPhoto); } catch { /* Storage may be full. */ }
         }
         return response;
       } catch (error) {
@@ -75,10 +111,24 @@ self.addEventListener('fetch', event => {
   }
   // Always try a fresh page first; use the cached shell if disconnected.
   if(req.mode==='navigate') {
-    event.respondWith(fetch(req).then(res => {
-      if(res.ok){const c=res.clone(); caches.open(CACHE).then(cache => cache.put('./index.html',c));}
-      return res;
-    }).catch(() => caches.match('./index.html')));
+    if(!isShellNavigation(url)) return;
+    event.respondWith((async () => {
+      const fallback = () => caches.open(CACHE).then(cache=>cache.match(shellURL.href)).catch(()=>undefined);
+      let response;
+      try { response=await fetch(req); }
+      catch (error) {
+        const saved=await fallback();
+        if(saved)return saved;
+        throw error;
+      }
+      if(response.status>=500) return await fallback() || response;
+      const destination = response.url && new URL(response.url);
+      if(response.ok && destination?.origin===scope.origin && isShellNavigation(destination) &&
+        /^text\/html\b/i.test(response.headers.get('content-type') || '')) {
+        try { await (await caches.open(CACHE)).put(shellURL.href,response.clone()); } catch { /* Cache unavailable. */ }
+      }
+      return response;
+    })());
     return;
   }
   // Keep image files on-device after first visit, without precaching the entire photo library.

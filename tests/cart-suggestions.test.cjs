@@ -16,6 +16,7 @@ function scenario(recipes, pantry = {}, cart = {}, groups = []) {
     have: pantry,
     cart,
     cartMeals: groups,
+    tableSelections: [],
     matchesFilters: (recipe) => Boolean(recipe[1]),
     effP: () => 10,
     IMG: {},
@@ -99,6 +100,7 @@ test('spreads suggestions across cuisines and different outstanding ingredients'
 test('the suggested card lists only pending ingredients and mobile CSS has two columns', () => {
   const state = scenario([{name: 'Carrot snack', ingredients: ['carrot', 'fennel', 'jaggery']}], {carrot: 1}, {jaggery: 1});
   const markup = state.cartDishCard(state.cartDishes(1)[0]);
+  assert.match(markup, /data-table-dish=/);
   assert.match(markup, /fennel/);
   assert.doesNotMatch(markup, /<span>carrot<\/span>|<span>jaggery<\/span>/);
   assert.match(markup, /1 more ingredient/);

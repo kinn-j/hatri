@@ -1,14 +1,15 @@
 /* Hatri authentication for the GitHub Pages / static-hosted app.
    Complete FIREBASE_CONFIG from your own Firebase Console web-app settings.
    These client identifiers are public; never paste a service-account key here. */
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.3.0/firebase-app.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js';
 import {
   getAuth, browserLocalPersistence, setPersistence, onAuthStateChanged,
   GoogleAuthProvider, signInWithPopup, signOut, connectAuthEmulator
-} from 'https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js';
+} from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js';
 import {
-  getFirestore, doc, getDoc, setDoc, serverTimestamp, Timestamp, connectFirestoreEmulator
-} from 'https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js';
+  getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, connectFirestoreEmulator
+} from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
+import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-functions.js';
 import { createActivityTracker } from './activity.js';
 
 const FIREBASE_CONFIG = {
@@ -28,9 +29,11 @@ let database = null;
 let currentUser = null;
 let loadedUid = null;
 let syncReady = false;
-let lastSynced = '';
+let syncState = null;
+let applyingCloud = false;
 let saveTimer = null;
 let syncMessage = 'Your changes are saved on this device.';
+export let functions;
 
 function safeText(value) {
   return typeof value === 'string' ? value : '';
@@ -86,6 +89,7 @@ function renderProfileDrawer() {
   name.translate = false;
   name.textContent = safeText(currentUser.displayName) || 'Hatri cook';
   const email = document.createElement('span');
+  email.translate = false;
   email.textContent = safeText(currentUser.email);
   identity.append(name, email);
   card.append(identity);
@@ -167,48 +171,130 @@ function localSnapshot() {
 
 function applyCloud(data) {
   if (!data || !data.core) return;
-  window.applyState(data.core);
+  (window.replaceCoreState || window.applyState)(data.core);
+  const flags = value => HatriPreferences.values(value, entry => entry === 1 || entry === true);
   if (data.filters && typeof data.filters === 'object') {
-    window.RS = data.filters.r || {};
-    window.OS = data.filters.o || {};
+    window.RS = flags(data.filters.r);
+    window.OS = flags(data.filters.o);
     window.migrateWinterOccasion(window.OS, data.filters.winter);
-    window.TS = data.filters.t || {};
+    window.TS = flags(data.filters.t);
   }
   const c = data.choices || {};
-  if (c.sel && typeof c.sel === 'object' && Object.keys(c.sel).length) window.sel = c.sel;
+  const selected = flags(c.sel);
+  if (Object.keys(selected).length) window.sel = selected;
   if (typeof c.crs === 'string') window.crs = c.crs;
   if (typeof c.sweet === 'boolean') window.wSweet = c.sweet;
   if (typeof c.side === 'boolean') window.wSide = c.side;
   if (typeof c.protein === 'boolean') window.wProt = c.protein;
   if (typeof c.occasion === 'string') window.occ = c.occasion;
-  window.MY = data.ratings && typeof data.ratings === 'object' ? data.ratings : {};
+  window.MY = HatriPreferences.values(data.ratings, HatriPreferences.isMap);
   window.syncT();
+  window.filterBaseline = null;
   window.saveF();
   window.all();
 }
 
 function queueSave() {
-  if (!syncReady || !currentUser || !database) return;
+  const state = syncState;
+  if (applyingCloud || !state || auth.currentUser?.uid !== state.uid) return;
+  const payload = localSnapshot();
+  const base = state.ready ? state.base : state.start;
+  const dirty = !HatriPreferences.equal(base, payload);
+  try {
+    if (dirty) {
+      const earlier = !state.ready && JSON.parse(localStorage.getItem(state.key) || 'null');
+      const journal = earlier?.target
+        ? {base:earlier.base, target:HatriPreferences.merge(state.start,payload,earlier.target)}
+        : {base,target:payload};
+      localStorage.setItem(state.key, JSON.stringify(journal));
+    } else if (state.ready) localStorage.removeItem(state.key);
+  } catch { /* Account data still lives in the current tab. */ }
   clearTimeout(saveTimer);
-  const uid = currentUser.uid;
-  saveTimer = setTimeout(async () => {
-    if (!auth.currentUser || auth.currentUser.uid !== uid || !syncReady) return;
-    const payload = localSnapshot();
-    const serialized = JSON.stringify(payload);
-    if (serialized === lastSynced) return;
-    lastSynced = serialized;
-    status('Saving your kitchen…');
-    try {
-      await setDoc(doc(database, 'users', uid, 'preferences', 'app'),
-        { ...payload, updatedAt: serverTimestamp() });
-      if (auth.currentUser && auth.currentUser.uid === uid) status('✓ Saved to your account');
-    } catch (error) {
-      lastSynced = '';
-      status('Cloud save failed. Your selections are still on this device.');
-      console.warn('Hatri sync error', error.code || error.message);
-    }
-  }, 900);
+  if (dirty && state.ready && !state.writing) saveTimer = setTimeout(() => flushPreferences(state), 500);
 }
+
+function restoreCloudView(payload) {
+  applyingCloud = true;
+  try { applyCloud(payload); }
+  finally { applyingCloud = false; }
+}
+
+function flushPreferences(state = syncState) {
+  if (!state?.ready || syncState !== state || auth.currentUser?.uid !== state.uid) return Promise.resolve();
+  if (state.writing) return state.writing;
+  clearTimeout(saveTimer);
+  const payload = localSnapshot();
+  if (HatriPreferences.equal(state.base, payload)) return Promise.resolve();
+  const ref = doc(database, 'users', state.uid, 'preferences', 'app');
+  status('Saving your kitchen…');
+  state.writing = runTransaction(database, async transaction => {
+    const remote = await transaction.get(ref);
+    if (syncState !== state || auth.currentUser?.uid !== state.uid) throw Error('Account changed');
+    let merged = payload;
+    if (remote.exists()) {
+      const { updatedAt, ...latest } = remote.data();
+      merged = HatriPreferences.merge(state.base || state.start, payload, latest);
+    }
+    transaction.set(ref, {...merged, updatedAt:serverTimestamp()});
+    return merged;
+  }).then(merged => {
+    if (syncState !== state || auth.currentUser?.uid !== state.uid) return;
+    const next = HatriPreferences.merge(payload, localSnapshot(), merged);
+    restoreCloudView(merged);
+    state.base = localSnapshot();
+    if (!HatriPreferences.equal(next, merged)) restoreCloudView(next);
+    status('✓ Saved to your account');
+    state.writing = null;
+    queueSave();
+  }).catch(error => {
+    state.writing = null;
+    if (syncState !== state) return;
+    status('Cloud save pending. Your changes are still on this device.');
+    if (error.code !== 'permission-denied' && navigator.onLine) {
+      saveTimer = setTimeout(() => flushPreferences(state), 30_000);
+    }
+    console.warn('Hatri sync error', error.code || error.message);
+  });
+  return state.writing;
+}
+
+async function loadPreferences(state) {
+  if (state.loading || syncState !== state) return;
+  state.loading = true;
+  try {
+    const ref = doc(database, 'users', state.uid, 'preferences', 'app');
+    const snapshot = await getDoc(ref);
+    if (syncState !== state || auth.currentUser?.uid !== state.uid) return;
+    if (snapshot.exists()) {
+      const duringLoad = localSnapshot();
+      let journal;
+      try { journal = JSON.parse(localStorage.getItem(state.key) || 'null'); } catch {}
+      restoreCloudView(snapshot.data());
+      state.base = localSnapshot();
+      const recovered = journal?.target ? HatriPreferences.merge(journal.base || state.start, journal.target, state.base) : state.base;
+      const merged = HatriPreferences.merge(state.start, duringLoad, recovered);
+      if (!HatriPreferences.equal(merged, state.base)) restoreCloudView(merged);
+      status('✓ Your saved kitchen is ready');
+    } else {
+      status('Creating your private kitchen…');
+    }
+    syncReady = state.ready = true;
+    window.renderResults();
+    window.renderPick();
+    window.renderKitchen();
+    renderAccount();
+  } catch (error) {
+    if (syncState !== state) return;
+    syncReady = false;
+    status('Cloud load pending. Your changes are still on this device.');
+    console.warn('Hatri account load failed', error.code || error.message);
+  } finally { state.loading = false; }
+}
+
+window.addEventListener('online', () => {
+  if (syncState && !syncState.ready) loadPreferences(syncState);
+  else flushPreferences();
+});
 
 // Existing recipe, filter and pantry handlers use these functions already.
 for (const fn of ['save', 'saveF', 'renderResults']) {
@@ -256,8 +342,17 @@ function clearPreviousAccount() {
   window.RS = {};
   window.OS = {};
   window.TS = {};
+  window.preferenceOwner = null;
+  window.coreBaseline = null;
+  window.filterBaseline = null;
   window.defaults();
   window.syncT();
+  for (const id of ['rq','q','bkText']) {
+    const field = document.getElementById(id);
+    if (field) field.value = '';
+  }
+  const recipe = document.getElementById('dtray');
+  if (recipe?.open) recipe.close();
   try {
     localStorage.removeItem(window.LS);
     localStorage.removeItem('rr-filters-v2');
@@ -286,6 +381,9 @@ document.addEventListener('click', async event => {
     if (action === 'google') {
       await signInWithPopup(auth, new GoogleAuthProvider());
     } else if (action === 'logout') {
+      let deadline;
+      await Promise.race([flushPreferences(), new Promise(resolve => { deadline = setTimeout(resolve, 4000); })]);
+      clearTimeout(deadline);
       await signOut(auth);
     }
   } catch (error) {
@@ -296,20 +394,25 @@ document.addEventListener('click', async event => {
 if (!isClaude && configured) {
   try {
     const app = initializeApp(FIREBASE_CONFIG);
+    const siteKey = document.querySelector('meta[name="hatri-app-check"]')?.content;
+    if (siteKey) {
+      const {initializeAppCheck, ReCaptchaEnterpriseProvider} = await import('https://www.gstatic.com/firebasejs/13.4.0/firebase-app-check.js');
+      initializeAppCheck(app, {provider:new ReCaptchaEnterpriseProvider(siteKey),isTokenAutoRefreshEnabled:true});
+    }
     auth = getAuth(app);
     database = getFirestore(app);
+    functions = getFunctions(app);
     if (location.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(location.hostname)) {
       connectAuthEmulator(auth, `http://${location.hostname}:9099`, { disableWarnings: true });
       connectFirestoreEmulator(database, location.hostname, 8080);
+      connectFunctionsEmulator(functions, location.hostname, 5001);
     }
-    const activity = createActivityTracker(async (uid, event) => {
+    const activity = createActivityTracker(async (uid, clientId, event) => {
       if (auth.currentUser?.uid !== uid) return;
-      const ref = doc(database, 'users', uid, 'activityEvents', event.sessionId + '-' + event.sequence);
-      await setDoc(ref, {
-        ...event,
-        createdAt: serverTimestamp(),
-        expiresAt: Timestamp.fromMillis(Date.now() + 90 * 24 * 60 * 60 * 1000)
-      });
+      await httpsCallable(functions, 'recordActivity')({...event,clientId});
+    }, async (uid, clientId, enabled) => {
+      if (auth.currentUser?.uid !== uid) return;
+      await setDoc(doc(database, 'users', uid, 'activityConsent', clientId), {enabled,updatedAt:serverTimestamp()});
     });
     await setPersistence(auth, browserLocalPersistence);
     onAuthStateChanged(auth, async newUser => {
@@ -321,46 +424,29 @@ if (!isClaude && configured) {
         return;
       }
       clearTimeout(saveTimer);
-      const previous = loadedUid;
+      const previous = loadedUid || window.preferenceOwner;
       syncReady = false;
+      syncState = null;
       currentUser = newUser;
       if (!newUser && previous) document.getElementById('rr-profile-drawer').close();
       loadedUid = newUser ? newUser.uid : null;
-      lastSynced = '';
+      if (previous && previous !== loadedUid) {
+        try { localStorage.removeItem('hatri-pending-preferences:' + previous); } catch {}
+        clearPreviousAccount();
+      }
       if (!newUser) {
-        if (previous) clearPreviousAccount();
         status('Sign in with Google to sync your saved kitchen.');
         renderAccount();
         return;
       }
-      if (previous && previous !== newUser.uid) clearPreviousAccount();
       window.ME = newUser.uid;
+      window.preferenceOwner = newUser.uid;
       status('Loading your saved kitchen…');
       renderAccount();
       const uid = newUser.uid;
-      try {
-        const ref = doc(database, 'users', uid, 'preferences', 'app');
-        const snapshot = await getDoc(ref);
-        if (!auth.currentUser || auth.currentUser.uid !== uid) return;
-        if (snapshot.exists()) {
-          applyCloud(snapshot.data());
-          lastSynced = JSON.stringify(localSnapshot());
-          status('✓ Your saved kitchen is ready');
-        } else {
-          status('Creating your private kitchen…');
-          syncReady = true;
-          queueSave(); // Import the current guest selections only for a new account.
-        }
-        syncReady = true;
-        window.renderResults();
-        window.renderPick();
-        window.renderKitchen();
-        renderAccount();
-      } catch (error) {
-        syncReady = false; // Never overwrite remote data if the initial read failed.
-        status('Could not load your cloud data. Please refresh and check the database rules.');
-        console.warn('Hatri account load failed', error.code || error.message);
-      }
+      const start = localSnapshot();
+      const state = syncState = {uid, start, base:null, ready:false, key:'hatri-pending-preferences:' + uid};
+      await loadPreferences(state);
     });
   } catch (error) {
     status('Account setup error. Please check your Firebase configuration.');

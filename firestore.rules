@@ -16,57 +16,23 @@ service cloud.firestore {
         && request.resource.data.choices is map
         && request.resource.data.ratings is map;
     }
-    // Activity is append-only through the website. Project members with IAM
-    // access can query it via the Firebase Console or an Admin SDK.
-    match /users/{userId}/activityEvents/{eventId} {
-      allow create: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.keys().hasOnly([
-          'sessionId', 'sequence', 'event', 'surface', 'detail', 'createdAt', 'expiresAt'
-        ])
-        && request.resource.data.sessionId is string
-        && request.resource.data.sessionId.matches('^[a-f0-9-]{36}$')
-        && request.resource.data.sequence is int
-        && request.resource.data.sequence >= 1 && request.resource.data.sequence <= 150
-        && request.resource.data.surface in ['recipes', 'pantry', 'plan', 'order', 'kitchen', 'winter', 'christmas']
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.expiresAt is timestamp
-        && request.resource.data.expiresAt > request.time
-        && request.resource.data.expiresAt <= request.time + duration.value(91, 'd')
-        && (
-          (request.resource.data.event == 'recipe_open'
-            && request.resource.data.detail is string
-            && request.resource.data.detail.matches('^[a-z0-9-]{1,110}$'))
-          || (request.resource.data.event in [
-            'page_view', 'recipe_search', 'profile_open', 'filters_open', 'filters_apply',
-            'category_select', 'pantry_browse', 'pantry_edit', 'cart_add', 'cart_edit', 'decide', 'mode_change'
-          ] && request.resource.data.detail == '')
-        );
+    match /users/{userId}/activityConsent/{clientId} {
+      allow create, update: if request.auth != null && request.auth.uid == userId
+        && clientId.matches('^[a-f0-9-]{36}$')
+        && request.resource.data.keys().hasOnly(['enabled', 'updatedAt'])
+        && request.resource.data.enabled is bool
+        && request.resource.data.updatedAt == request.time;
     }
-    // Public recipe videos: metadata is readable by everyone, but only the
-    // authenticated owner may create or update their own post.
+    // Only the trusted backend can publish, edit or remove a video.
     match /publicRecipeVideos/{videoId} {
-      allow read: if true;
-      allow create: if request.auth != null
-        && request.resource.data.ownerUid == request.auth.uid
-        && request.resource.data.keys().hasOnly([
-          'ownerUid', 'creatorName', 'title', 'caption', 'status', 'createdAt'
-        ])
-        && request.resource.data.status == 'uploading'
-        && request.resource.data.title is string
-        && request.resource.data.title.size() >= 1
-        && request.resource.data.title.size() <= 80;
-      allow update: if request.auth != null
-        && resource.data.ownerUid == request.auth.uid
-        && request.resource.data.ownerUid == resource.data.ownerUid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'videoUrl', 'status', 'sizeBytes', 'contentType'
-        ])
-        && request.resource.data.status == 'published'
-        && request.resource.data.videoUrl is string
-        && request.resource.data.contentType in ['video/mp4', 'video/webm', 'video/quicktime']
-        && request.resource.data.sizeBytes is int
-        && request.resource.data.sizeBytes <= 104857600;
-      allow delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+      allow get: if resource.data.version == 2 && resource.data.status == 'published';
+      allow list: if resource.data.version == 2 && resource.data.status == 'published'
+        && request.query.limit <= 30;
+    }
+    match /reelDrafts/{videoId} {
+      allow get: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+      allow list: if request.auth != null && resource.data.ownerUid == request.auth.uid
+        && request.query.limit <= 30;
     }
     // All other paths are denied.
 

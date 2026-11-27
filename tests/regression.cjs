@@ -11,6 +11,7 @@ const {execFile, spawnSync} = require('node:child_process');
 const git = require('node:util').promisify(execFile);
 const previousRelease = 'fde94edb12e763c367ea64e937eb7e77f496de21';
 let servePreviousRelease = false;
+let disconnectOrigin = false;
 
 const root = path.resolve(__dirname, '..');
 let server, browser, url;
@@ -19,6 +20,7 @@ const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'applica
 
 test.before(async () => {
   server = http.createServer(async (req, res) => {
+    if (disconnectOrigin) { req.socket.destroy(); return; }
     const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
     const filename = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     if (!filename.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
@@ -42,9 +44,10 @@ test.before(async () => {
   browser = await engine.launch({headless: true, executablePath: process.env.HATRI_BROWSER_PATH || undefined});
 });
 test.after(async () => { await browser?.close(); await new Promise(resolve => server?.close(resolve)); });
+test.afterEach(() => { disconnectOrigin = false; });
 
 async function open(viewport = { width: 390, height: 844 }, device = {}, translationRequests) {
-  const context = await browser.newContext({ viewport, reducedMotion: 'reduce', ...device });
+  const context = await browser.newContext({ viewport, reducedMotion: 'reduce', serviceWorkers: 'block', ...device });
   // Deterministic offline-image fallback; external auth/provider connectivity is not under test.
   await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, route => route.abort());
   await mockGoogleTranslate(context, translationRequests);
@@ -168,9 +171,11 @@ test('all 1096+ recipes have categories, match Excel, and have no total browsing
     assert.deepEqual(audit.invalid,[], 'each recipe is assigned to a real category');
     assert.equal(audit.count,audit.enabled,'All dishes category shows every dish allowed by Veg/Hostel Mode');
 
-    const checker=spawnSync('python3',[path.join(root,'scripts/check-catalog-workbook.py')],{
+    const python=process.platform==='win32'?'python':'python3';
+    const checker=spawnSync(python,[path.join(root,'scripts/check-catalog-workbook.py')],{
       input:JSON.stringify(audit.catalog),encoding:'utf8',maxBuffer:8*1024*1024,
     });
+    assert.ifError(checker.error);
     assert.equal(checker.status,0,(checker.stderr||'')+'\n'+(checker.stdout||''));
 
     const filtered = await page.evaluate(() => {
@@ -190,16 +195,23 @@ test('all 1096+ recipes have categories, match Excel, and have no total browsing
     await page.locator('#results [data-more-sentinel]').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => document.querySelectorAll('#results details.tile').length >= 200);
     assert.ok(await page.locator('#results [data-load-more]').isVisible(),'show-all fallback remains available');
-    await page.locator('#results [data-load-more]').click();
+    // WebKit's scroll anchoring can keep moving this sentinel while the
+    // automatic batch loader replaces it. Invoke the still-visible fallback
+    // directly to verify its action without racing its viewport position.
+    await page.locator('#results [data-load-more]').evaluate(button => button.click());
     assert.equal(await page.locator('#results details.tile').count(),audit.enabled,'every allowed dish can be rendered');
     assert.equal(await page.locator('#results [data-more-sentinel]').count(),0,'no hidden later page');
 
     await page.locator('#rq').fill('a');
     const searched=await page.evaluate(()=>({shown:document.querySelectorAll('#results details.tile').length,
       matching:MEALS.filter(m=>matchesModes(m)&&searchLabels(m).join(' ').toLowerCase().includes('a')).length}));
-    assert.equal(searched.shown,Math.min(100,searched.matching),'search progressively loads matches');
-    if(searched.matching>100){
-      await page.locator('#results [data-load-more]').click();
+    // IntersectionObserver can load further 100-card batches before this
+    // measurement, especially in WebKit. That is expected, not a cap.
+    assert.ok(searched.shown>0&&searched.shown<=searched.matching&&
+      (searched.shown===searched.matching||searched.shown%100===0),
+      'search progressively loads complete batches without exceeding matches');
+    if(searched.matching>searched.shown){
+      await page.locator('#results [data-load-more]').evaluate(button => button.click());
       assert.equal(await page.locator('#results details.tile').count(),searched.matching,'search has no result cap');
     }
   } finally { await context.close(); }
@@ -323,6 +335,49 @@ test('five- and four-dish meals can both be saved to Table and survive reload', 
   } finally {await context.close()}
 });
 
+test('a cart change in another open tab preserves a saved Table selection', async () => {
+  const {page,context}=await open(undefined,{serviceWorkers:'block'});
+  try {
+    const other=await context.newPage();
+    await other.goto(url,{waitUntil:'domcontentloaded'});
+    await other.waitForFunction(()=>window.MFREADY===true);
+    await page.locator('#rq').fill('Gajar Halwa');
+    await page.locator('#results summary [data-table-dish]').first().click();
+    await other.locator('#rq').fill('Gajar Halwa');
+    await other.locator('#results summary[data-open-dish]').first().click();
+    await other.locator('#dtray [data-add]').click();
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('.tabbar [data-view="table"]').click();
+    assert.match(await page.locator('.table-selection').textContent(),/Gajar Halwa/);
+  } finally { await context.close(); }
+});
+
+test('a pantry and filter backup restores valid filters and rejects malformed maps', async () => {
+  const {page,context}=await open();
+  const region=async name=>{
+    await page.locator('#slides [data-mf-open]').click();
+    await page.locator('[data-mf-option="r|'+name+'"]').click();
+    await page.locator('[data-mf-apply]').click();
+  };
+  try {
+    await region('Punjabi');
+    await page.locator('.tabbar [data-view="kitchen"]').click();
+    await page.locator('[data-bk="copy"]').click();
+    const backup=await page.locator('#bkText').inputValue();
+    await page.locator('.tabbar [data-view="recipes"]').click();
+    await region('Bengali');
+    await page.locator('.tabbar [data-view="kitchen"]').click();
+    await page.locator('#bkText').fill(backup);
+    await page.locator('[data-bk="restore"]').click();
+    assert.deepEqual(await page.evaluate(()=>Object.keys(RS)),['Punjabi']);
+    const invalid=Buffer.from(JSON.stringify({have:[],cart:{}})).toString('base64');
+    await page.locator('#bkText').fill(invalid);
+    await page.locator('[data-bk="restore"]').click();
+    assert.match(await page.locator('#toast').textContent(),/isn’t valid/);
+    assert.deepEqual(await page.evaluate(()=>Object.keys(RS)),['Punjabi']);
+  } finally { await context.close(); }
+});
+
 test('Hindi translation does not corrupt late CSS or leave account button visible', async () => {
   const {page, context} = await open();
   await page.locator('#langBtn').click();
@@ -434,9 +489,60 @@ test('Hindi recipe amounts and every cooking step render with Google Translate b
     });
     assert.match(await page.locator('#dtray .steps ul').innerText(), /गाजर/);
     assert.doesNotMatch(await page.locator('#dtray .steps ol').innerText(), /Peel and grate the carrots/);
+    assert.equal(await page.locator('#dtray .steps ol').locator('..').getAttribute('lang'), 'hi');
+    assert.equal(await page.locator('#dtray [data-translation-fallback]').isVisible(), false);
     assert.ok(requests.every(request => !request.includes('Gajar Halwa')));
     await page.locator('#dtray [data-recipe-language="en"]').click();
     await page.waitForFunction(() => document.querySelector('#dtray .steps ol')?.textContent.includes('Peel and grate the carrots'));
+  } finally { await context.close(); }
+});
+
+test('a missing Hindi method stays labeled in English and is kept off the translation network', async () => {
+  const requests = [];
+  const {page,context} = await open(undefined,{serviceWorkers:'block'},requests);
+  try {
+    await context.route('**/hindi-catalog.js',async route => {
+      const content = await fs.readFile(path.join(root,'hindi-catalog.js'),'utf8');
+      await route.fulfill({contentType:'text/javascript',body:content+'\nHATRI_HINDI_CATALOG.steps = {};' });
+    });
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('#langBtn').click();
+    await page.locator('#rq').fill('gajar halwa');
+    await page.locator('#results [data-recipe="Gajar%20Halwa"] summary').first().click();
+    await page.locator('#dtray [data-translation-fallback]').waitFor({state:'visible'});
+    const method = page.locator('#dtray .steps ol');
+    assert.match(await method.textContent(),/Peel and grate the carrots/);
+    assert.equal(await method.locator('li').first().getAttribute('lang'),'en');
+    assert.ok(requests.every(request => !request.includes('Peel and grate the carrots')));
+  } finally { await context.close(); }
+});
+
+test('live pantry labels and elapsed soak time agree with recipe suggestions', async () => {
+  const {page,context}=await open();
+  try {
+    await page.locator('#rq').fill('Paan Kulfi');
+    await page.locator('#results summary[data-open-dish]').first().click();
+    assert.match(await page.locator('#dtray .shop-item').allTextContents().then(labels=>labels.join(' ')),/Paan leaves.*Gulkand/);
+    await page.locator('#dish-detail-close').click();
+    await page.locator('#rq').fill('Moong Dal Chilla');
+    assert.match(await page.locator('#results [data-recipe="Moong%20Dal%20Chilla"] .tm').first().textContent(),/142 min/);
+    await page.locator('#rq').fill('');
+    await page.locator('#slides [data-sf="t|t2"]').click();
+    await page.locator('#rq').fill('Moong Dal Chilla');
+    assert.equal(await page.locator('#results [data-recipe="Moong%20Dal%20Chilla"]').count(),0);
+  } finally { await context.close(); }
+});
+
+test('the planner starts when browser storage is denied', async () => {
+  const {page,context}=await open(undefined,{serviceWorkers:'block'});
+  try {
+    await context.addInitScript(()=>{
+      Object.defineProperty(window,'localStorage',{get(){throw new DOMException('Unavailable','SecurityError');}});
+    });
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>window.MFREADY===true && !!document.querySelector('#results .meal-sets'));
+    await page.locator('.tabbar [data-view="table"]').click();
+    await page.locator('#table-list .table-empty').waitFor({state:'visible'});
   } finally { await context.close(); }
 });
 
@@ -600,7 +706,7 @@ test('recipe details cover the entire live catalog and render measured methods i
   }
 });
 
-test('whole meals show themed six-, five- and four-dish sets and clearly separate the ready subset', async () => {
+test('whole meals show themed six-, five- and four-dish sets and clearly separate the ready subset', {timeout:90_000}, async () => {
   for (const width of [320, 1024]) {
     const {page, context} = await open({width, height: 844});
     try {
@@ -633,6 +739,7 @@ test('whole meals show themed six-, five- and four-dish sets and clearly separat
       const grid = cards.first().locator('summary .mos');
       const photos = grid.locator('.mc img');
       assert.equal(await photos.count(), 6);
+      await grid.scrollIntoViewIfNeeded();
       await photos.evaluateAll(images => Promise.all(images.map(image => image.decode())));
       assert.equal(new Set(await grid.locator('.meal-caption').allTextContents()).size, 6);
       assert.equal(await grid.evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length), 3);
@@ -853,26 +960,25 @@ test('dish photo and text open the same full recipe on mobile and desktop', asyn
 });
 
 test('offline service worker installs and controls subsequent navigation', async () => {
-  const {page, context} = await open();
-  await page.waitForFunction(async () => !!(await navigator.serviceWorker.getRegistration()), { timeout: 10000 });
-  await page.reload({waitUntil:'domcontentloaded'});
-  const controlled = await page.evaluate(async () => {
-    await navigator.serviceWorker.ready;
-    return !!navigator.serviceWorker.controller;
-  });
-  assert.equal(controlled, true);
-  await context.setOffline(true);
-  await page.reload({waitUntil:'domcontentloaded'});
-  await page.waitForFunction(() => window.MFREADY === true);
-  assert.equal(await page.evaluate(async () => {
-    const preview = new Image();
-    preview.src = document.querySelector('#results .meal-preview image').getAttribute('href');
-    await preview.decode();
-    return preview.naturalWidth === mealPreviewSize * mealPreviewColumns;
-  }), true);
-  await page.locator('#rq').fill('gobi pakora');
-  assert.match(await page.locator('#results .steps').first().textContent(), /250 g small cauliflower florets/);
-  await context.close();
+  const {page, context} = await open(undefined,{serviceWorkers:'allow'});
+  try {
+    await page.waitForFunction(() => navigator.serviceWorker.controller?.state === 'activated', null, {timeout:20_000});
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, {timeout:10_000});
+    disconnectOrigin = true;
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(() => window.MFREADY === true);
+    await page.evaluate(() => {
+      const preview = new Image();
+      preview.id = 'offline-preview-probe';
+      preview.src = document.querySelector('#results .meal-preview image').getAttribute('href');
+      document.body.append(preview);
+    });
+    await page.waitForFunction(() => document.getElementById('offline-preview-probe').naturalWidth ===
+      mealPreviewSize * mealPreviewColumns, null, {timeout:45_000});
+    await page.locator('#rq').fill('gobi pakora');
+    assert.match(await page.locator('#results .steps').first().textContent(), /250 g small cauliflower florets/);
+  } finally { await context.close(); }
 });
 
 test('closed browse cards render full recipe content only when opened', async () => {
@@ -914,6 +1020,67 @@ test('community video code loads once when opening Reels', async () => {
     assert.equal(loads, 1);
     assert.equal(await page.locator('#reels-upload-open').isEnabled(), true);
   } finally { await context.close(); }
+});
+
+test('cancelling an in-flight Reel upload never invokes publication and Back returns to Cook', {timeout:45_000}, async () => {
+  const context = await browser.newContext({viewport:{width:320,height:700},serviceWorkers:'block'});
+  let releaseTransfer;
+  const pending = new Promise(resolve => { releaseTransfer=resolve; });
+  const modules = {
+    'firebase-app.js':'export const initializeApp=()=>({}),getApp=()=>({});',
+    'firebase-auth.js':`
+      const auth={currentUser:{uid:'cook'}};
+      export const getAuth=()=>auth,browserLocalPersistence={},setPersistence=async()=>{};
+      export const GoogleAuthProvider=class {},signInWithPopup=async()=>{},signOut=async()=>{},connectAuthEmulator=()=>{};
+      export const onAuthStateChanged=(value,callback)=>queueMicrotask(()=>callback(value.currentUser));
+    `,
+    'firebase-firestore.js':`
+      export const getFirestore=()=>({}),doc=()=>({}),getDoc=async()=>({exists:()=>false});
+      export const setDoc=async()=>{},serverTimestamp=()=>0,connectFirestoreEmulator=()=>{};
+      export const runTransaction=async (_,action)=>action({get:getDoc,set:()=>{}});
+      export const collection=()=>({}),limit=()=>({}),orderBy=()=>({}),query=()=>({}),where=()=>({});
+      export const onSnapshot=(_,callback)=>{callback({empty:true});return ()=>{};};
+    `,
+    'firebase-functions.js':`
+      window.uploadCalls=[];
+      export const getFunctions=()=>({}),connectFunctionsEmulator=()=>{};
+      export const httpsCallable=(_,name)=>async()=>{
+        window.uploadCalls.push(name);
+        return {data:{id:'test-video-id-123456',policy:{url:'https://storage.googleapis.com/hatri-test/',fields:{key:'clip'}}}};
+      };
+    `,
+  };
+  try {
+    await context.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
+    await context.route('https://www.gstatic.com/firebasejs/**',route=>{
+      const name=new URL(route.request().url()).pathname.split('/').at(-1);
+      return route.fulfill({contentType:'text/javascript',headers:{'Access-Control-Allow-Origin':'*'},body:modules[name]});
+    });
+    await context.route('https://storage.googleapis.com/hatri-test/',async route=>{
+      const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST, OPTIONS'};
+      if(route.request().method()==='OPTIONS')return route.fulfill({status:204,headers});
+      await pending;
+      await route.fulfill({status:204,headers}).catch(()=>{});
+    });
+    const page=await context.newPage();
+    await page.goto(url,{waitUntil:'domcontentloaded'});
+    await page.locator('.tabbar [data-view="reels"]').click();
+    await page.getByText('No community videos yet.').waitFor();
+    await page.locator('#reels-upload-open').click();
+    await page.locator('#reels-title-input').fill('Test recipe');
+    await page.locator('#reels-video-input').setInputFiles(path.join(__dirname,'fixtures/test-reel.webm'));
+    const transferred=page.waitForRequest(request=>request.method()==='POST' && request.url()==='https://storage.googleapis.com/hatri-test/');
+    await page.locator('#reels-upload-submit').click();
+    await transferred;
+    await page.locator('#reels-upload-cancel').click();
+    releaseTransfer();
+    await page.waitForFunction(()=>window.uploadCalls.includes('cancelReel'));
+    assert.deepEqual(await page.evaluate(()=>window.uploadCalls),['startReel','cancelReel']);
+    assert.equal(await page.locator('#reels-upload-dialog').isVisible(),false);
+    await page.locator('#reels-back').click();
+    await page.locator('.tabbar [data-view="recipes"]').waitFor();
+    assert.equal(new URL(page.url()).searchParams.has('reels'),false);
+  } finally { releaseTransfer(); await context.close(); }
 });
 
 test('ingredient photo failures preserve the fallback and selection badge', async () => {
@@ -1321,7 +1488,7 @@ test('v28 installed cart upgrades and can finish a saved dish offline', async ()
   servePreviousRelease = true;
   let context;
   try {
-    const opened = await open(); context = opened.context;
+    const opened = await open(undefined,{serviceWorkers:'allow'}); context = opened.context;
     const page = opened.page;
     await page.evaluate(() => navigator.serviceWorker.register('./sw.js'));
     await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
@@ -1355,11 +1522,18 @@ test('v28 installed cart upgrades and can finish a saved dish offline', async ()
     const upgraded = await page.evaluate(() => caches.keys());
     assert.ok(upgraded.includes('other-app-cache'));
     assert.equal(upgraded.includes('hatri-v28-dynamic-cart-dishes'), false);
-    await context.setOffline(true);
+    disconnectOrigin = true;
     await page.reload({waitUntil:'domcontentloaded'});
     await page.waitForFunction(() => window.MFREADY === true);
     await page.locator('.tabbar [data-view="order"]').click();
     const group = page.locator('.cart-group');
+    const offlineState = await page.evaluate(() => ({
+      saved: JSON.parse(localStorage.getItem(LS)||'null'),
+      loaded: cartMeals, version: typeof tableSelections,
+      group: document.querySelector('.cart-group')?.outerHTML.slice(0,600)||null,
+      worker: navigator.serviceWorker.controller?.scriptURL||null,
+    }));
+    assert.equal(await group.count(),1,'offline cart after upgrade: '+JSON.stringify(offlineState));
     assert.equal(await group.locator('.cart-dish-name').textContent(), 'Gajar Halwa');
     await group.locator('[data-cart-add-listed="sugar"]').click();
     assert.equal(await group.locator('[data-cart-item="milk"] output').textContent(), '2');
@@ -1392,7 +1566,7 @@ test('Hindi cart controls remain tappable at 320 and 390 pixels with a failed ph
       await page.waitForFunction(() => document.querySelector('.cart-dish-name').textContent.includes('हलवा'));
       assert.match(await card.locator('.cart-dish-name').textContent(), /हलवा/);
       const buttons = card.locator('button');
-      assert.equal(await buttons.count(), 4);
+      assert.equal(await buttons.count(), 5);
       for (const button of await buttons.all()) {
         await button.tap({trial:true});
         const rect = await button.boundingBox(), outer = await card.boundingBox();
@@ -1462,8 +1636,9 @@ test('winter collection registers 50 unique recipes with working images and pant
 });
 
 test('activity writes are opt-in, scoped to the signed-in account and omit search text', async () => {
-  const {page, context} = await open();
+  const context = await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce',serviceWorkers:'block'});
   try {
+    await context.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
     // Exercise auth.js and activity.js together with a local Firebase transport.
     const modules = {
       'firebase-app.js': 'export const initializeApp = () => ({});',
@@ -1485,16 +1660,24 @@ test('activity writes are opt-in, scoped to the signed-in account and omit searc
         export const collection = () => ({}), addDoc = async () => ({id: "test-video"});
         export const limit = value => value, onSnapshot = () => () => {}, orderBy = value => value;
         export const query = (...values) => values, connectFirestoreEmulator = () => {};
+        export const runTransaction = async (db, update) => update({get:getDoc,set:() => {}});
         export const setDoc = async (path, data) => {
-          if (path[2] === "activityEvents") window.activityWrites.push({path, data});
+          if (path[2] === "activityConsent") window.testConsent = {path,data};
         };
-      `
+      `,
+      'firebase-functions.js': `
+        export const getFunctions = () => ({}), connectFunctionsEmulator = () => {};
+        export const httpsCallable = (_, name) => async data => {
+          window.activityWrites.push({name,data,consent:window.testConsent});
+        };
+      `,
     };
     await context.route('https://www.gstatic.com/firebasejs/**', route => {
       const filename = new URL(route.request().url()).pathname.split('/').at(-1);
       return route.fulfill({contentType: 'text/javascript', headers: {'Access-Control-Allow-Origin': '*'}, body: modules[filename]});
     });
-    await page.reload({waitUntil: 'domcontentloaded'});
+    const page = await context.newPage();
+    await page.goto(url,{waitUntil:'domcontentloaded'});
     await page.waitForFunction(() => typeof window.testAuth === 'function');
 
     const profile = page.locator('[data-rr-profile-open]');
@@ -1514,9 +1697,10 @@ test('activity writes are opt-in, scoped to the signed-in account and omit searc
       ['page_view', 'recipes', ''], ['recipe_search', 'recipes', ''],
       ['page_view', 'winter', ''], ['recipe_open', 'winter', 'roasted-cauliflower-soup']
     ]);
-    assert.ok(records.every(({path, data}, index) =>
-      path.join('/') === `users/test-one/activityEvents/${records[0].data.sessionId}-${index + 1}`
-      && data.createdAt === 'server-time' && data.expiresAt > Date.now()
+    assert.ok(records.every(({name, data, consent}, index) =>
+      name === 'recordActivity' && data.sessionId === records[0].data.sessionId && data.sequence === index + 1 &&
+      consent.path.join('/') === `users/test-one/activityConsent/${data.clientId}` &&
+      consent.data.enabled === true && consent.data.updatedAt === 'server-time'
     ));
     await page.locator('#dish-detail-close').click();
     await page.locator('#winter-back').click();

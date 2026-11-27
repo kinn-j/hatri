@@ -64,6 +64,7 @@ test('saved Table selections validate types and preserve distinct recipe identit
   const loaded = ctx.normalizeTableSelections([
     {kind:'meal',names,theme:'Punjabi'},
     {kind:'meal',names,theme:'Punjabi duplicate'},
+    {kind:'meal',names:names.slice().reverse(),theme:'Same meal in a different order'},
     {kind:'dish',name:'Dal Tadka'},
     {kind:'dish',name:'Dal Tadka'},
     {kind:'meal',names:['Dal Tadka','Dal Tadka']},

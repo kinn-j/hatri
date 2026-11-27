@@ -220,6 +220,21 @@ test('diet, search, unlimited shopping suggestions and clear-all code guards are
   assert.doesNotMatch(src, /if\(!anyOn\(st\)\)selAll\(k\)\}\}\}catch/);
 });
 
+test('a whole meal can take a faster bread when the most pantry-friendly choice is too slow', () => {
+  const dishes = [
+    ['Main A',5,[]],['Main B',5,[]],['Bread Slow',30,[]],['Bread Fast',5,['atta']],
+    ['Rice One',5,[]],['Raita One',5,[]],['Sweet One',5,[]],
+  ].map(([n,p,x]) => ({n,p,x,c:0,ing:['curd'],recipe:{}}));
+  const ctx=fn('function mealTime(', 'function mealTileHTML(', {
+    score:()=>dishes,course:name=>name.split(' ')[0],isLong:()=>false,
+    pairOK:()=>true,regionOf:()=>'Punjabi',REG:['Punjabi'],INTL:'International',
+    tmax:40,fitsTime:time=>time<=40,wProt:false,wSide:false,pslug:name=>name.toLowerCase()
+  });
+  const [meal]=ctx.buildMeals();
+  assert.equal(meal.t,30);
+  assert.equal(meal.items[2].n,'Bread Fast');
+});
+
 test('vegetarian panna cotta guidance excludes animal gelatin', () => {
   const eggless = src.match(/\["Eggless Panna Cotta"[^\n]*/)?.[0] || '';
   const mango = src.match(/\["Mango Panna Cotta"[^\n]*/)?.[0] || '';
@@ -309,6 +324,7 @@ test('cloud preferences ignore and omit saved heaviness selections', () => {
       migrateWinterOccasion() {}, syncT() {}, saveF() {}, all() {},
     };
     const context = vm.createContext({ window });
+    vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../preferences.js'), 'utf8'), context);
     vm.runInContext(auth.slice(start, end), context);
     context.applyCloud({
       core, filters: { ...filters, h: { Light: 1 } },
@@ -327,16 +343,15 @@ test('community video feed keeps media out of Firestore and enforces its upload 
   const rules = fs.readFileSync(path.resolve(__dirname, '../firestore.rules'), 'utf8');
   const storage = fs.readFileSync(path.resolve(__dirname, '../storage.rules'), 'utf8');
   assert.match(src, /id="reels-page"/);
-  assert.match(reels, /collection\(db, 'publicRecipeVideos'\)/);
-  assert.match(reels, /communityVideos\/\$\{signedInUser\.uid\}\/\$\{post\.id\}/);
+  assert.match(reels, /collection\(db,\s*'publicRecipeVideos'\)/);
   assert.match(reels, /MAX_BYTES = 100 \* 1024 \* 1024/);
-  assert.match(reels, /connectStorageEmulator\(storage, location\.hostname, 9199\)/);
+  assert.match(reels, /where\('status','==','published'\).*limit\(30\)/);
   const auth = fs.readFileSync(path.resolve(__dirname, '../auth.js'), 'utf8');
   assert.match(auth, /connectAuthEmulator\(auth, `http:\/\/\$\{location\.hostname\}:9099`/);
   assert.match(auth, /connectFirestoreEmulator\(database, location\.hostname, 8080\)/);
   assert.match(rules, /match \/publicRecipeVideos\/{videoId}/);
-  assert.match(storage, /match \/communityVideos\/{userId}\/{videoId}/);
-  assert.match(storage, /request\.resource\.size <= 104857600/);
+  assert.match(rules, /allow get: if resource\.data\.version == 2 && resource\.data\.status == 'published'/);
+  assert.match(storage, /allow read, write: if false/);
 });
 
 test('the first-render recipe photo paths match the published photo index', () => {
@@ -369,7 +384,8 @@ test('a failed photo decode can replace a bad cached image and reuse the repaire
   const scope = 'https://example.org/hatri/';
   const src = scope + 'images/paneer-pulao.webp?v=38';
   const entries = new Map([[src, new Response('old')]]), handlers = {};
-  const cache = {match: async key => entries.get(key)?.clone(), put: async (key, response) => entries.set(key, response)};
+  const cache = {match: async key => entries.get(key)?.clone(), put: async (key, response) => entries.set(key, response),
+    keys: async () => [...entries.keys()].map(key => new Request(key))};
   let downloads = 0;
   vm.runInNewContext(sw, {
     URL, self: {registration: {scope}, location: new URL(scope), addEventListener: (name, cb) => { handlers[name] = cb; }},
@@ -389,6 +405,25 @@ test('a failed photo decode can replace a bad cached image and reuse the repaire
   assert.equal(await (await request(src + '&photo-retry=1')).text(), 'fresh');
   assert.equal(await (await request(src)).text(), 'fresh');
   assert.equal(downloads, 1);
+});
+
+test('the service worker falls back on a server outage and leaves unrelated navigation alone', async () => {
+  const scope='https://example.test/hatri/';
+  const handlers={};
+  let writes=0;
+  vm.runInNewContext(sw,{
+    URL,self:{registration:{scope},location:new URL(scope),addEventListener:(name,callback)=>{handlers[name]=callback}},
+    caches:{open:async()=>({match:async()=>new Response('Hatri shell'),put:async()=>{writes++}})},
+    fetch:async()=>new Response('Maintenance',{status:503}),
+  });
+  const navigate=relative=>{
+    let response;
+    handlers.fetch({request:{method:'GET',mode:'navigate',url:new URL(relative,scope).href},respondWith:value=>{response=value}});
+    return response;
+  };
+  assert.equal(await (await navigate('?reels=1')).text(),'Hatri shell');
+  assert.equal(navigate('legacy/index.html'),undefined);
+  assert.equal(writes,0);
 });
 
 test('every catalog image has a unique slot in the shared WebP preview', () => {
