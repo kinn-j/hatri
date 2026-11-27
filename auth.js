@@ -238,6 +238,7 @@ function clearPreviousAccount() {
   window.have = {};
   window.cart = {};
   window.cartMeals = [];
+  window.tableSelections = [];
   window.cuis = {};
   (window.CUIS || []).forEach(name => { window.cuis[name] = 1; });
   window.app = {};
