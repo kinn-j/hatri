@@ -2,6 +2,131 @@
 globalThis.HatriTranslation = (() => {
   const cacheKey = "hatri-google-hi-v1";
   const endpoint = "https://translate.googleapis.com/translate_a/single";
+  // The unauthenticated Google endpoint sometimes serves a CAPTCHA/429 instead of
+  // JSON. Keep essential navigation, filters and pantry labels usable without it.
+  // English remains the canonical source; these are authored Hindi translations.
+  const offline = new Map(Object.entries({
+    "Hatri":"हातरी", "Hindi":"हिंदी", "English":"अंग्रेज़ी", "Language":"भाषा",
+    "Planner":"योजना", "My Kitchen":"मेरी रसोई", "Features":"सुविधाएँ", "Account":"खाता",
+    "Profile":"प्रोफ़ाइल", "Settings":"सेटिंग्स", "Appearance":"दिखावट", "Day":"दिन", "Night":"रात",
+    "Sign in with Google":"गूगल से साइन इन करें", "Log out":"लॉग आउट", "Profile and settings":"प्रोफ़ाइल और सेटिंग्स",
+    "Cook":"पकाएँ", "Kitchen":"रसोई", "Reels":"रील्स", "Shopping list":"खरीदारी की सूची",
+    "Pantry":"रसोई की सामग्री", "Filters":"फ़िल्टर", "Suggestions":"सुझाव", "Shuffle":"नए सुझाव",
+    "Search recipes":"व्यंजन खोजें", "Search recipes by voice":"बोलकर व्यंजन खोजें", "Voice search":"बोलकर खोजें",
+    'Search "chole bhature"':'"छोले भटूरे" खोजें', "Search ingredients…":"सामग्री खोजें…",
+    "Recipe modes":"व्यंजन के विकल्प", "Veg mode":"शाकाहारी मोड", "Hostel mode":"हॉस्टल मोड",
+    "VEG":"शाकाहारी", "MODE":"मोड", "HOSTEL":"हॉस्टल", "Cook with what you have":"घर में उपलब्ध सामग्री से बनाएँ",
+    "Pick ingredients from your pantry to find recipes.":"घर में मौजूद सामग्री चुनें और उससे बनने वाले व्यंजन पाएँ।",
+    "What should I cook today?":"आज क्या बनाऊँ?", "Christmas recipes":"क्रिसमस के व्यंजन",
+    "See more Christmas dish suggestions":"क्रिसमस के और व्यंजन देखें", "Winter recipes & soups":"सर्दियों के व्यंजन और सूप",
+    "Winter recipes":"सर्दियों के व्यंजन", "← Back to home":"← होम पर वापस जाएँ",
+    "Plan tonight’s meal":"आज रात का खाना तय करें", "Start with the pantry on the left, then set your occasion and time.":"पहले घर में उपलब्ध सामग्री चुनें, फिर अवसर और समय तय करें।",
+    "Pick ingredients":"सामग्री चुनें", "1 Pick what’s at home":"१ घर में मौजूद सामग्री चुनें",
+    "2 See what you can cook":"२ देखें क्या बना सकते हैं", "3 Refine with Filters":"३ फ़िल्टर से सुझाव चुनें",
+    "Quick start: common veg + dal":"आसान शुरुआत: आम सब्ज़ियाँ और दाल", "Clear all":"सब हटाएँ",
+    "Basics at home (oil, salt, haldi, masalas)":"घर में तेल, नमक, हल्दी और मसाले हैं",
+    "Show recipes":"व्यंजन दिखाएँ", "Close":"बंद करें", "Close filters":"फ़िल्टर बंद करें",
+    "More filters":"और फ़िल्टर", "Fine-tune your recipe suggestions":"व्यंजनों के सुझाव अपनी पसंद के अनुसार चुनें",
+    "Reset filters":"फ़िल्टर रीसेट करें", "Apply filters":"फ़िल्टर लागू करें",
+    "Region":"क्षेत्र", "Occasion":"अवसर", "Time":"समय", "Ready in":"तैयार होने में",
+    "Daily":"रोज़मर्रा", "Festive":"त्योहार", "Vrat":"व्रत", "Vrat / Upvas":"व्रत / उपवास",
+    "Sweets":"मिठाइयाँ", "All":"सभी", "All regions":"सभी क्षेत्र", "All occasions":"सभी अवसर",
+    "Select all":"सभी चुनें", "Clear":"हटाएँ", "Reset":"रीसेट करें", "Done":"हो गया",
+    "Include meat and egg recipes":"मांस और अंडे वाले व्यंजन भी दिखाएँ",
+    "Search results":"खोज के नतीजे", "found":"मिले", "Your active filters apply":"चुने हुए फ़िल्टर लागू हैं",
+    "No recipes match your search and filters. Try another name or reset filters.":"आपकी खोज और फ़िल्टर से कोई व्यंजन नहीं मिला। दूसरा नाम खोजें या फ़िल्टर हटाएँ।",
+    "Ready to cook":"बनाने के लिए तैयार", "Add to cart":"सूची में जोड़ें", "Remove":"हटाएँ",
+    "Dishes in your cart":"आपकी खरीदारी के व्यंजन", "Other shopping items":"अन्य खरीदारी सामग्री",
+    "More dishes to shop for":"और व्यंजन बनाने के लिए सामग्री", "Choose a dish to build your shopping list.":"खरीदारी की सूची बनाने के लिए व्यंजन चुनें।",
+    "Just 1–2 more ingredients per dish, using what you already have or plan to buy":"घर की सामग्री से बनने वाले व्यंजन, जिनके लिए केवल १–२ चीज़ें और चाहिए",
+    "Order from Blinkit":"ब्लिंकिट से मँगाएँ", "item":"सामग्री", "items":"सामग्रियाँ",
+    "Decide for me":"मेरे लिए चुनें", "🎲 Decide for me":"🎲 मेरे लिए चुनें", "Show pantry slide":"सामग्री वाला स्लाइड दिखाएँ",
+    "Show dinner ideas slide":"रात के खाने का स्लाइड दिखाएँ", "Show Christmas slide":"क्रिसमस वाला स्लाइड दिखाएँ",
+    "Show winter recipes slide":"सर्दियों के व्यंजनों का स्लाइड दिखाएँ", "Slide controls":"स्लाइड नियंत्रण",
+    "Pause slides":"स्लाइड रोकें", "Play slides":"स्लाइड चलाएँ", "Hatri highlights":"हातरी की खास बातें",
+    "Hatri Reels":"हातरी रील्स", "Cook, share, discover":"पकाएँ, साझा करें, नए व्यंजन जानें",
+    "Upload a recipe video":"व्यंजन का वीडियो अपलोड करें", "Share your recipe":"अपना व्यंजन साझा करें",
+    "Recipe name":"व्यंजन का नाम", "Caption":"विवरण", "Video":"वीडियो", "Choose video":"वीडियो चुनें",
+    "No video selected":"कोई वीडियो नहीं चुना", "Cancel":"रद्द करें", "Publish video":"वीडियो प्रकाशित करें",
+    "Made for everyday cooking":"रोज़ के खाने के लिए बनाया गया", "Pantry matching":"उपलब्ध सामग्री से सुझाव",
+    "Soak and timing":"भिगोने और बनाने का समय", "Festive, vrat, sweets":"त्योहार, व्रत और मिठाइयाँ",
+    "Regional and local":"स्थानीय और क्षेत्रीय व्यंजन", "Seasonal vegetables":"मौसमी सब्ज़ियाँ",
+    "Share activity to help improve Hatri":"हातरी को बेहतर बनाने के लिए गतिविधि साझा करें",
+    "Pahadi":"पहाड़ी", "North Indian":"उत्तर भारतीय", "South Indian":"दक्षिण भारतीय", "Rajasthani":"राजस्थानी",
+    "Punjabi":"पंजाबी", "Gujarati":"गुजराती", "Maharashtrian":"महाराष्ट्रीय", "Bengali":"बंगाली",
+    "Sindhi":"सिंधी", "Kashmiri":"कश्मीरी", "Bihari":"बिहारी", "Everyday":"रोज़मर्रा",
+    "International / National":"अंतरराष्ट्रीय / राष्ट्रीय", "Italian":"इतालवी", "Chinese":"चीनी", "Thai":"थाई",
+    "Daily vegetables":"रोज़ की सब्ज़ियाँ", "Seasonal — winter":"सर्दियों की सब्ज़ियाँ",
+    "All vegetables":"सभी सब्ज़ियाँ", "Roots & tubers":"जड़ और कंद वाली सब्ज़ियाँ",
+    "Gourds & squash":"लौकी और कद्दू वर्ग", "Leafy greens":"पत्तेदार सब्ज़ियाँ",
+    "Pods & peas":"फलियाँ और मटर", "Fruit vegetables":"फल वाली सब्ज़ियाँ",
+    "Cruciferous":"गोभी वर्ग", "Corn & fungi":"मक्का और मशरूम", "Other vegetables":"अन्य सब्ज़ियाँ",
+    "Onion":"प्याज़", "Tomato":"टमाटर", "Potato":"आलू", "Capsicum":"शिमला मिर्च", "Brinjal":"बैंगन",
+    "Bhindi":"भिंडी", "Cabbage":"पत्तागोभी", "Carrot":"गाजर", "Cucumber":"खीरा",
+    "Lauki (bottle gourd)":"लौकी", "French beans":"फ्रेंच बीन्स", "Mushroom":"मशरूम",
+    "Sweet corn":"मीठा मक्का", "Arbi (colocasia)":"अरबी", "Cauliflower":"फूलगोभी",
+    "Green peas":"हरी मटर", "Spinach (palak)":"पालक", "Sarson (mustard greens)":"सरसों का साग",
+    "Methi leaves":"मेथी के पत्ते", "Mooli (radish)":"मूली", "Beetroot":"चुकंदर",
+    "Sweet potato (shakarkandi)":"शकरकंद", "Suran (elephant yam)":"सूरन",
+    "Pumpkin":"कद्दू", "Drumstick":"सहजन", "Raw banana":"कच्चा केला", "Karela":"करेला",
+    "Tinda":"टिंडा", "Turai":"तुरई", "Coriander":"हरा धनिया", "Mint":"पुदीना",
+    "Curry leaves":"करी पत्ता", "Green chilli":"हरी मिर्च", "Ginger":"अदरक", "Garlic":"लहसुन",
+    "Lemon":"नींबू", "Coconut":"नारियल", "Raw mango":"कच्चा आम", "Mango":"आम",
+    "Banana":"केला", "Apple":"सेब", "Amla":"आँवला", "Paneer":"पनीर", "Curd":"दही",
+    "Butter":"मक्खन", "Ghee":"घी", "Milk":"दूध", "Eggs":"अंडे", "Chicken":"चिकन",
+    "Fish":"मछली", "Mutton":"मटन", "Prawn":"झींगा", "Rice":"चावल", "Atta":"आटा",
+    "Besan":"बेसन", "Suji":"सूजी", "Poha":"पोहा", "Bread":"ब्रेड", "Bajra":"बाजरा",
+    "Makki":"मक्का", "Sev":"सेव", "Makhana":"मखाना", "Dry fruits":"मेवे", "Toor dal":"अरहर दाल",
+    "Moong dal":"मूँग दाल", "Rajma":"राजमा", "Peanuts":"मूँगफली", "Urad dal":"उड़द दाल",
+    "Jaggery":"गुड़", "Sesame":"तिल", "Mustard oil":"सरसों का तेल", "Tamarind":"इमली",
+    "Oats":"ओट्स", "Maida":"मैदा", "Soya":"सोया", "Pasta":"पास्ता", "Sprouts":"अंकुरित दाने",
+    "Cheese":"चीज़", "Masoor dal":"मसूर दाल", "Sattu":"सत्तू", "Ragi":"रागी",
+    "Noodles":"नूडल्स", "Cream":"क्रीम", "Cocoa":"कोको", "Chocolate":"चॉकलेट",
+    "Broccoli":"ब्रोकली", "Orange":"संतरा", "Pineapple":"अनानास", "Watermelon":"तरबूज़",
+    "Pomegranate":"अनार", "Coffee":"कॉफ़ी", "Honey":"शहद", "Sugar":"चीनी",
+    "Almonds":"बादाम", "Cashews":"काजू", "Turmeric":"हल्दी", "Cumin":"जीरा",
+    "Salt":"नमक", "Black pepper":"काली मिर्च", "Cinnamon":"दालचीनी", "Cardamom":"इलायची",
+    "Gajar Halwa":"गाजर का हलवा", "Shahi Paneer":"शाही पनीर", "Aloo Gobi":"आलू गोभी",
+    "Dal Tadka":"दाल तड़का", "Palak Paneer":"पालक पनीर", "Chole Bhature":"छोले भटूरे",
+    "Rajma Chawal":"राजमा चावल", "Bhindi Masala":"भिंडी मसाला", "Matar Paneer":"मटर पनीर",
+    "Masala Dosa":"मसाला डोसा", "Idli":"इडली", "Sambar":"सांभर", "Gulab Jamun":"गुलाब जामुन",
+    "Rasgulla":"रसगुल्ला", "Rasmalai":"रसमलाई", "Baingan Bharta":"बैंगन भर्ता",
+    "Aloo Paratha":"आलू पराठा", "Methi Matar Malai":"मेथी मटर मलाई",
+    "Uttarakhand Mandua Cheela":"उत्तराखंड मडुआ चीला", "Pahadi Mandua Cheela":"पहाड़ी मडुआ चीला"
+  }));
+  const recipeTerms = Object.assign(Object.create(null), {
+    aloo:"आलू",gobi:"गोभी",dal:"दाल",paneer:"पनीर",masala:"मसाला",matar:"मटर",palak:"पालक",
+    bhindi:"भिंडी",methi:"मेथी",gajar:"गाजर",halwa:"हलवा",chawal:"चावल",kheer:"खीर",roti:"रोटी",
+    paratha:"पराठा",puri:"पूरी",poori:"पूरी",sabzi:"सब्ज़ी",sabji:"सब्ज़ी",curry:"करी",rice:"चावल",
+    chicken:"चिकन",mutton:"मटन",fish:"मछली",egg:"अंडा",eggs:"अंडे",soup:"सूप",salad:"सलाद",
+    chutney:"चटनी",raita:"रायता",lassi:"लस्सी",chaas:"छाछ",milk:"दूध",bread:"ब्रेड",butter:"मक्खन",
+    cheese:"चीज़",tomato:"टमाटर",potato:"आलू",onion:"प्याज़",garlic:"लहसुन",ginger:"अदरक",
+    mint:"पुदीना",coconut:"नारियल",mushroom:"मशरूम",sweet:"मीठा",corn:"मक्का",green:"हरा",
+    fried:"तला हुआ",roasted:"भुना हुआ",stuffed:"भरवाँ",mixed:"मिक्स",vegetable:"सब्ज़ी",vegetables:"सब्ज़ियाँ",
+    north:"उत्तर",south:"दक्षिण",indian:"भारतीय",rajasthani:"राजस्थानी",punjabi:"पंजाबी",
+    bengali:"बंगाली",gujarati:"गुजराती",kashmiri:"कश्मीरी",pahadi:"पहाड़ी",andhra:"आंध्र",
+    with:"के साथ",and:"और",without:"बिना",lemon:"नींबू",beetroot:"चुकंदर",carrot:"गाजर",
+    pumpkin:"कद्दू",spinach:"पालक",riceflour:"चावल का आटा",chilli:"मिर्च",chili:"मिर्च",
+    dosa:"डोसा",idli:"इडली",uttapam:"उत्तपम",upma:"उपमा",poha:"पोहा",vada:"वड़ा",
+    tikka:"टिक्का",kebab:"कबाब",biryani:"बिरयानी",pulao:"पुलाव",khichdi:"खिचड़ी",
+    noodles:"नूडल्स",pasta:"पास्ता",pizza:"पिज़्ज़ा",sandwich:"सैंडविच",roll:"रोल",
+    cake:"केक",ladoo:"लड्डू",laddu:"लड्डू",jamun:"जामुन",gulab:"गुलाब",pakora:"पकौड़ा",
+    pakoda:"पकौड़ा",dahi:"दही",chaat:"चाट",besan:"बेसन",mawa:"मावा",atta:"आटा"
+  });
+  const recipeTitles = new Set();
+  function builtIn(source) {
+    if (offline.has(source)) return offline.get(source);
+    if (!recipeTitles.has(source)) return null;
+    // For romanized dish titles, a partial native-language name is preferable
+    // to a completely English label. Never apply this to cooking directions.
+    let found = false;
+    const parts = source.split(/(\s+|[-(),/&])/).map(part => {
+      const value = recipeTerms[part.toLowerCase()];
+      if (value) found = true;
+      return value || part;
+    });
+    return found ? parts.join("").replace(/\s+/g, " ").trim() : null;
+  }
   const cache = new Map();
   const records = new WeakMap();
   const pending = new Map();
@@ -10,7 +135,7 @@ globalThis.HatriTranslation = (() => {
   const roots = new Set();
   const attributes = ["aria-label", "aria-description", "title", "placeholder", "alt"];
   const ignored = "script,style,noscript,template,[translate=no]";
-  let language = "en", active = 0, frame, flush, save, retry, scroll, lastError = 0, retryDelay = 5000;
+  let language = "en", active = 0, frame, flush, save, retry, scroll, cooldownUntil = 0;
 
   function read(node, attribute) {
     return attribute ? node.getAttribute(attribute) : node.data;
@@ -89,21 +214,19 @@ globalThis.HatriTranslation = (() => {
       pending.delete(source);
     });
     if (values) {
-      retryDelay = 5000;
       if (!save) save = setTimeout(persist, 400);
-    } else if (language === "hi") {
-      if (Date.now() - lastError > 30000) {
-        lastError = Date.now();
-        document.dispatchEvent(new Event("hatri:translation-error"));
-      }
-      if (!retry) retry = setTimeout(() => {
+    } else {
+      // If Google presents a CAPTCHA or rejects the request, hammering the
+      // service every five seconds keeps Hindi broken and can prolong a block.
+      cooldownUntil = Date.now() + 5 * 60 * 1000;
+      if (!retry && language === "hi") retry = setTimeout(() => {
         retry = null;
+        cooldownUntil = 0;
         failed.clear();
         queue(document.body);
         const title = document.querySelector("title");
         if (title) queue(title);
-        retryDelay = Math.min(retryDelay * 2, 60000);
-      }, retryDelay);
+      }, 5 * 60 * 1000);
     }
   }
 
@@ -120,6 +243,11 @@ globalThis.HatriTranslation = (() => {
         urgent.delete(source); background.delete(source);
       }
       active++;
+      if (Date.now() < cooldownUntil) {
+        finish(sources);
+        active--;
+        continue;
+      }
       fetchGroup(sources).then(values => finish(sources, values), () => finish(sources))
         .finally(() => { active--; schedule(); });
     }
@@ -130,7 +258,9 @@ globalThis.HatriTranslation = (() => {
   }
 
   function request(source, priority = true) {
-    if (cache.has(source)) return Promise.resolve(cache.get(source));
+    const ready = cache.get(source) || builtIn(source);
+    if (ready) return Promise.resolve(ready);
+    if (Date.now() < cooldownUntil) return Promise.resolve(null);
     if (Date.now() - (failed.get(source) || 0) < 5000) return Promise.resolve(null);
     let entry = pending.get(source);
     if (!entry) {
@@ -157,7 +287,8 @@ globalThis.HatriTranslation = (() => {
     if (target(node, attribute) === "en") return apply(node, attribute, entry, null);
     const source = entry.source?.trim();
     if (!source || !/\p{Script=Latin}/u.test(source) || /^(?:https?:\/\/|@\S+$|\S+@\S+$)/i.test(source)) return;
-    if (cache.has(source)) return apply(node, attribute, entry, cache.get(source));
+    const ready = cache.get(source) || builtIn(source);
+    if (ready) return apply(node, attribute, entry, ready);
     const priority = nearViewport(attribute ? node : node.parentElement);
     if (entry.waiting) {
       if (priority && background.delete(source)) urgent.add(source);
@@ -220,6 +351,7 @@ globalThis.HatriTranslation = (() => {
       clearTimeout(flush);
       retry = null;
       flush = null;
+      cooldownUntil = 0;
       roots.clear();
       for (const source of [...urgent, ...background]) {
         pending.get(source)?.resolve(null);
@@ -243,7 +375,11 @@ globalThis.HatriTranslation = (() => {
     if (document.querySelector("title")) queue(document.querySelector("title"));
   }
 
-  addEventListener("online", () => { failed.clear(); queue(document.body); });
+  addEventListener("online", () => {
+    clearTimeout(retry); retry = null;
+    cooldownUntil = 0;
+    failed.clear(); queue(document.body);
+  });
   addEventListener("pagehide", () => { if (save) persist(); });
   document.addEventListener("scroll", event => {
     if (language !== "hi") return;
@@ -259,7 +395,10 @@ globalThis.HatriTranslation = (() => {
       const value = read(node, attribute);
       return entry && value === entry.output ? entry.source : value;
     },
-    lookup(text) { return cache.get(text); },
+    lookup(text) { return cache.get(text) || builtIn(text); },
+    seedCatalog(recipes) {
+      for (const recipe of recipes) if (typeof recipe?.[0] === "string") recipeTitles.add(recipe[0]);
+    },
     warm(texts, onProgress, onSettled) {
       for (const text of texts) {
         if (!/\p{Script=Latin}/u.test(text)) { onSettled(text); continue; }

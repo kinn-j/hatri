@@ -16,7 +16,7 @@ Recipe cards, filters, and the recipe catalog omit heaviness ratings. Ignore sav
 
 ## Language
 
-Author app text and recipe content in English. In Hindi mode, use Google Translate at runtime for visible text, including recipe names, ingredients, methods, regions, filters, and accessibility labels. Reuse previously fetched translations when offline. Keep account identities and form entries verbatim. Hindi search uses translated catalog terms and keeps the entered query on the device.
+Author app text and recipe content in English. Hindi mode must translate the core navigation, filters, common pantry ingredients, and known recipe names locally without any external network request, and preserve previously fetched translations for other content when offline. Google Translate may supplement the local translations for recipe methods and less-common content when reachable, but a CAPTCHA or network failure must not produce repeating error toasts or request storms. Keep account identities and form entries verbatim. Hindi search uses local and cached translated catalog terms and keeps the entered query on the device. Do not present an English fallback recipe method as a completed Hindi translation.
 
 ## Community recipe videos
 

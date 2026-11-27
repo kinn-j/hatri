@@ -1470,7 +1470,7 @@ function setLang(value){
   label.translate=false;label.lang=next;
   label.textContent=new Intl.DisplayNames([next],{type:"language"}).of(next);
   $("langBtn").replaceChildren(label);
-  translationReady.then(function(){HatriTranslation.setLanguage(LANG)},function(){toast("Google Translate could not be loaded.")});
+  translationReady.then(function(){HatriTranslation.seedCatalog(MEALS);HatriTranslation.setLanguage(LANG)},function(){toast("Hindi language files could not be loaded.")});
 }
 document.addEventListener("hatri:translation-error",function(){toast("Google Translate is temporarily unavailable. Retrying?")});
 $("langBtn").addEventListener("click",function(){setLang(LANG==="hi"?"en":"hi")});

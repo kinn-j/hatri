@@ -42,6 +42,8 @@ test('the app and recipe catalog use English source text with one runtime transl
   const translation = fs.readFileSync(path.resolve(__dirname, '../translation.js'), 'utf8');
   new vm.Script(translation);
   assert.match(translation, /translate\.googleapis\.com\/translate_a\/single/);
+  assert.match(translation, /const offline = new Map/);
+  assert.match(translation, /seedCatalog\(recipes\)/);
   assert.doesNotMatch(src, /\p{Script=Devanagari}/u);
   assert.match(src, /<script src="\.\/translation\.js"><\/script>/);
   const legacy = fs.readFileSync(path.resolve(__dirname, '../Raman_Rasoi_Google_Login_Configured/index.html'), 'utf8');
@@ -168,7 +170,7 @@ test('adding all recipe ingredients preserves existing and legacy cart quantitie
 
 test('PWA registers offline worker and caches the required shell files', () => {
   assert.match(src, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
-  assert.match(sw, /const CACHE = 'hatri-v52-runtime-translation'/);
+  assert.match(sw, /const CACHE = 'hatri-v53-hindi-fallback'/);
   assert.ok(sw.includes("'./translation.js'"));
   for (const item of ['auth.js','recipe-reels.js','ingredient-images.js','recipe-details.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp','seasonal-recipes.js','winter-recipes.js','desi-recipes.js','additional-recipes.js','activity.js','international-recipes.js','hero-carousel.js','images/hatri-dinner-header.webp','images/hatri-christmas-header.webp','images/mushroom-barley-soup.webp']) assert.ok(sw.includes(`'./${item}'`));
   new vm.Script(sw);
