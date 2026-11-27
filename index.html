@@ -2646,6 +2646,9 @@ function pickCrs(v){
   if(v==="all"){resetCategories("all");return}
   // Selecting non-veg must also unlock non-veg dishes in Veg Mode.
   if(v==="NonVeg"&&!nonveg){nonveg=true;renderModes()}
+  // Replace the default Whole meal selection when picking a diet category;
+  // otherwise the new category unexpectedly includes all meal courses too.
+  if((v==="Veg"||v==="NonVeg")&&sel.meal&&Object.keys(sel).length===1){resetCategories(v);return}
   delete sel.all;
   if(sel[v])delete sel[v];else sel[v]=1;
   var selected=Object.keys(sel);
