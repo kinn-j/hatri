@@ -24,6 +24,8 @@ MIXED_NUMBER = re.compile(r"(\d+)([¼½¾⅓⅔])")
 # Editorial corrections for ingredient identity or tablespoon/teaspoon confusion.
 # Extend this reviewed map as the English source catalog changes.
 MANUAL_CORRECTIONS = {
+    'Blanch the florets for 2 min, drain and pat dry. Whisk flours, seasonings and enough water for a batter that coats a spoon.':
+        'फूलगोभी के टुकड़ों को उबलते पानी में 2 मिनट ब्लांच करें, पानी निथारें और थपथपाकर सुखाएँ। दोनों आटों और मसालों में इतना पानी फेंटकर मिलाएँ कि घोल चम्मच पर चिपक सके।',
     '1 cup amaranth flour': '1 कप राजगीरे का आटा',
     '1 cup buckwheat flour': '1 कप कुट्टू का आटा',
     '1 cup buckwheat groats': '1 कप कुट्टू के साबुत दाने',
