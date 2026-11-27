@@ -60,23 +60,23 @@ test('vegetarian, non-vegetarian and Hostel classifications overlap without excl
   assert.equal(c.matchesModes(other),false,'Hostel Mode only narrows by equipment');
   c.hostel=false;
   assert.equal(c.matchesModes(other),true,'leaving Hostel Mode restores ordinary catalog');
-  assert.match(html,/\["Veg","🥬 Vegetarian"\]/);
-  assert.match(html,/\["NonVeg","🍗 Non-vegetarian"\]/);
-  assert.match(html,/counts\[dietCategory\(recipe\)\]\+\+/);
-  assert.match(html,/!!sel\[dietCategory\(m\)\]/);
+  const carousel=isolate('var CRS=[', 'function categoryLabel(', {});
+  assert.ok(!carousel.CRS.some(([id])=>id==='Veg'||id==='NonVeg'),'diet must not appear as a carousel category');
+  assert.match(html,/function dietCategory\(m\)/,'internal diet classification remains');
+  assert.doesNotMatch(html,/counts\[dietCategory\(recipe\)\]\+\+/);
 });
 
-test('choosing a diet category replaces the default Whole meal selection', () => {
+test('choosing any dish-type category replaces the default Whole meal selection', () => {
   const c=isolate('var wSide=true,crs="meal"', 'function inSel(m){', {
-    nonveg:false,renderModes:()=>{}
+    nonveg:false
   });
-  c.pickCrs('NonVeg');
-  assert.equal(c.nonveg,true,'non-veg category unlocks non-veg mode');
-  assert.equal(c.sel.NonVeg,1);
+  c.pickCrs('Main');
+  assert.equal(c.nonveg,false,'category selection must not change Veg Mode');
+  assert.equal(c.sel.Main,1);
   assert.equal(c.sel.meal,undefined,'default whole meal does not pollute dietary results');
-  c.pickCrs('Veg');
-  assert.equal(c.sel.Veg,1,'a second explicit category can be combined');
-  assert.equal(c.sel.NonVeg,1);
+  c.pickCrs('Sweet');
+  assert.equal(c.sel.Sweet,1,'a second dish type may be combined');
+  assert.equal(c.sel.Main,1);
 });
 
 test('dish images leave activation to their enclosing recipe control', () => {

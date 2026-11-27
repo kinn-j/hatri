@@ -205,7 +205,7 @@ test('all 1096+ recipes have categories, match Excel, and have no total browsing
   } finally { await context.close(); }
 });
 
-test('vegetarian/non-vegetarian categories cover every recipe including Hostel dishes', async () => {
+test('the top Veg Mode switch categorizes every veg and non-veg dish without diet carousel tiles', async () => {
   const {page, context} = await open({width:390,height:844},{serviceWorkers:'block'});
   try {
     const catalog=await page.evaluate(() => {
@@ -215,35 +215,36 @@ test('vegetarian/non-vegetarian categories cover every recipe including Hostel d
         hostel:hostelRecipes.length,hostelVeg:hostelRecipes.filter(isVegetarianDish).length,
         hostelNonVeg:hostelRecipes.filter(m=>!isVegetarianDish(m)).length,
         hostelNames:Object.keys(HOSTEL).filter(name=>!MEALS.some(m=>m[0]===name)),
-        before:categoryCounts()};
+        before:categoryCounts(),allCategorized:MEALS.every(recipe=>cats(recipe).some(id=>CRS.some(([key])=>key===id)))};
     });
     assert.equal(catalog.veg+catalog.nonveg,catalog.total,'every recipe belongs to exactly one diet');
     assert.deepEqual(catalog.hostelNames,[],'every Hostel recipe belongs to the full catalog');
     assert.ok(catalog.hostelVeg>0 && catalog.hostelNonVeg>0,'both diets have Hostel recipes');
-    assert.equal(catalog.before.Veg,catalog.veg);
-    assert.equal(catalog.before.NonVeg,0,'Veg Mode hides non-veg until selected');
+    assert.equal(catalog.veg,1036,'the complete 1,036 vegetarian recipes remain in the current catalog');
+    assert.equal(catalog.nonveg,60);
+    assert.equal(catalog.before.all,catalog.veg);
+    assert.equal(catalog.allCategorized,true,'no recipe is orphaned from the carousel types');
+    assert.equal(await page.locator('#slides [data-crs="Veg"],#slides [data-crs="NonVeg"]').count(),0);
 
-    await page.locator('#slides [data-crs="NonVeg"]').click();
-    const nv=await page.evaluate(()=>({mode:nonveg,selected:sel.NonVeg,count:score(true).length,
-      allNonVeg:score(true).every(dish=>!dish.v),counts:categoryCounts()}));
-    assert.equal(nv.mode,true,'non-veg category automatically enables non-veg recipes');
-    assert.equal(nv.selected,1);
-    assert.equal(nv.count,catalog.nonveg);
-    assert.equal(nv.allNonVeg,true);
-    assert.equal(nv.counts.Veg+nv.counts.NonVeg,catalog.total);
+    await page.locator('#slides [data-crs="Main"]').click();
+    const typed=await page.evaluate(()=>({selected:sel,correct:score(true).every(dish=>cats(dish.recipe).includes('Main'))}));
+    assert.equal(typed.selected.meal,undefined,'dish category replaces the default Whole meal selection');
+    assert.equal(typed.correct,true);
+    await page.locator('#slides [data-crs="all"]').click();
+    assert.equal(await page.evaluate(()=>score(true).length),catalog.veg,'all veg dishes are browseable');
 
-    await page.locator('#slides [data-crs="Veg"]').click();
+    await page.locator('#nvBtn').click();
     const both=await page.evaluate(()=>({count:score(true).length,veg:score(true).filter(d=>d.v).length,
-      nv:score(true).filter(d=>!d.v).length}));
-    assert.equal(both.count,catalog.total,'both diet categories include every dish');
+      nv:score(true).filter(d=>!d.v).length,uncategorized:MEALS.filter(m=>!cats(m).some(id=>CRS.some(([key])=>key===id))).length}));
+    assert.equal(both.count,catalog.total,'Veg Mode off includes the entire catalog');
     assert.equal(both.veg,catalog.veg);
     assert.equal(both.nv,catalog.nonveg);
+    assert.equal(both.uncategorized,0);
 
     await page.evaluate(()=>{hostel=true;app={K:1,R:1,I:1,T:1,N:1};renderModes();renderResults()});
     const filtered=await page.evaluate(()=>({names:score(true).map(m=>m.n),counts:categoryCounts()}));
     assert.equal(filtered.names.length,catalog.hostel,'Hostel Mode includes every Hostel recipe with equipment');
-    assert.equal(filtered.counts.Veg,catalog.hostelVeg);
-    assert.equal(filtered.counts.NonVeg,catalog.hostelNonVeg);
+    assert.equal(filtered.counts.all,catalog.hostel);
     await page.evaluate(()=>{hostel=false;renderModes();renderResults()});
     assert.equal(await page.evaluate(()=>score(true).length),catalog.total,'Hostel dishes remain in normal diet categories');
   } finally {await context.close();}
@@ -578,7 +579,7 @@ test('recipe details cover the entire live catalog and render measured methods i
   }
 });
 
-test('whole meals show up to 50 unique themed six-dish sets', async () => {
+test('whole meals show every possible themed six-dish set and clearly separate the ready subset', async () => {
   for (const width of [320, 1024]) {
     const {page, context} = await open({width, height: 844});
     try {
@@ -586,10 +587,13 @@ test('whole meals show up to 50 unique themed six-dish sets', async () => {
       const section = page.locator('#results .meal-sets');
       const cards = section.locator('details.mtile');
       await section.locator('summary img').first().waitFor();
-      assert.deepEqual(await section.locator(':scope > h2').allTextContents(), ['6-dish meals']);
       const total = await page.evaluate(() => Object.keys(MEALK).length);
       assert.ok(total >= 25);
-      assert.equal(await cards.count(), Math.min(total, 50));
+      assert.equal(await cards.count(), total,'do not cap the rendered complete meal list');
+      assert.equal(await section.getAttribute('data-total-meals'),String(total));
+      assert.match(await section.locator(':scope > h2').innerText(),new RegExp(`${total} complete sets`));
+      const ready=await page.evaluate(() => Object.values(MEALK).filter(meal=>meal.miss.length===0).length);
+      assert.match(await section.locator('.meal-summary').innerText(),new RegExp(`${ready} ready with your pantry`));
       const audit = await page.evaluate(() => Object.values(MEALK).every(({items,theme}) =>
         items.length === 6 && new Set(items.map(d => d.n)).size === 6 &&
         items.slice(0, 2).every(d => regionOf(d.recipe) === theme && course(d.n) === 'Main') &&

@@ -1271,9 +1271,13 @@ function renderResults(){
   if(sel.meal&&!(vrat&&crs==="meal")&&!vrat&&crs==="meal")title="Meal dishes";
   var html="",openTiles=new Set(Array.from(r.querySelectorAll("details.tile[open]"),function(tile){return tile.dataset.recipe}));
   if(!Object.keys(have).length)html="<div class='card' style='display:flex;gap:10px;align-items:center;justify-content:space-between'><span class='sub'>Pick ingredients to see what you can cook right now</span><button class='btn sm primary' data-view='pantry'>Pick ingredients</button></div>";
-  if(meals.length){
+  if(sel.meal){
     var listed=meals.filter(function(meal){return meal.key!==lastMeal});
-    html+="<section class='meal-sets'><h2>"+("6-dish meals")+"</h2>"+suggestionGroups(listed,true);
+    var ready=meals.filter(function(meal){return !meal.miss.length}).length;
+    html+="<section class='meal-sets' data-total-meals='"+meals.length+"'><h2>"+("6-dish meals")+" <small>· "+meals.length+" "+("complete sets")+"</small></h2>"+
+      "<p class='sub meal-summary'>"+ready+" "+("ready with your pantry")+" · "+(meals.length-ready)+" "+("need more ingredients")+
+      (restr(RS,rIds())?" · "+("Region filter active"):"")+"</p>"+
+      (meals.length?suggestionGroups(listed,true):"<p class='sub'>"+("No complete six-dish meals match these filters.")+"</p>");
     html+="</section>";
   }
   var totalDishes=dishes.length,pageSize=dishPage("browse:"+JSON.stringify([sel,TS,OS,RS,nonveg,hostel,app]));
@@ -2652,11 +2656,8 @@ var sel={meal:1};
 function resetCategories(category){sel={};sel[category]=1;crs=category}
 function pickCrs(v){
   if(v==="all"){resetCategories("all");return}
-  // Selecting non-veg must also unlock non-veg dishes in Veg Mode.
-  if(v==="NonVeg"&&!nonveg){nonveg=true;renderModes()}
-  // Replace the default Whole meal selection when picking a diet category;
-  // otherwise the new category unexpectedly includes all meal courses too.
-  if((v==="Veg"||v==="NonVeg")&&sel.meal&&Object.keys(sel).length===1){resetCategories(v);return}
+  // Whole meal is a default, not an implicit second category when selecting a dish type.
+  if(v!=="meal"&&sel.meal&&Object.keys(sel).length===1){resetCategories(v);return}
   delete sel.all;
   if(sel[v])delete sel[v];else sel[v]=1;
   var selected=Object.keys(sel);
@@ -2666,7 +2667,7 @@ function pickCrs(v){
 function inSel(m){return Object.keys(sel).some(function(k){return k==="NoCook"?isNoCook(m):k==="Chaat"?(m[6]==="Street & chaat"||/chaat/i.test(m[0])):course(m[0])===k})}
 function isNoCook(m){return (m[3]===0&&!/chai|kadha|coffee|cappuccino|hot chocolate|doodh|ambli|affogato|espresso|\btea\b/i.test(m[0]))||!!(window.NCSET&&NCSET[m[0]])||/coffee (float|frappe)|dalgona|cold coffee|iced (latte|mocha)|cold brew/i.test(m[0])&&m[3]===0}
 
-var CRS=[["meal","🍽️ Whole meal"],["Veg","🥬 Vegetarian"],["NonVeg","🍗 Non-vegetarian"],["Main","🥘 Curry / sabzi / dal"],["Bread","🫓 Roti / paratha"],["Rice","🍚 Rice"],["Complete","🍲 One-pot meal"],["Sweet","🍮 Sweet"],["Side","🥣 Chutney & sides"],["Snack","🥪 Snack / breakfast"],["Chaat","🥗 Chaat"],["NoCook","🧊 No-cook"],["Pickle","🥫 Pickles & jams"],["Baked","🍰 Baking"],["Drink","🥤 Drinks"],["all","All dishes"]];
+var CRS=[["meal","🍽️ Whole meal"],["Main","🥘 Curry / sabzi / dal"],["Bread","🫓 Roti / paratha"],["Rice","🍚 Rice"],["Complete","🍲 One-pot meal"],["Sweet","🍮 Sweet"],["Side","🥣 Chutney & sides"],["Snack","🥪 Snack / breakfast"],["Chaat","🥗 Chaat"],["NoCook","🧊 No-cook"],["Pickle","🥫 Pickles & jams"],["Baked","🍰 Baking"],["Drink","🥤 Drinks"],["all","All dishes"]];
 function categoryLabel(option){
   var label=(option[1]);
   return option[0]==="all"?label:label.slice(label.indexOf(" ")+1);
@@ -2753,8 +2754,10 @@ function buildMeals(){
   });
   MEALK={};
   var used=new Set();
-  function choose(main,items,role,region){
-    var missing=new Set(missOf(items)),selected=new Set(items.map(function(item){return keys.get(item)})),best=null,bestCost=Infinity;
+  // When a first-choice side would strand the meal, try other matches before
+  // abandoning the main. A dish is still reserved only after all six courses fit.
+  function choices(main,items,role,region,limit){
+    var missing=new Set(missOf(items)),selected=new Set(items.map(function(item){return keys.get(item)})),options=[];
     var needsProtein=role==="Main"&&wProt&&sumP(items)<2;
     for(var dish of pools[role]){
       var key=keys.get(dish);
@@ -2766,26 +2769,32 @@ function buildMeals(){
       var extra=dish.x.filter(function(id){return !missing.has(id)}).length;
       var cost=extra*10+(local?0:5);
       if(needsProtein&&rtype(dish.n)!=="dal")cost+=3;
-      if(cost<bestCost){best=dish;bestCost=cost}
-      if(cost===0)break;
+      if(options.length===limit&&cost>=options[options.length-1].cost)continue;
+      var at=options.findIndex(function(option){return cost<option.cost});
+      options.splice(at<0?options.length:at,0,{dish:dish,cost:cost});
+      if(options.length>limit)options.pop();
     }
-    return best;
+    return options.map(function(option){return option.dish});
+  }
+  function complete(main,items,region,step){
+    var roles=["Main","Bread","Rice","Curd","Sweet"];
+    if(step===roles.length)return fitsTime(mealTime(items))?items:null;
+    for(var dish of choices(main,items,roles[step],region,6)){
+      var result=complete(main,items.concat(dish),region,step+1);
+      if(result)return result;
+    }
+    return null;
   }
   for(var main of pools.Main){
     var region=regionOf(main.recipe);
     if(region===INTL||used.has(keys.get(main)))continue;
-    var items=[main];
-    for(var role of ["Main","Bread","Rice","Curd","Sweet"]){
-      var dish=choose(main,items,role,region);
-      if(!dish)break;
-      items.push(dish);
-    }
-    if(items.length!==6)continue;
+    if(["Bread","Rice","Curd","Sweet"].some(function(role){return !pools[role].some(function(dish){return !used.has(keys.get(dish))})}))break;
+    var items=complete(main,[main],region,0);
+    if(!items)continue;
     var time=mealTime(items);
-    if(!fitsTime(time))continue;
     var key=items.map(function(m){return m.n}).join(" + ");
     var meal={items:items,theme:region,miss:missOf(items),t:time,key:key};
-    if(wSide)meal.salad=choose(main,items,"Salad",region);
+    if(wSide)meal.salad=choices(main,items,"Salad",region,1)[0];
     items.forEach(function(m){used.add(keys.get(m))});
     if(meal.salad)used.add(keys.get(meal.salad));
     MEALK[key]=meal;meals.push(meal);
@@ -3973,15 +3982,14 @@ function catsRaw(m){var n=m[0],l=n.toLowerCase(),a=[course(n)],c=a[0];
 function buildCats(){CATC={};MBY={};MEALS.forEach(function(m){CATC[m[0]]=catsRaw(m);MBY[m[0]]=m})}
 function cats(m){if(!MFREADY)return catsRaw(m);if(!CATC)buildCats();return CATC[m[0]]||catsRaw(m)}
 function catsN(n){if(!MFREADY||!CATC)buildCats();return CATC[n]||[]}
-inSel=function(m){return (!!sel.meal&&wholeMealDish(m[0]))||!!sel[dietCategory(m)]||cats(m).some(function(k){return !!sel[k]})};
+inSel=function(m){return (!!sel.meal&&wholeMealDish(m[0]))||cats(m).some(function(k){return !!sel[k]})};
 function categoryCounts(){
   // Category tiles describe the catalog, not the current recommendation slice.
   // Otherwise a saved short time window can make "All dishes" read as 143/1096.
-  var counts={all:0,meal:0,Veg:0,NonVeg:0};
+  var counts={all:0,meal:0};
   for(var recipe of MEALS){
     if(!matchesModes(recipe))continue;
     counts.all++;
-    counts[dietCategory(recipe)]++;
     if(wholeMealDish(recipe[0]))counts.meal++;
     for(var category of cats(recipe))counts[category]=(counts[category]||0)+1;
   }
