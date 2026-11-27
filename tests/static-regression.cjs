@@ -29,11 +29,12 @@ test('category cards report catalog totals, not truncated suggestions or hidden 
   });
   const counts = c.categoryCounts();
   assert.equal(counts.all,2);
-  assert.equal(counts.Veg,2);
-  assert.equal(counts.NonVeg,0);
+  assert.equal(counts.Veg,undefined,'diet is controlled by the header, not category cards');
+  assert.equal(counts.NonVeg,undefined);
   assert.equal(counts.Main,1);
   assert.equal(counts.Snack,1);
   assert.equal(counts.Complete,1);
+  assert.equal(counts.Main+counts.Snack,2,'all available recipes are included under dish types');
 
   const score = fn('function score(singleDishes){', 'function isLong(', {
     sel:{all:1},crs:'all',MEALS:recipes,matchesModes:m=>!!m[1],
@@ -56,6 +57,7 @@ test('the complete catalog and search results automatically render every batch, 
   assert.equal(c.dishPage('search:paneer'),100,'a new query resets pagination');
   assert.equal(c.dishPageFooter(1096,1096),'');
   assert.match(src, /new IntersectionObserver\(function\(entries\)/);
+  assert.doesNotMatch(src, /\["Veg","🥬 Vegetarian"\]|\["NonVeg","🍗 Non-vegetarian"\]/);
   assert.doesNotMatch(src, /DISH_LIMIT|MEAL_LIMIT/);
 });
 
@@ -130,6 +132,22 @@ test('whole meals exhaust distinct courses before reusing any dish', () => {
     }
   }
   assert.ok(c.buildMeals().length > 50, 'the available complete meals are not cut off at 50');
+});
+
+test('whole meals retry a faster accompaniment when the first choice cannot complete six courses', () => {
+  const item = (name, prep, missing = []) => ({n:name, ing:['curd'], recipe:{}, x:missing, p:prep, c:1});
+  const dishes = [item('Main A',1),item('Main B',1),item('Bread Slow',7),
+    item('Bread Fast',1,['tomato']),item('Rice A',1),item('Raita A',1),item('Sweet A',1)];
+  const c=fn('function mealTime(', 'function mealTileHTML(', {
+    score:()=>dishes,course:name=>name.split(' ')[0],isLong:()=>false,
+    pairOK:()=>true,regionOf:()=> 'Punjabi',REG:['Punjabi'],INTL:'International',
+    tmax:10,fitsTime:minutes=>minutes<=10,wProt:false,wSide:false,
+    pslug:name=>name.toLowerCase()
+  });
+  const meals=c.buildMeals();
+  assert.equal(meals.length,1,'try another bread instead of silently losing the whole meal');
+  assert.equal(meals[0].items[2].n,'Bread Fast');
+  assert.equal(new Set(meals[0].items.map(d=>d.n)).size,6);
 });
 
 test('diet, search, unlimited shopping suggestions and clear-all code guards are present', () => {
