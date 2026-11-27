@@ -205,8 +205,12 @@ test('all 1096+ recipes have categories, match Excel, and have no total browsing
     await page.locator('#rq').fill('a');
     const searched=await page.evaluate(()=>({shown:document.querySelectorAll('#results details.tile').length,
       matching:MEALS.filter(m=>matchesModes(m)&&searchLabels(m).join(' ').toLowerCase().includes('a')).length}));
-    assert.equal(searched.shown,Math.min(100,searched.matching),'search progressively loads matches');
-    if(searched.matching>100){
+    // IntersectionObserver can load further 100-card batches before this
+    // measurement, especially in WebKit. That is expected, not a cap.
+    assert.ok(searched.shown>0&&searched.shown<=searched.matching&&
+      (searched.shown===searched.matching||searched.shown%100===0),
+      'search progressively loads complete batches without exceeding matches');
+    if(searched.matching>searched.shown){
       await page.locator('#results [data-load-more]').evaluate(button => button.click());
       assert.equal(await page.locator('#results details.tile').count(),searched.matching,'search has no result cap');
     }
@@ -1523,6 +1527,13 @@ test('v28 installed cart upgrades and can finish a saved dish offline', async ()
     await page.waitForFunction(() => window.MFREADY === true);
     await page.locator('.tabbar [data-view="order"]').click();
     const group = page.locator('.cart-group');
+    const offlineState = await page.evaluate(() => ({
+      saved: JSON.parse(localStorage.getItem(LS)||'null'),
+      loaded: cartMeals, version: typeof tableSelections,
+      group: document.querySelector('.cart-group')?.outerHTML.slice(0,600)||null,
+      worker: navigator.serviceWorker.controller?.scriptURL||null,
+    }));
+    assert.equal(await group.count(),1,'offline cart after upgrade: '+JSON.stringify(offlineState));
     assert.equal(await group.locator('.cart-dish-name').textContent(), 'Gajar Halwa');
     await group.locator('[data-cart-add-listed="sugar"]').click();
     assert.equal(await group.locator('[data-cart-item="milk"] output').textContent(), '2');
