@@ -80,6 +80,36 @@ async function mockGoogleTranslate(context, requests = []) {
   });
 }
 
+test('slow startup displays the centered message and moving spinner until app becomes interactive', async () => {
+  const context = await browser.newContext({viewport:{width:390,height:844},reducedMotion:'no-preference',serviceWorkers:'block'});
+  let releaseScript;
+  const holdScript = new Promise(resolve => { releaseScript = resolve; });
+  await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, route => route.abort());
+  await context.route('**/vrat-recipes.js', async route => {
+    await holdScript;
+    await route.continue();
+  });
+  const page = await context.newPage();
+  try {
+    const navigation = page.goto(url,{waitUntil:'domcontentloaded'});
+    const loader = page.locator('#startupLoader');
+    await loader.waitFor({state:'visible'});
+    assert.equal(await loader.locator('.startup-quote').innerText(), 'the hardest part of cooking is deciding what to cook!!');
+    assert.equal(await loader.locator('.startup-subtitle').innerText(), 'Let us handle that');
+    assert.equal(await loader.locator('.startup-spinner').evaluate(el => getComputedStyle(el).animationName),'startup-spin');
+    const position = await loader.locator('.startup-content').boundingBox();
+    assert.ok(Math.abs(position.y+position.height/2-422)<30,'message and spinner are vertically centered');
+    releaseScript();
+    await navigation;
+    await page.waitForFunction(() => window.MFREADY === true);
+    await loader.waitFor({state:'hidden'});
+    assert.ok(await page.locator('#pantrySlides .pantry-grid').count(), 'app is interactive after loader leaves');
+  } finally {
+    releaseScript();
+    await context.close();
+  }
+});
+
 test('four-tab pill navigation excludes Kitchen and keeps it available through Profile', async () => {
   for (const width of [320,390,768]) {
     const {page,context}=await open({width,height:844});
