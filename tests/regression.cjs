@@ -1704,6 +1704,10 @@ test('v28 installed cart upgrades and can finish a saved dish offline', async ()
       cartMeals = [{name: recipe[0], ingredients: requiredCartIngredients(recipe[5]), added: ['milk','ghee']}];
       all();
     });
+    const savedBeforeUpgrade = await page.evaluate(() => JSON.parse(localStorage.getItem(LS) || 'null'));
+    assert.equal(savedBeforeUpgrade?.have?.carrot, 1, 'old release persisted pantry before upgrade');
+    assert.equal(savedBeforeUpgrade?.cart?.milk, 2, 'old release persisted shopping cart before upgrade');
+    assert.equal(savedBeforeUpgrade?.cartMeals?.[0]?.name, 'Gajar Halwa', 'old release persisted selected dish before upgrade');
     // Prior releases stored viewed recipe photos alongside the app shell.
     await page.evaluate(async () => {
       const photo = 'images/gajar-halwa.webp?v=38';
@@ -1725,6 +1729,8 @@ test('v28 installed cart upgrades and can finish a saved dish offline', async ()
     const upgraded = await page.evaluate(() => caches.keys());
     assert.ok(upgraded.includes('other-app-cache'));
     assert.equal(upgraded.includes('hatri-v28-dynamic-cart-dishes'), false);
+    const savedAfterUpgrade = await page.evaluate(() => JSON.parse(localStorage.getItem(LS) || 'null'));
+    assert.equal(savedAfterUpgrade?.cartMeals?.[0]?.name, 'Gajar Halwa', 'service-worker activation retained locally saved dish');
     disconnectOrigin = true;
     await page.reload({waitUntil:'domcontentloaded'});
     await page.waitForFunction(() => window.MFREADY === true);
@@ -1736,6 +1742,8 @@ test('v28 installed cart upgrades and can finish a saved dish offline', async ()
       group: document.querySelector('.cart-group')?.outerHTML.slice(0,600)||null,
       worker: navigator.serviceWorker.controller?.scriptURL||null,
     }));
+    offlineState.savedBeforeUpgrade = savedBeforeUpgrade.cartMeals;
+    offlineState.savedAfterUpgrade = savedAfterUpgrade.cartMeals;
     assert.equal(await group.count(),1,'offline cart after upgrade: '+JSON.stringify(offlineState));
     assert.equal(await group.locator('.cart-dish-name').textContent(), 'Gajar Halwa');
     await group.locator('[data-cart-add-listed="sugar"]').click();
@@ -1921,3 +1929,4 @@ test('activity writes are opt-in, scoped to the signed-in account and omit searc
     await context.close();
   }
 });
+
