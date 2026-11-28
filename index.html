@@ -4253,7 +4253,9 @@ function slTile(attr,emo,lab,sub,on,pal,photo){
     (sub?"<small>"+sub+"</small>":"")+"<i aria-hidden='true'>"+emo+"</i>"+(on?"<u aria-hidden='true'>✓</u>":"")+"</button>";
 }
 function slRow(classes,title,tiles,actions,summary){
-  return "<div class='slr "+classes+"'><div class='slh'><h3>"+title+"</h3>"+(actions||"")+"</div>"+(summary||"")+"<div class='sls'>"+tiles+"</div></div>";
+  // Keep the rail keyed when the selection summary is inserted above it.
+  // Otherwise the DOM reconciler can recycle the rail as the summary, losing scrollLeft.
+  return "<div class='slr "+classes+"'><div class='slh'><h3>"+title+"</h3>"+(actions||"")+"</div>"+(summary||"")+"<div class='sls' data-scroll-strip='categories'>"+tiles+"</div></div>";
 }
 function renderSlides(counts){
   var el=$("slides");if(!el||!MFREADY)return;
