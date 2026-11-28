@@ -1063,10 +1063,84 @@ test('community video code loads once when opening Reels', async () => {
     assert.equal(loads, 0);
     await page.locator('.tabbar [data-view="reels"]').click();
     await page.getByText('Community videos ready').waitFor();
+    assert.equal(await page.locator('.tabbar').isVisible(),true,'Reels retains the shared bottom navigation');
     await page.evaluate(() => setView('recipes'));
     await page.locator('.tabbar [data-view="reels"]').click();
     assert.equal(loads, 1);
     assert.equal(await page.locator('#reels-upload-open').isEnabled(), true);
+  } finally { await context.close(); }
+});
+
+test('each Reel links to a complete recipe tray and remains navigable after closing', {timeout:45_000}, async () => {
+  const context = await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
+  const modules = {
+    'firebase-app.js':'export const initializeApp=()=>({}),getApp=()=>({});',
+    'firebase-auth.js':`
+      const auth={currentUser:{uid:'cook'}};
+      export const getAuth=()=>auth,browserLocalPersistence={},setPersistence=async()=>{};
+      export const GoogleAuthProvider=class {},signInWithPopup=async()=>{},signOut=async()=>{},connectAuthEmulator=()=>{};
+      export const onAuthStateChanged=(_,callback)=>{queueMicrotask(()=>callback(auth.currentUser));return ()=>{};};
+    `,
+    'firebase-firestore.js':`
+      export const getFirestore=()=>({}),doc=()=>({}),getDoc=async()=>({exists:()=>false});
+      export const setDoc=async()=>{},serverTimestamp=()=>0,connectFirestoreEmulator=()=>{};
+      export const runTransaction=async (_,action)=>action({get:getDoc,set:()=>{}});
+      export const collection=()=>({}),limit=()=>({}),orderBy=()=>({}),query=()=>({}),where=()=>({});
+      export const onSnapshot=(_,callback)=>{
+        const data=[{id:'sample-reel-1234567',title:'My lunch today',recipeName:'Aloo Paratha',caption:'Fresh from the tawa'},
+          {id:'sample-reel-2345678',title:'Gajar Halwa',caption:'Slow cooked'},
+          {id:'sample-reel-3456789',title:'Lunch inspiration',caption:'Unlinked older post'}];
+        queueMicrotask(()=>callback({empty:false,docs:data.map(item=>({id:item.id,data:()=>item}))}));
+        return ()=>{};
+      };
+    `,
+    'firebase-functions.js':`
+      export const getFunctions=()=>({}),connectFunctionsEmulator=()=>{};
+      export const httpsCallable=(_,name)=>async()=>({data:name==='playReel'
+        ? {url:'https://storage.googleapis.com/hatri-test/clip.webm',expires:Date.now()+300000,owner:false} : {}});
+    `,
+  };
+  try {
+    await context.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
+    await context.route('https://www.gstatic.com/firebasejs/**',route=>{
+      const name=new URL(route.request().url()).pathname.split('/').at(-1);
+      return route.fulfill({contentType:'text/javascript',headers:{'Access-Control-Allow-Origin':'*'},body:modules[name]});
+    });
+    const page=await context.newPage();
+    await page.goto(url,{waitUntil:'domcontentloaded'});
+    await page.locator('.tabbar [data-view="reels"]').click();
+    const tile=page.locator('.reel-card').first().locator('.reel-recipe-tile');
+    await tile.waitFor();
+    assert.match(await tile.innerText(),/Aloo Paratha/);
+    assert.equal(await page.locator('.tabbar').isVisible(),true);
+    assert.equal(await page.locator('.reel-card').count(),3);
+    assert.equal(await page.locator('.reel-card').nth(2).locator('.reel-recipe-tile').count(),0,
+      'an unmatched legacy video must not open an unrelated recipe');
+    assert.match(await page.locator('.reel-card').nth(2).locator('.reel-recipe-missing').innerText(),/not linked/);
+    await tile.click();
+    await page.locator('#dtray[open]').waitFor();
+    assert.match(await page.locator('#dish-title').innerText(),/Aloo Paratha/);
+    assert.ok(await page.locator('#dish-detail-body .steps li').count()>0,'the existing full recipe appears');
+    await page.locator('#dish-detail-close').click();
+    assert.equal(await page.locator('#dtray').isVisible(),false);
+    const before=await page.locator('#reels-feed').evaluate(el=>{el.scrollTop=el.clientHeight;return el.scrollTop});
+    await page.waitForTimeout(200);
+    assert.equal(await page.locator('.reel-card').nth(1).locator('.reel-recipe-tile').count(),1,
+      'older clips with exact catalog titles retain their recipe link');
+    await page.locator('.reel-card').nth(1).locator('.reel-recipe-tile').click();
+    await page.locator('#dish-detail-close').click();
+    const after=await page.locator('#reels-feed').evaluate(el=>el.scrollTop);
+    assert.ok(Math.abs(after-before)<3,'closing the tray preserves the current reel');
+    await page.locator('.tabbar [data-view="order"]').click();
+    assert.match(await page.locator('body').getAttribute('class'),/sh-order/);
+    await page.evaluate(()=>setView('recipes'));
+    await page.locator('.tabbar [data-view="reels"]').click();
+    await page.locator('#reels-back').click();
+    assert.equal(await page.locator('body').getAttribute('data-v'),'recipes');
+    await page.locator('.tabbar [data-view="table"]').click();
+    assert.equal(await page.locator('body').getAttribute('data-v'),'table');
+    await page.locator('.tabbar [data-view="kitchen"]').click();
+    assert.equal(await page.locator('body').getAttribute('data-v'),'kitchen');
   } finally { await context.close(); }
 });
 
@@ -1115,8 +1189,12 @@ test('cancelling an in-flight Reel upload never invokes publication and Back ret
     await page.locator('.tabbar [data-view="reels"]').click();
     await page.getByText('No community videos yet.').waitFor();
     await page.locator('#reels-upload-open').click();
+    await page.locator('#reels-recipe-input').fill('Not a listed recipe');
     await page.locator('#reels-title-input').fill('Test recipe');
     await page.locator('#reels-video-input').setInputFiles(path.join(__dirname,'fixtures/test-reel.webm'));
+    await page.locator('#reels-upload-submit').click();
+    assert.deepEqual(await page.evaluate(()=>window.uploadCalls),[],'unmatched recipes cannot be published');
+    await page.locator('#reels-recipe-input').fill('Aloo Paratha');
     const transferred=page.waitForRequest(request=>request.method()==='POST' && request.url()==='https://storage.googleapis.com/hatri-test/');
     await page.locator('#reels-upload-submit').click();
     await transferred;

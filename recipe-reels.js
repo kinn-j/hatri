@@ -16,13 +16,45 @@ const openUpload = document.getElementById('reels-upload-open');
 const cancel = document.getElementById('reels-upload-cancel');
 const publish = document.getElementById('reels-upload-submit');
 const mine = document.getElementById('reels-mine');
+const explore = document.getElementById('reels-explore');
 const manageDialog = document.getElementById('reels-manage-dialog');
 const manageForm = manageDialog.querySelector('form');
+const recipeInput = document.getElementById('reels-recipe-input');
+const editRecipeInput = document.getElementById('reel-edit-recipe');
 const MAX_BYTES = 100 * 1024 * 1024;
 const extensions = {mp4:'video/mp4', webm:'video/webm', mov:'video/quicktime'};
 const cards = new Map();
 let signedInUser, activeUpload, unsubscribe, wantedFeed, managing, generation = 0;
 let ownFeed = false;
+
+// Recipe names are the stable catalog identities used by the rest of Hatri.
+// Do not infer a different dish from an approximate video title.
+const recipes = new Map();
+for (const [index, recipe] of (window.MEALS || []).entries()) {
+  if (!Array.isArray(recipe) || typeof recipe[0] !== 'string') continue;
+  recipes.set(recipe[0].trim().toLocaleLowerCase('en'), {name:recipe[0],index});
+}
+const choices = document.createDocumentFragment();
+for (const recipe of [...recipes.values()].sort((a,b) => a.name.localeCompare(b.name))) {
+  const option = document.createElement('option');
+  option.value = recipe.name;
+  choices.append(option);
+}
+document.getElementById('reels-recipe-options').append(choices);
+function exactRecipe(name) {
+  return typeof name === 'string' ? recipes.get(name.trim().toLocaleLowerCase('en')) : null;
+}
+function linkedRecipe(item) {
+  // Before recipeName existed, older clips carried only a free-text title.
+  return exactRecipe(item.recipeName === undefined ? item.title : item.recipeName);
+}
+function selectedRecipe(input, statusNode) {
+  const match = exactRecipe(input.value);
+  input.setCustomValidity(match ? '' : 'Choose a recipe from the Hatri catalog.');
+  if (!match) { statusNode.textContent = 'Select a listed Hatri recipe before continuing.'; input.reportValidity(); }
+  return match;
+}
+for (const input of [recipeInput,editRecipeInput]) input.addEventListener('input', () => input.setCustomValidity(''));
 
 const call = async (name, data) => (await httpsCallable(functions, name)(data)).data;
 function action(label, handler) {
@@ -69,6 +101,7 @@ function openManagement(kind, entry) {
   manageDialog.querySelector('h2').textContent = {edit:'Edit video',delete:'Remove video',report:'Report video'}[kind];
   if (kind === 'edit') {
     for (const key of ['title','caption','credit']) manageForm.elements.namedItem(key).value = entry.item[key] || '';
+    editRecipeInput.value = entry.item.recipeName || linkedRecipe(entry.item)?.name || '';
   }
   manageDialog.showModal();
 }
@@ -76,11 +109,13 @@ manageForm.addEventListener('submit', async event => {
   event.preventDefault();
   const job = managing;
   if (!job || job.uid !== signedInUser?.uid) return;
+  if (job.kind === 'edit' && !selectedRecipe(editRecipeInput,manageForm.querySelector('[data-reel-management-status]'))) return;
   const submit = manageForm.querySelector('[type=submit]');
   submit.disabled = true;
   const fields = Object.fromEntries(new FormData(manageForm));
   try {
     const data = {id:job.entry.item.id, action:job.kind, ...fields};
+    if (job.kind === 'edit') data.recipeName = exactRecipe(data.recipeName).name;
     await call(job.kind === 'report' ? 'reportReel' : 'manageReel', data);
     if (job.kind === 'edit' && wantedFeed?.startsWith('post:')) loadFeed();
     if (job.kind === 'delete' && wantedFeed?.startsWith('post:')) message('This video has been removed.');
@@ -101,6 +136,48 @@ function refreshActions(entry, isOwner) {
     entry.actions.append(button);
   }
 }
+function renderRecipeLink(entry, item) {
+  const recipe = linkedRecipe(item), area = entry.recipeArea;
+  area.replaceChildren();
+  if (!recipe) {
+    const note = document.createElement('p');
+    note.className = 'reel-recipe-missing';
+    note.textContent = 'Recipe not linked yet. The cook can add a Hatri recipe in Edit.';
+    area.append(note);
+    return;
+  }
+  const tile = document.createElement('button');
+  tile.type = 'button';
+  tile.className = 'reel-recipe-tile';
+  tile.dataset.openDish = String(recipe.index);
+  tile.setAttribute('aria-haspopup','dialog');
+  tile.setAttribute('aria-controls','dtray');
+  tile.setAttribute('aria-label',`Open ${recipe.name} ingredients and recipe steps`);
+  const imageId = window.IMG?.[window.pslug?.(recipe.name)];
+  const fallback = () => {
+    const symbol = document.createElement('span');
+    symbol.className = 'reel-recipe-fallback';
+    symbol.setAttribute('aria-hidden','true');
+    symbol.textContent = '🍲';
+    return symbol;
+  };
+  if (imageId && typeof window.photoSrc === 'function') {
+    const img = document.createElement('img');
+    img.alt = '';
+    img.loading = 'lazy';
+    img.src = window.photoSrc(imageId);
+    img.addEventListener('error', () => img.replaceWith(fallback()), {once:true});
+    tile.append(img);
+  } else tile.append(fallback());
+  const label = document.createElement('span');
+  const name = document.createElement('strong');
+  name.textContent = window.dn?.(recipe.name) || recipe.name;
+  const instruction = document.createElement('small');
+  instruction.textContent = 'View ingredients & full recipe ↗';
+  label.append(name,instruction);
+  tile.append(label);
+  area.append(tile);
+}
 function makeCard(item) {
   const card = document.createElement('article');
   card.className = 'reel-card';
@@ -119,10 +196,14 @@ function makeCard(item) {
   const playError = document.createElement('p');
   playError.setAttribute('role','status');
   playError.hidden = true;
-  copy.append(author,title,caption,playError);
+  const recipeArea = document.createElement('div');
+  const hint = document.createElement('p');
+  hint.className = 'reels-swipe-hint';
+  hint.textContent = 'Swipe up for the next recipe video ↑';
+  copy.append(author,title,caption,playError,recipeArea,hint);
   const actions = document.createElement('div');
   actions.className = 'reel-actions';
-  const entry = {card,video,author,title,caption,playError,actions,item};
+  const entry = {card,video,author,title,caption,playError,recipeArea,actions,item};
   const share = action('Share', async () => {
     const url = new URL(location.href);
     url.searchParams.delete('reels');
@@ -160,6 +241,7 @@ function updateCard(entry, item) {
   author.textContent = item.credit || 'Hatri cook';
   title.textContent = item.title || 'Recipe video';
   caption.textContent = item.caption || '';
+  renderRecipeLink(entry,item);
   video.setAttribute('aria-label',title.textContent);
   if (entry.subtitles === item.subtitles && entry.subtitleLanguage === item.subtitleLanguage) return;
   video.querySelector('track')?.remove();
@@ -241,6 +323,7 @@ function loadFeed() {
   unsubscribe = null;
   const link = new URL(location.href).searchParams.get('reel');
   const linkId = link && /^[A-Za-z0-9_-]{16,80}$/.test(link) ? link : null;
+  explore.hidden = !linkId || ownFeed;
   const scope = linkId && !ownFeed ? 'post:' + linkId : ownFeed ? 'own:' + signedInUser?.uid : 'public';
   if (wantedFeed !== scope) { render([]); feed.scrollTop = 0; }
   wantedFeed = scope;
@@ -269,6 +352,23 @@ mine.addEventListener('click', () => {
   ownFeed = !ownFeed;
   mine.textContent = ownFeed ? 'Community feed' : 'My videos';
   loadFeed();
+});
+explore.addEventListener('click', () => {
+  const url = new URL(location.href);
+  url.searchParams.delete('reel');
+  url.searchParams.set('reels','1');
+  history.replaceState({hatriReels:true},'',url);
+  ownFeed = false;
+  mine.textContent = 'My videos';
+  loadFeed();
+});
+// The existing Hatri recipe dialog supplies photos, quantities, methods, Hindi
+// content and its normal close button. Keep the reel position behind the dialog.
+document.addEventListener('hatri:recipe-open', () => {
+  if (document.body.dataset.v === 'reels') for (const entry of cards.values()) entry.video.pause();
+});
+document.getElementById('dtray').addEventListener('close', () => {
+  if (document.body.dataset.v === 'reels') for (const entry of cards.values()) if (entry.visible) playVisible(entry);
 });
 function syncFeed() {
   if (document.body.dataset.v === 'reels') loadFeed();
@@ -314,6 +414,7 @@ openUpload.addEventListener('click',() => {
   if (!signedInUser) return profile();
   if (activeUpload) return;
   form.reset();
+  recipeInput.setCustomValidity('');
   showVideoName();
   status.textContent = '';
   progress.value = 0;
@@ -340,6 +441,8 @@ form.addEventListener('submit',async event => {
   event.preventDefault();
   if (!signedInUser || activeUpload) return;
   const data = new FormData(form), file = videoInput.files[0], captionFile = form.elements.namedItem('subtitles').files[0];
+  const recipe = selectedRecipe(recipeInput,status);
+  if (!recipe) return;
   const contentType = file && (Object.values(extensions).includes(file.type) ? file.type : extensions[file.name.split('.').pop().toLowerCase()]);
   if (!file || !contentType || !file.size || file.size > MAX_BYTES) {
     status.textContent = 'Choose a non-empty MP4, WebM, or MOV video up to 100 MB.';
@@ -352,7 +455,7 @@ form.addEventListener('submit',async event => {
   try {
     const subtitles = captionFile ? await captionFile.text() : '';
     if (job.cancelled || job.uid !== signedInUser?.uid) return;
-    const {id,policy} = await call('startReel',{title:data.get('title'),caption:data.get('caption'),
+    const {id,policy} = await call('startReel',{title:data.get('title'),recipeName:recipe.name,caption:data.get('caption'),
       credit:data.get('credit'),subtitleLanguage:data.get('subtitleLanguage'),subtitles,contentType,sizeBytes:file.size});
     job.id = id;
     if (job.cancelled || job.uid !== signedInUser?.uid) return;

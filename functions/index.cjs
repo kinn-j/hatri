@@ -3,7 +3,7 @@ const {getFirestore, Timestamp, FieldValue} = require('firebase-admin/firestore'
 const {getStorage} = require('firebase-admin/storage');
 const {onCall, HttpsError} = require('firebase-functions/v2/https');
 const {onDocumentDeleted} = require('firebase-functions/v2/firestore');
-const {MAX_BYTES, REEL_ID, reelText, reelDraft, matchesVideoHeader} = require('./reel-data.cjs');
+const {MAX_BYTES, REEL_ID, reelText, reelRecipe, reelDraft, matchesVideoHeader} = require('./reel-data.cjs');
 
 initializeApp();
 const db = getFirestore();
@@ -117,9 +117,9 @@ exports.publishReel = callable(async request => {
     const current = (await transaction.get(ref)).data();
     if (current?.status === 'published') return true;
     if (current?.status !== 'uploading' || current.validUntil.toMillis() < Date.now()) return false;
-    const {title, caption, credit, subtitles, subtitleLanguage} = current;
+    const {title, recipeName, caption, credit, subtitles, subtitleLanguage} = current;
     transaction.create(posts.doc(id),{version:2,status:'published',publishedAt:FieldValue.serverTimestamp(),
-      title,caption,credit,subtitles,subtitleLanguage});
+      title,recipeName,caption,credit,subtitles,subtitleLanguage});
     transaction.update(ref,{status:'published',publishedAt:FieldValue.serverTimestamp(),expiresAt:FieldValue.delete()});
     return true;
   });
@@ -146,7 +146,7 @@ exports.manageReel = callable(async request => {
   const uid = user(request), id = reelId(request), ref = drafts.doc(id), post = posts.doc(id);
   const action = request.data.action;
   if (!['edit','delete','hide'].includes(action)) throw new HttpsError('invalid-argument','Invalid action.');
-  const patch = action === 'edit' ? validated(reelText,request.data) : {status:action === 'hide' ? 'hidden' : 'removed'};
+  const patch = action === 'edit' ? {...validated(reelText,request.data),...validated(reelRecipe,request.data)} : {status:action === 'hide' ? 'hidden' : 'removed'};
   await db.runTransaction(async transaction => {
     const [record, publicRecord] = await transaction.getAll(ref,post);
     if (action === 'hide') {

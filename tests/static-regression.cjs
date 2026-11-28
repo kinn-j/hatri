@@ -451,6 +451,13 @@ test('community video feed keeps media out of Firestore and enforces its upload 
   assert.match(reels, /collection\(db,\s*'publicRecipeVideos'\)/);
   assert.match(reels, /MAX_BYTES = 100 \* 1024 \* 1024/);
   assert.match(reels, /where\('status','==','published'\).*limit\(30\)/);
+  assert.match(src, /id="reels-recipe-input"[^>]*list="reels-recipe-options"/);
+  assert.match(src, /body\[data-v="reels"\]:not\(\[class\*="sh-"\]\)>\.tabbar\{display:flex!important/);
+  assert.match(reels, /tile\.dataset\.openDish = String\(recipe\.index\)/);
+  assert.match(reels, /document\.getElementById\('dtray'\)\.addEventListener\('close'/);
+  const backend = fs.readFileSync(path.resolve(__dirname,'../functions/index.cjs'),'utf8');
+  assert.match(backend,/title,recipeName,caption,credit,subtitles,subtitleLanguage/);
+  assert.match(backend,/validated\(reelRecipe,request\.data\)/);
   const auth = fs.readFileSync(path.resolve(__dirname, '../auth.js'), 'utf8');
   assert.match(auth, /connectAuthEmulator\(auth, `http:\/\/\$\{location\.hostname\}:9099`/);
   assert.match(auth, /connectFirestoreEmulator\(database, location\.hostname, 8080\)/);
