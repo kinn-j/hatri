@@ -1420,7 +1420,10 @@ test('mobile dish cards and More filters time, region and occasion preserve sele
     });
     assert.ok(left > 0);
 
-    await main.tap();
+    // A real tap on an offscreen tile first scrolls that tile into view.
+    // Dispatch the same click without that browser-driven movement so this
+    // assertion measures the app's rerender, not Playwright auto-scrolling.
+    await main.evaluate(button => button.click());
     assert.equal(await main.getAttribute('aria-pressed'), 'true');
     assert.equal(await breadTile.evaluate(tile => tile.isConnected && getComputedStyle(tile).backgroundImage), background);
     assert.equal(await dishes.evaluate(strip => strip.scrollLeft), left);
