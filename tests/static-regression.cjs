@@ -19,6 +19,25 @@ function fn(start, end, globals = {}) {
   return ctx;
 }
 
+test('startup loader is self-contained, accessible and released after first render', () => {
+  const loader = src.indexOf('<div id="startupLoader"');
+  const firstRecipeScript = src.indexOf('<script src="./vrat-recipes.js">');
+  const appReady = src.indexOf('document.dispatchEvent(new Event("hatri:ready"))');
+  assert.ok(loader > src.indexOf('<body>') && loader < firstRecipeScript,
+    'loader must be present before any network-dependent recipe scripts');
+  assert.match(src, /role="status" aria-label="Loading Hatri" aria-live="polite"/);
+  assert.match(src, /the hardest part of cooking is deciding what to cook!!/);
+  assert.match(src, /Let us handle that/);
+  assert.match(src, /\.startup-spinner\{[^}]*animation:startup-spin/);
+  assert.match(src, /prefers-reduced-motion:reduce\)\{\.startup-spinner\{animation:none/);
+  assert.match(src, /setTimeout\(function\(\)\{[\s\S]*?startupDelay[\s\S]*?\},15000\)/);
+  assert.match(src, /class="startup-retry" onclick="location\.reload\(\)"/);
+  assert.ok(appReady > src.indexOf('MFREADY=true;syncT();'),
+    'do not dismiss before the recipe catalog and Suggestions are initialized');
+  assert.match(src, /requestAnimationFrame\(function\(\)\{\s*loader\.hidden=true/);
+  assert.match(sw, /hatri-v75-atomic-offline-shell/);
+});
+
 test('category cards report catalog totals, not truncated suggestions or hidden advanced filters', () => {
   const recipes = [['Aloo Jeera',1], ['Egg Curry',0], ['Chole Bhature',1]];
   const c = fn('function categoryCounts(){', 'fit=function(', {

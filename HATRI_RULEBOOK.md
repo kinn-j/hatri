@@ -67,6 +67,8 @@ Mark any untranslated instructions as English and identify the fallback to the r
 
 ## Offline app shell
 
+Show a self-contained, centered startup loader immediately while the initial app scripts are loading, with the message "the hardest part of cooking is deciding what to cook!!" followed by "Let us handle that" and an animated green loading indicator. Respect reduced-motion preferences. Dismiss the loader only after the first interactive app render, without waiting for recipe photos, authentication or other optional network responses. If startup stalls, offer a usable retry action rather than an endless spinner. The loader must work in the cached offline shell and both light and dark themes.
+
 Every local script required to restore saved pantry, cart, Table and recipe state must be precached in the service worker shell, including `preferences.js`. Treat HTML, JavaScript and the manifest as one atomic, versioned offline shell: install every required asset before activation, bypass stale HTTP-cache responses during installation, and serve these shell assets cache-first. Do not overwrite individual shell assets from network responses after installation, which could mix release versions. Derive the shell request allowlist from the precache list and advance the cache version whenever a shell asset changes. Leave saved state in local storage untouched across worker upgrades. Test that saved pantry, cart and Table selections survive installation over an older release and repeated offline reloads in both Chromium and WebKit.
 
 ## Community recipe videos
