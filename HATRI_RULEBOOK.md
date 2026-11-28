@@ -55,6 +55,10 @@ Author app text and recipe content in English and retain stable recipe and ingre
 
 Mark any untranslated instructions as English and identify the fallback to the reader. Voice search is offered only when speech recognition is available on-device for the chosen language. Community video titles, captions, and credits remain verbatim.
 
+## Offline app shell
+
+Every local script required to restore saved pantry, cart, Table and recipe state must be precached in the service worker shell, including `preferences.js`. Keep the shell's network-cache allowlist synchronized, and advance the cache version when updating the shell. Test that saved data survives installation over an older release and an offline reload in both Chromium and WebKit.
+
 ## Community recipe videos
 
 Community recipe videos are public once published. A signed-in user may upload an MP4, WebM, or MOV video up to 100 MB, with the binary stored in Firebase Storage and only its metadata stored in Firestore. Anonymous users may browse public videos but may not upload, edit, or delete posts. The feed shows one video per viewport, advances by vertical scroll, and loads at most 30 newest posts per initial query.
@@ -66,3 +70,4 @@ Keep drafts and staging files private. The backend validates the declared size, 
 ## Activity sharing
 
 Activity sharing is opt-in per browser and account. The server checks consent, deduplicates named events, and limits recorded events per account. Typed and dictated recipe queries are excluded. Activity records expire after 90 days.
+

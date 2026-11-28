@@ -1003,6 +1003,7 @@ test('offline service worker installs and controls subsequent navigation', async
     disconnectOrigin = true;
     await page.reload({waitUntil:'domcontentloaded'});
     await page.waitForFunction(() => window.MFREADY === true);
+    assert.equal(await page.evaluate(() => typeof window.HatriPreferences), 'object', 'offline shell loads local preference restoration');
     if (process.env.HATRI_BROWSER !== 'webkit') {
       // WebKit does not expose the installed preview sprite through page-level
       // CacheStorage matching after a forced origin outage, even when the
