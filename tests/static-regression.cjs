@@ -35,7 +35,7 @@ test('startup loader is self-contained, accessible and released after first rend
   assert.ok(appReady > src.indexOf('MFREADY=true;syncT();'),
     'do not dismiss before the recipe catalog and Suggestions are initialized');
   assert.match(src, /requestAnimationFrame\(function\(\)\{\s*loader\.hidden=true/);
-  assert.match(sw, /hatri-v75-atomic-offline-shell/);
+  assert.match(sw, /hatri-v76-atomic-offline-shell/);
 });
 
 test('category cards report catalog totals, not truncated suggestions or hidden advanced filters', () => {
