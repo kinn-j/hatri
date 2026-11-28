@@ -444,6 +444,61 @@ body[data-v="reels"] .reel-actions .btn{background:#153829e8;color:#fff;border:1
 .reels-form .reel-recipe-help{margin:5px 0 10px;font-size:12px;color:var(--muted)}
 @media(max-width:360px){body[data-v="reels"] .reels-top h1{display:none}.reel-recipe-tile img,.reel-recipe-fallback{width:50px;height:50px}.reel-recipe-tile strong{font-size:12px}}
 </style>
+<style id="hatri-reels-create-and-search">
+/* An explicit, single-tap clear action works consistently across desktop and mobile search fields. */
+.input-search-clear{position:relative;display:flex;align-items:center;width:100%;min-width:0}
+.input-search-clear>input{flex:1;min-width:0;width:100%;padding-right:42px!important}
+.input-search-clear>.search-clear{position:absolute;right:7px;top:50%;transform:translateY(-50%)}
+.search-clear{flex:none;display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);font:24px/1 system-ui;cursor:pointer;touch-action:manipulation}
+.search-clear:hover,.search-clear:focus-visible{background:var(--accent-bg);color:var(--text)}
+input:placeholder-shown+.search-clear{display:none!important}
+input[type="search"]::-webkit-search-cancel-button{display:none}
+.header-search>.search-clear{color:var(--search-pill-text)}
+.mf-search>.search-clear{color:var(--muted)}
+body[data-v="reels"] .reels-top h1{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+body[data-v="reels"] .reels-top{right:78px}
+.reels-back-arrow{display:grid;place-items:center;flex:none;width:42px;height:42px;border:1px solid #ffffff70;border-radius:50%;background:#142b23c9;color:#fff;cursor:pointer}
+.reels-back-arrow:focus-visible{outline:3px solid #ffd58e;outline-offset:3px}
+.reels-create-dialog{width:min(480px,100%);max-width:100vw;max-height:min(92dvh,900px);padding:0!important;background:#0c1713!important;color:#fff!important;border:1px solid #ffffff28!important;border-radius:18px;overflow-y:auto}
+.reels-create-dialog::backdrop{background:#000c}
+.reels-create-form{padding:0!important;color:#fff}
+.reels-create-header{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:2;min-height:54px;padding:8px 14px;background:#10201a;border-bottom:1px solid #ffffff1d}
+.reels-create-form .reels-create-header h2{margin:0;font-size:17px;font-weight:750}
+.reels-create-close,.reels-create-next{border:0;background:transparent;color:#fff;cursor:pointer;padding:5px 9px;font:inherit}
+.reels-create-close{font-size:30px;line-height:1}
+.reels-create-next{color:#7eddb0;font-weight:750}
+.reels-create-next:disabled{opacity:.38;cursor:default}
+.reels-preview-stage{display:grid;place-items:center;position:relative;height:min(58dvh,510px);margin:12px auto 8px;aspect-ratio:9/16;max-width:calc(100% - 24px);overflow:hidden;border-radius:14px;background:#020605}
+.reels-preview-stage video{width:100%;height:100%;object-fit:contain;background:#000}
+.reels-preview-empty{display:grid;justify-items:center;gap:10px;padding:16px;text-align:center;color:#e0e9e3}
+.reels-preview-empty>span{display:grid;place-items:center;width:64px;height:64px;border:2px solid #ffffff4f;border-radius:18px;font-size:38px}
+.reels-preview-empty small{color:#b2c8bb}
+.reels-gallery-controls{display:grid;gap:12px;padding:12px 18px 22px}
+.reels-gallery-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.reels-gallery-heading strong{font-size:17px}
+.reels-gallery-heading span{font-size:11px;color:#b5c7bb;text-align:right}
+.reels-gallery-pick{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:16px;border:1px dashed #74aa8c;border-radius:14px;background:#173a2b;color:#fff;font:700 15px system-ui;cursor:pointer}
+.reels-gallery-pick span{font-size:24px}
+#reels-video-name{font-size:12px;color:#aecabb;overflow-wrap:anywhere}
+.reels-create-dialog.is-details .reels-preview-stage{height:150px;width:96px;aspect-ratio:9/16;margin:14px auto 8px}
+.reels-create-details{padding:0 18px 24px}
+.reels-create-details label{display:block;margin:12px 0 5px;font-size:13px;color:#c9ded0}
+.reels-create-details textarea,.reels-create-details input:not([type="file"]),.reels-create-details select{width:100%;box-sizing:border-box;border:1px solid #44614d;border-radius:12px;background:#182a21;color:#fff;padding:12px;font:inherit}
+.reels-create-details textarea{min-height:96px;resize:vertical}
+.reels-create-details textarea::placeholder,.reels-create-details input::placeholder{color:#9fb3a7}
+.reels-map-recipe-btn{display:flex;align-items:center;gap:8px;max-width:100%;margin-top:12px;padding:9px 12px;border:1px solid #80bb91;border-radius:999px;background:#143d29;color:#d9ffdc;font:700 13px system-ui;cursor:pointer}
+.reels-map-recipe-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reels-recipe-search-row{margin:8px 0 12px}
+.reels-create-details .reel-recipe-help{margin:4px 0 0;color:#b8d3c0;font-size:12px}
+.reels-create-options{margin:18px 0;border-top:1px solid #ffffff25;padding-top:12px;color:#cddbd0;font-size:13px}
+.reels-create-options summary{cursor:pointer}
+.reels-create-options input[type="file"]{max-width:100%;color:#fff}
+.reels-create-details .note{color:#d9e9dc;min-height:15px}
+.reels-create-details progress{width:100%;accent-color:#65dc93;height:8px}
+.reels-publish-btn{display:block;width:100%;margin-top:18px;padding:14px;border:0;border-radius:12px;background:#58c986;color:#082717;font:800 15px system-ui;cursor:pointer}
+.reels-publish-btn:disabled{opacity:.5;cursor:default}
+@media(max-width:600px){.reels-create-dialog{width:100vw;height:100dvh;max-height:100dvh;margin:0;inset:0;border:0!important;border-radius:0}.reels-create-header{padding-top:calc(8px + env(safe-area-inset-top,0px))}.reels-create-details{padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}}
+</style>
 <style id="hatri-table-styles">
 /* Table is a dedicated cooking shortlist, not another shopping cart. */
 body[data-v="table"] [data-vs="table"]{display:block}
@@ -485,6 +540,7 @@ body[data-v="table"] [data-vs="table"]{display:block}
     <div class="header-search" role="search">
       <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.7" cy="10.7" r="7"/><path d="m16 16 5 5"/></svg>
       <input type="search" id="rq" placeholder="Search &quot;chole bhature&quot;" aria-label="Search recipes" enterkeyhint="search">
+      <button type="button" class="search-clear" data-clear-for="rq" aria-label="Clear recipe search">×</button>
       <button id="rrVoiceBtn" class="voice-btn" type="button" aria-label="Search recipes by voice" title="Voice search">
         <svg aria-hidden="true" viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8"/></svg>
       </button>
@@ -540,7 +596,7 @@ body[data-v="table"] [data-vs="table"]{display:block}
   <section class="left" data-vs="pantry">
     <div class="card">
       <h2>Pick ingredients <span id="count" class="sub"></span><button class="sx" data-view="recipes" aria-label="Close">✕</button></h2>
-      <div class="how"><span>1 Pick what’s at home</span><span>2 See what you can cook</span><span>3 Refine with Filters</span></div><input type="search" id="q" placeholder="Search ingredients…" aria-label="Search ingredients">
+      <div class="how"><span>1 Pick what’s at home</span><span>2 See what you can cook</span><span>3 Refine with Filters</span></div><div class="input-search-clear"><input type="search" id="q" placeholder="Search ingredients…" aria-label="Search ingredients"><button type="button" class="search-clear" data-clear-for="q" aria-label="Clear ingredient search">×</button></div>
       <div class="row">
         <button class="btn sm" id="starter">Quick start: common veg + dal</button>
         <button class="btn sm" id="clear">Clear all</button>
@@ -583,7 +639,7 @@ body[data-v="table"] [data-vs="table"]{display:block}
 </main>
 <main id="reels-page" aria-labelledby="reels-title">
   <div class="reels-top">
-    <button class="btn sm" type="button" id="reels-back">← Suggestions</button>
+    <button class="reels-back-arrow" type="button" id="reels-back" aria-label="Back to suggestions" title="Back to suggestions"><svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
     <h1 id="reels-title">Hatri Reels</h1>
     <button class="btn sm" type="button" id="reels-explore" hidden>All reels</button>
     <button class="btn sm" type="button" id="reels-mine">My videos</button>
@@ -591,32 +647,48 @@ body[data-v="table"] [data-vs="table"]{display:block}
   <button class="reels-plus" id="reels-upload-open" type="button" aria-label="Upload a recipe video">+</button>
   <div class="reels-feed" id="reels-feed"></div>
 </main>
-<dialog id="reels-upload-dialog" class="reels-dialog" aria-labelledby="reels-upload-title">
-  <form class="reels-form" id="reels-upload-form">
-    <h2 id="reels-upload-title">Share your recipe</h2>
-    <p class="note">Each video is linked to a Hatri recipe. Your video title, caption, selected recipe, and display name will be public.</p>
-    <label for="reels-recipe-input">Linked Hatri recipe</label><input id="reels-recipe-input" name="recipeName" list="reels-recipe-options" maxlength="140" autocomplete="off" placeholder="Search a dish (e.g. Aloo Paratha)" required aria-describedby="reels-recipe-help"><datalist id="reels-recipe-options"></datalist>
-    <p id="reels-recipe-help" class="reel-recipe-help">Select an existing recipe from the suggestions.</p>
-    <label for="reels-title-input">Video title</label><input id="reels-title-input" name="title" maxlength="80" required>
-    <label for="reels-caption-input">Caption</label><textarea id="reels-caption-input" name="caption" maxlength="240"></textarea>
-    <label for="reels-credit-input">Public display name (optional)</label><input id="reels-credit-input" name="credit" maxlength="40" placeholder="Hatri cook">
-    <button class="btn" type="button" id="reels-video-pick" aria-describedby="reels-video-name">Choose video</button>
-    <span id="reels-video-name" role="status">No video selected</span>
-    <input id="reels-video-input" name="video" type="file" accept=".mp4,.webm,.mov,video/mp4,video/webm,video/quicktime" hidden>
-    <label for="reels-subtitles-input">Timed captions (optional WebVTT file)</label><input id="reels-subtitles-input" name="subtitles" type="file" accept=".vtt,text/vtt">
-    <label for="reels-subtitle-language">Caption language</label>
-    <select id="reels-subtitle-language" name="subtitleLanguage"><option value="en">English</option><option value="hi">Hindi</option></select>
-    <p class="note" id="reels-upload-status" aria-live="polite"></p>
-    <progress id="reels-upload-progress" max="1" value="0" aria-label="Video upload progress"></progress>
-    <div class="row"><button class="btn" type="button" id="reels-upload-cancel">Cancel</button><button class="btn primary" type="submit" id="reels-upload-submit">Publish video</button></div>
+<dialog id="reels-upload-dialog" class="reels-dialog reels-create-dialog" aria-labelledby="reels-upload-title">
+  <form class="reels-form reels-create-form" id="reels-upload-form">
+    <div class="reels-create-header">
+      <button type="button" id="reels-upload-cancel" class="reels-create-close" aria-label="Cancel video upload">×</button>
+      <h2 id="reels-upload-title">New reel</h2>
+      <button type="button" id="reels-upload-next" class="reels-create-next" disabled>Next</button>
+    </div>
+    <div class="reels-preview-stage" id="reels-preview-stage">
+      <video id="reels-preview-video" muted playsinline controls preload="metadata" hidden aria-label="Selected video preview"></video>
+      <div id="reels-preview-empty" class="reels-preview-empty"><span aria-hidden="true">▣</span><strong>Your reel preview</strong><small>Select a video from your gallery</small></div>
+    </div>
+    <div class="reels-gallery-controls" id="reels-gallery-controls">
+      <div class="reels-gallery-heading"><strong>Gallery</strong><span>MP4, WebM or MOV · up to 100 MB</span></div>
+      <button class="reels-gallery-pick" type="button" id="reels-video-pick" aria-describedby="reels-video-name"><span aria-hidden="true">＋</span> Choose from gallery</button>
+      <span id="reels-video-name" role="status">No video selected</span>
+      <input id="reels-video-input" name="video" type="file" accept=".mp4,.webm,.mov,video/mp4,video/webm,video/quicktime" hidden>
+    </div>
+    <div class="reels-create-details" id="reels-create-details" hidden>
+      <label for="reels-caption-input">Caption</label><textarea id="reels-caption-input" name="caption" maxlength="240" placeholder="Write a caption for your reel…"></textarea>
+      <button type="button" class="reels-map-recipe-btn" id="reels-map-recipe-open" aria-expanded="false" aria-controls="reels-recipe-search-row">⌕ <span id="reels-map-recipe-label">Add / map a recipe</span></button>
+      <div id="reels-recipe-search-row" class="reels-recipe-search-row" hidden>
+        <label for="reels-recipe-input">Search Hatri recipes</label>
+        <div class="input-search-clear"><input id="reels-recipe-input" name="recipeName" list="reels-recipe-options" maxlength="140" autocomplete="off" placeholder="Search a dish (e.g. Aloo Paratha)" aria-describedby="reels-recipe-help"><button type="button" class="search-clear" data-clear-for="reels-recipe-input" aria-label="Clear recipe mapping search">×</button></div>
+        <datalist id="reels-recipe-options"></datalist>
+        <p id="reels-recipe-help" class="reel-recipe-help">Choose an exact recipe from Hatri.</p>
+      </div>
+      <label for="reels-credit-input">Public display name (optional)</label><input id="reels-credit-input" name="credit" maxlength="40" placeholder="Hatri cook">
+      <details class="reels-create-options"><summary>More options</summary>
+        <label for="reels-subtitles-input">Timed captions (optional WebVTT file)</label><input id="reels-subtitles-input" name="subtitles" type="file" accept=".vtt,text/vtt">
+        <label for="reels-subtitle-language">Caption language</label><select id="reels-subtitle-language" name="subtitleLanguage"><option value="en">English</option><option value="hi">Hindi</option></select>
+      </details>
+      <p class="note" id="reels-upload-status" aria-live="polite"></p>
+      <progress id="reels-upload-progress" max="1" value="0" aria-label="Video upload progress"></progress>
+      <button class="reels-publish-btn" type="submit" id="reels-upload-submit">Share reel</button>
+    </div>
   </form>
 </dialog>
 <dialog id="reels-manage-dialog" class="reels-dialog" aria-labelledby="reels-manage-title">
   <form class="reels-form">
     <h2 id="reels-manage-title">Manage video</h2>
     <div data-reel-management="edit" hidden>
-      <label for="reel-edit-recipe">Linked Hatri recipe</label><input id="reel-edit-recipe" name="recipeName" list="reels-recipe-options" maxlength="140" autocomplete="off" required>
-      <label for="reel-edit-title">Recipe name</label><input id="reel-edit-title" name="title" maxlength="80" required>
+      <label for="reel-edit-recipe">Linked Hatri recipe</label><div class="input-search-clear"><input id="reel-edit-recipe" name="recipeName" list="reels-recipe-options" maxlength="140" autocomplete="off" placeholder="Search Hatri recipes" required><button type="button" class="search-clear" data-clear-for="reel-edit-recipe" aria-label="Clear linked recipe search">×</button></div>
       <label for="reel-edit-caption">Caption</label><textarea id="reel-edit-caption" name="caption" maxlength="240"></textarea>
       <label for="reel-edit-credit">Public display name (optional)</label><input id="reel-edit-credit" name="credit" maxlength="40">
     </div>
@@ -4206,7 +4278,7 @@ function renderMoreFilterSheet(){
   var regions=REG.map(function(x){return mfChoice("r",x,(EMO_R[x]||"🗺️")+" "+x)}).join("");
   var other=WLD.concat([INTL]).map(function(x){return mfChoice("r",x,(EMO_R[x]||"🌍")+" "+x)}).join("");
   var occasions=OB.map(function(x){return mfChoice("o",x[0],(EMO_O[x[0]]||"🎉")+" "+x[1])}).join("");
-  $("mf-content").innerHTML=mfGroup("r","Region","Pick one or more cuisines","<label class='mf-search'><span aria-hidden='true'>⌕</span><input type='search' id='mf-region-search' placeholder='Search regions' aria-label='Search regions' autocomplete='off'></label><p class='mf-subhead'>Indian regions</p><div class='mf-choices mf-region-choices'>"+regions+"</div><p class='mf-subhead'>Other cuisines</p><div class='mf-choices mf-region-choices'>"+other+"</div><p class='mf-no-match' hidden>No matching regions</p>")+
+  $("mf-content").innerHTML=mfGroup("r","Region","Pick one or more cuisines","<div class='mf-search'><span aria-hidden='true'>⌕</span><input type='search' id='mf-region-search' placeholder='Search regions' aria-label='Search regions' autocomplete='off'><button class='search-clear' type='button' data-clear-for='mf-region-search' aria-label='Clear region search'>×</button></div><p class='mf-subhead'>Indian regions</p><div class='mf-choices mf-region-choices'>"+regions+"</div><p class='mf-subhead'>Other cuisines</p><div class='mf-choices mf-region-choices'>"+other+"</div><p class='mf-no-match' hidden>No matching regions</p>")+
     mfGroup("o","Occasion","Select any that fit","<div class='mf-choices'>"+occasions+"</div>");
   syncMoreFilterSheet();
 }
@@ -5075,6 +5147,17 @@ body.searching .sh,body.searching [data-shuffle]{display:none!important}
   });
   scheduleUpdate();
 })();
+// Clear any search field in one click; dispatch input so existing filters update immediately.
+document.addEventListener("click",function(event){
+  var clear=event.target.closest&&event.target.closest("[data-clear-for]");
+  if(!clear)return;
+  var input=document.getElementById(clear.dataset.clearFor);
+  if(!input)return;
+  input.value="";
+  input.dispatchEvent(new Event("input",{bubbles:true}));
+  input.dispatchEvent(new Event("change",{bubbles:true}));
+  input.focus();
+});
 // Register the already-bundled offline shell on HTTPS and localhost.
 if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){/* Online use still works if offline support is blocked. */})})}
 </script>

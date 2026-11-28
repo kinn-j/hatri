@@ -452,6 +452,16 @@ test('community video feed keeps media out of Firestore and enforces its upload 
   assert.match(reels, /MAX_BYTES = 100 \* 1024 \* 1024/);
   assert.match(reels, /where\('status','==','published'\).*limit\(30\)/);
   assert.match(src, /id="reels-recipe-input"[^>]*list="reels-recipe-options"/);
+  assert.match(src, /id="reels-back" aria-label="Back to suggestions"/);
+  assert.doesNotMatch(src, /id="reels-title-input"|id="reel-edit-title"/);
+  assert.match(src, /id="reels-preview-video"/);
+  assert.match(src, /id="reels-upload-next"/);
+  assert.match(src, /id="reels-map-recipe-open"/);
+  assert.match(reels, /title:recipe\.name\.slice\(0,80\)/);
+  for (const id of ['rq','q','mf-region-search','reels-recipe-input','reel-edit-recipe']) {
+    assert.match(src, new RegExp('data-clear-for=["\\\']' + id + '["\\\']'));
+  }
+  assert.match(src, /input\.dispatchEvent\(new Event\("input",\{bubbles:true\}\)\)/);
   assert.match(src, /body\[data-v="reels"\]:not\(\[class\*="sh-"\]\)>\.tabbar\{display:flex!important/);
   assert.match(reels, /tile\.dataset\.openDish = String\(recipe\.index\)/);
   assert.match(reels, /document\.getElementById\('dtray'\)\.addEventListener\('close'/);
