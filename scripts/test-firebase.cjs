@@ -40,7 +40,7 @@ async function main() {
   await request(docs+'/'+old.path,403);
   const draft = db.collection('reelDrafts').doc(ref.id);
   const file = await fs.readFile(path.join(__dirname,'../tests/fixtures/test-reel.webm'));
-  await draft.set({ownerUid:owner.localId,status:'uploading',title:'Audit recipe',caption:'Test clip',
+  await draft.set({ownerUid:owner.localId,status:'uploading',title:'Audit recipe',recipeName:'Aloo Paratha',caption:'Test clip',
     credit:'',subtitles:'',subtitleLanguage:'en',contentType:'video/webm',sizeBytes:file.length,
     validUntil:Timestamp.fromMillis(Date.now()+120_000)});
   await bucket.file('incoming-reels/'+ref.id).save(file,{contentType:'video/webm'});
@@ -53,6 +53,7 @@ async function main() {
   await call('publishReel',{id:ref.id},owner.idToken);
   const publicRecord = await request(docs+'/'+ref.path,200);
   assert.equal(publicRecord.fields.title.stringValue,'Audit recipe');
+  assert.equal(publicRecord.fields.recipeName.stringValue,'Aloo Paratha');
   assert.ok(!Object.hasOwn(publicRecord.fields,'ownerUid') && !Object.hasOwn(publicRecord.fields,'videoUrl'));
   const feed = await request(docs+':runQuery',200,{structuredQuery:{
     from:[{collectionId:'publicRecipeVideos'}],
@@ -65,8 +66,10 @@ async function main() {
   assert.deepEqual(feed.filter(item=>item.document).map(item=>item.document.fields.title.stringValue),['Audit recipe']);
   await call('reportReel',{id:ref.id,reason:'privacy'},guest.idToken);
   await call('manageReel',{id:ref.id,action:'delete'},guest.idToken,403);
-  await call('manageReel',{id:ref.id,action:'edit',title:'Updated recipe'},owner.idToken);
-  assert.equal((await request(docs+'/'+ref.path,200)).fields.title.stringValue,'Updated recipe');
+  await call('manageReel',{id:ref.id,action:'edit',title:'Updated recipe',recipeName:'Gajar Halwa',caption:'Test clip',credit:''},owner.idToken);
+  const updated = await request(docs+'/'+ref.path,200);
+  assert.equal(updated.fields.title.stringValue,'Updated recipe');
+  assert.equal(updated.fields.recipeName.stringValue,'Gajar Halwa');
   await call('manageReel',{id:ref.id,action:'delete'},owner.idToken);
   await request(docs+'/'+ref.path,403);
 
