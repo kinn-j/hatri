@@ -677,6 +677,7 @@ body[data-v="table"] [data-vs="table"]{display:block}
 <script src="./additional-recipes.js"></script>
 <script src="./street-food-recipes.js"></script>
 <script src="./north-chaat-recipes.js"></script>
+<script src="./no-cook-recipes.js"></script>
 <script src="./rajasthani-recipes.js"></script>
 <script src="./seasonal-recipes.js"></script>
 <script src="./winter-recipes.js"></script>
@@ -685,6 +686,7 @@ body[data-v="table"] [data-vs="table"]{display:block}
 <script src="./recipe-details.js"></script>
 <script src="./hindi-catalog.js"></script>
 <script src="./north-chaat-hindi.js"></script>
+<script src="./no-cook-hindi.js"></script>
 <script src="./translation.js"></script>
 <script src="./preferences.js"></script>
 <script>
@@ -4044,8 +4046,19 @@ if(typeof INSTAGRAM_RECIPES!=="undefined"){
       NAME[item[0]]=item[1];
     });
   }
+  if(typeof NO_COOK_PANTRY!=="undefined"){
+    var noCookSpecialty=CATS.find(function(group){return group[0]==="Specialty & other"});
+    if(!noCookSpecialty){noCookSpecialty=["Specialty & other",[]];CATS.push(noCookSpecialty)}
+    NO_COOK_PANTRY.forEach(function(item){
+      if(typeof INGREDIENT_LOCAL_IMAGES!=="undefined")INGREDIENT_LOCAL_IMAGES[item[0]]=item[2];
+      if(NAME[item[0]])return;
+      noCookSpecialty[1].push([item[0],item[1]]);
+      NAME[item[0]]=item[1];
+    });
+  }
   var northChaat=typeof NORTH_CHAAT_CATALOG==="undefined"?[]:NORTH_CHAAT_CATALOG;
-  quick.concat(street,rajasthani,seasonal,international,winter,desi,additional,northChaat).forEach(function(recipe){
+  var regionalNoCook=typeof NO_COOK_RECIPES==="undefined"?[]:NO_COOK_RECIPES;
+  quick.concat(street,rajasthani,seasonal,international,winter,desi,additional,northChaat,regionalNoCook).forEach(function(recipe){
     var name=recipe.name,c=recipe.course;
     var occasions=recipe.occasion?["Festive",recipe.occasion]:["Daily"];
     if(winter.includes(recipe))occasions.push("Winter");

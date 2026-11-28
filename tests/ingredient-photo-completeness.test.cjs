@@ -36,6 +36,13 @@ for(const item of newCtx.pantry){
  names.add(item[0]);
  mapped.local[item[0]]='images/ingredients/hatri-'+item[0]+'.webp';
 }
+const noCook={};
+vm.runInNewContext(fs.readFileSync(path.join(root,'no-cook-recipes.js'),'utf8')+
+ '\n;this.pantry=NO_COOK_PANTRY;',noCook);
+for(const item of noCook.pantry){
+ names.add(item[0]);
+ mapped.local[item[0]]=item[2];
+}
 test('all registered core, regional and specialty pantry ingredients have photo mappings',()=>{
  assert.ok(names.size>=190);
  const missing=[...names].filter(id=>!mapped.images[id]&&!mapped.local[id]);

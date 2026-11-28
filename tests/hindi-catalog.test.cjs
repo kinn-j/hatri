@@ -18,6 +18,9 @@ vm.runInNewContext(script, context);
 vm.runInNewContext(fs.readFileSync(path.join(root, 'north-chaat-recipes.js'), 'utf8') +
   '\n;globalThis.NORTH_CHAAT_RECIPES=NORTH_CHAAT_RECIPES;globalThis.NORTH_CHAAT_PANTRY=NORTH_CHAAT_PANTRY;', context);
 vm.runInNewContext(fs.readFileSync(path.join(root, 'north-chaat-hindi.js'), 'utf8'), context);
+vm.runInNewContext(fs.readFileSync(path.join(root, 'no-cook-recipes.js'), 'utf8') +
+  '\n;globalThis.NO_COOK_ROWS=NO_COOK_ROWS;globalThis.NO_COOK_PANTRY=NO_COOK_PANTRY;', context);
+vm.runInNewContext(fs.readFileSync(path.join(root, 'no-cook-hindi.js'), 'utf8'), context);
 const pack = context.HATRI_HINDI_CATALOG;
 
 test('Hindi recipe pack is available in both apps and the installed PWA', () => {
@@ -25,6 +28,7 @@ test('Hindi recipe pack is available in both apps and the installed PWA', () => 
   assert.match(legacy, /import\(hindiCatalogUrl\.href\)/);
   assert.match(sw, /'\.\/hindi-catalog\.js'/);
   assert.match(sw, /'\.\/north-chaat-hindi\.js'/);
+  assert.match(sw, /'\.\/no-cook-hindi\.js'/);
   assert.ok(pack && pack.titles && pack.steps && pack.amounts && pack.ingredients);
 });
 
