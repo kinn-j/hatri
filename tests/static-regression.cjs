@@ -548,6 +548,70 @@ test('the service worker falls back on a server outage and leaves unrelated navi
   assert.equal(writes,0);
 });
 
+test('the service worker serves one versioned offline shell without network or partial updates', async () => {
+  const scope='https://example.test/hatri/';
+  const handlers={};
+  const cached=new Map([
+    ['index.html','offline HTML'],
+    ['preferences.js','offline preferences'],
+    ['translation.js','offline translations'],
+    ['recipe-reels.js','offline reels'],
+    ['manifest.webmanifest','offline manifest'],
+  ].map(([name,body])=>[new URL(name,scope).href,new Response(body)]));
+  let downloads=0,writes=0;
+  vm.runInNewContext(sw,{
+    URL,Request,
+    self:{registration:{scope},location:new URL(scope),addEventListener:(name,callback)=>{handlers[name]=callback}},
+    caches:{open:async()=>({
+      match:async key=>cached.get(typeof key==='string'?key:key.url)?.clone(),
+      put:async()=>{writes++},
+    })},
+    fetch:async()=>{downloads++;return new Response('network version')},
+  });
+  const request=(relative,navigation=false)=>{
+    let response;
+    handlers.fetch({request:{method:'GET',mode:navigation?'navigate':'same-origin',url:new URL(relative,scope).href},
+      respondWith:value=>{response=value}});
+    return response;
+  };
+  assert.equal(await (await request('?reels=1',true)).text(),'offline HTML');
+  for(const [name,body] of [['preferences.js','offline preferences'],['translation.js','offline translations'],
+    ['recipe-reels.js','offline reels'],['manifest.webmanifest','offline manifest']]) {
+    assert.equal(await (await request(name)).text(),body,`${name} comes from the installed version`);
+  }
+  assert.equal(downloads,0,'an installed shell never depends on a healthy origin');
+  assert.equal(writes,0,'online requests cannot silently overwrite one shell file');
+  assert.equal(await (await request('not-in-shell.txt')).text(),'network version');
+  assert.equal(downloads,1,'unrelated resources still use the network');
+});
+
+test('service worker verifies the complete shell before activating and bypasses old HTTP-cache files', async () => {
+  const scope='https://example.test/hatri/';
+  const handlers={};
+  let complete=false,activations=0,installedRequests=[];
+  vm.runInNewContext(sw,{
+    URL,Request,
+    self:{registration:{scope},location:new URL(scope),addEventListener:(name,callback)=>{handlers[name]=callback},
+      skipWaiting:async()=>{activations++}},
+    caches:{open:async()=>({
+      addAll:async requests=>{installedRequests=requests},
+      match:async key=>complete||!String(key).endsWith('/preferences.js')?new Response('present'):undefined,
+    })},
+  });
+  const install=()=>{
+    let installation;
+    handlers.install({waitUntil:value=>{installation=value}});
+    return installation;
+  };
+  await assert.rejects(install(),/Incomplete Hatri offline shell: .\/preferences.js/);
+  assert.equal(activations,0,'incomplete installs never activate');
+  assert.ok(installedRequests.length>20);
+  assert.ok(installedRequests.every(req=>req.cache==='reload'),'precache skips stale browser HTTP cache');
+  complete=true;
+  await install();
+  assert.equal(activations,1,'complete shell is allowed to activate');
+});
+
 test('every catalog image has a unique slot in the shared WebP preview', () => {
   const { mealPhotoPreviews, mealPreviewSize, mealPreviewColumns, mealPreviewRows, mealPreviewAsset } =
     fn('var mealPreviewSize=', 'var bundledPhotos=');
