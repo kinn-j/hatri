@@ -4348,12 +4348,13 @@ document.addEventListener("error",function(e){
     else if(dairy[id]||/^Dairy/.test(c[0]))k="Dairy & Bread";
     else if(snacks[id]||/biscuit|cookie|cracker|namkeen|prepared.*shell/.test(id))k="Bakery & Snacks";
     else if(nuts[id]||/nuts|cereal|oats|raisin|almond|cashew|pistachio/.test(id))k="Dry Fruits & Cereals";
-    else if(id==="desiccatedcoconut")k="Dry Fruits & Cereals";
+    else if(id==="desiccatedcoconut"||id==="sabja")k="Dry Fruits & Cereals";
+    else if(id==="yeast"||id==="chocolate")k="Bakery & Snacks";
     else if(sauces[id]||/chutney|sauce|spread|jam|syrup|paste/.test(id)&&!/gingergarlicpaste|rawpapayapaste/.test(id))k="Sauces & Spreads";
     else if(processedFruit[id])k="Drinks & Specialty";
     else if(drinks[id]||/coffee|tea|juice|soda|tonic|sherbet|sharbat/.test(id))k="Drinks & Specialty";
     else if(id==="foodgradeslakedlime"||id==="lemonzest"||id==="orangezest")k="Oil, Ghee & Masala";
-    else if((herb[id]&&!/^(kasurimethi|italianherbs)$/.test(id))||veg[id]||fruit[id]||/^Daily vegetables|^Seasonal|^Herbs|^Fruits & coconut/.test(c[0])&&!/^(kasurimethi|italianherbs)$/.test(id))k="Vegetables & Fruits";
+    else if(id==="tulsileaves"||(herb[id]&&!/^(kasurimethi|italianherbs)$/.test(id))||veg[id]||fruit[id]||/^Daily vegetables|^Seasonal|^Herbs|^Fruits & coconut/.test(c[0])&&!/^(kasurimethi|italianherbs)$/.test(id))k="Vegetables & Fruits";
     else if(cond[id]||/^Kitchen basics/.test(c[0]))k="Oil, Ghee & Masala";
     else if(grains[id]||/^Grains|^Dals|^Vrat ingredients/.test(c[0])||/dal|rice|flour|beans|chana|wheat|millet/.test(id))k="Atta, Rice & Dal";
     else if(protein[id])k="Dairy & Bread";
@@ -4365,6 +4366,75 @@ document.addEventListener("error",function(e){
   CATS.forEach(function(c){c[1].forEach(function(item){NAME[item[0]]=item[1]})});
 })();
 function pantryGroupLabel(k){return k==="Dairy & Bread"&&nonveg?"Dairy, Bread & Eggs":k}
+// All groups use the same existing subcategory-pill UI. Each ingredient belongs
+// to exactly one subcategory; no secondary "Seasonal" copy of produce is needed.
+var PANTRY_SUBCATEGORIES={
+  "Vegetables & Fruits":["Fresh Vegetables","Fresh Fruits","Coriander & Others","Exotics"],
+  "Atta, Rice & Dal":["Rice & Poha","Dal & Pulses","Atta & Flours","Grains & Staples","Noodles & Batters"],
+  "Oil, Ghee & Masala":["Oil & Ghee","Ground Masala","Khada Masala","Kitchen Basics"],
+  "Dairy & Bread":["Milk & Dairy","Paneer & Cheese","Bread & Flatbreads","Plant Proteins","Eggs"]
+};
+function pantrySubcategory(group,id){
+  if(group==="Vegetables & Fruits"){
+    if(/^(lemon|lime|coconut|tendercoconut|rawmango|mango|banana|apple|amla|papaya|orange|pineapple|pomegranate|mosambi|watermelon|kiwi|peach|lychee|pear|strawberries|blueberries|berries|cherries|orangeslices|gratedcoconut|karonda|gunda|kachri)$/.test(id))return "Fresh Fruits";
+    if(/^(coriander|mint|currylv|gchilli|bigchilli|freshredchilli|ginger|garlic|basil|tulsi|tulsileaves|parsley|rosemary|thyme|sage|dill|freshturmeric|makrutleaves|bayleaf|garlicchives)$/.test(id))return "Coriander & Others";
+    if(/^(broccoli|zucchini|avocado|kale|brusselssprouts|asparagus|artichoke|leek|parsnip|celery|collardgreens|lotusstem|lemongrass|galangal|mushroom|shiitake|redbellpepper|yellowbellpepper)$/.test(id))return "Exotics";
+    return "Fresh Vegetables"; // All seasonal vegetables are included here.
+  }
+  if(group==="Atta, Rice & Dal"){
+    if(/^(rice|basmatirice|blackrice|arborio|arboriorice|shortgrainrice|samak|poha|murmura|ricenoodlerolls)$/.test(id))return "Rice & Poha";
+    if(/^(toor|moong|chickpea|rajma|urad|chanadal|matki|lobia|masoor|masoorwhole|kabulichana|blackchickpeas|driedblackchickpeas|whitebeans|splitpeas|cookedwhitebeans|cookedfavabeans|cookedchickpeas|cookedmothbeans|cookedblackchickpeas|greenchickpeas|sprouts|kumatiya|kadalacurry)$/.test(id))return "Dal & Pulses";
+    if(/^(atta|besan|suji|bajra|makki|kuttu|singhara|jowar|maida|sattu|ragi|riceflour|barleyflour|mothflour|sproutedwheatflour|rajgira|polenta)$/.test(id))return "Atta & Flours";
+    if(/^(vermicelli|noodles|wheatnoodles|glassnoodles|pasta|cannellonipastatubes|jumbopastashells|batter|fermentedricebatter)$/.test(id))return "Noodles & Batters";
+    return "Grains & Staples";
+  }
+  if(group==="Oil, Ghee & Masala"){
+    if(/^(ghee|mustardoil|oliveoil|coconutoil|sesameoil|chillioil|fryingoil|oil|truffleoil|vegetableoil|sunfloweroil|canolaoil)$/.test(id))return "Oil & Ghee";
+    if(/^(chaatmasala|pavbhajimasala|currypowder|turmeric|kolhapurimasalaordriedredchillies|cumin|roastedcuminpowder|redchillipowder|jeeravanmasala|garammasala|picklemasala|corianderpowder|cholemasala|tandoorimasala|fennelpowder|drygingerpowder|groundginger|gingergarlicpaste|rawpapayapaste|asafoetida)$/.test(id))return "Ground Masala";
+    if(/^(blackpepper|cuminseeds|cardamom|cinnamon|mustardseeds|cloves|ajwain|fennel|fenugreekseeds|wholespices|redchilli|dryredchilli|corianderseeds|anardana|saffron|kasurimethi|italianherbs|bayleaf)$/.test(id))return "Khada Masala";
+    return "Kitchen Basics";
+  }
+  if(group==="Dairy & Bread"){
+    if(id==="eggs")return "Eggs";
+    if(/^(bread|pav|kulcha|tortillas)$/.test(id))return "Bread & Flatbreads";
+    if(/^(tofu|soyachaap)$/.test(id))return "Plant Proteins";
+    if(/^(paneer|cheese|creamcheese|ricottacheese|parmesanstylevegetariancheese|feta|cheddar|gruyere|kaladi|chhena)$/.test(id))return "Paneer & Cheese";
+    return "Milk & Dairy";
+  }
+  return "";
+}
+var PANTRY_ITEM_ORDER={
+  "Vegetables & Fruits":("onion pearlonion springonion potato babypotato sweetpotato arbi suran garadu carrot mooli beetroot radishpods lotusroot " +
+    "spinach sarson methi bathua radishgreens gonguraleaves cabbage cauliflower lauki turai tinda karela pumpkin ashgourd butternut pointedgourd cucumber " +
+    "beans clusterbeans peas pigeonpeas drumstick okra tomato brinjal capsicum rawbanana corn mixedvegetables " +
+    "mango rawmango apple pear banana papaya amla lemon lime orange orangeslices mosambi pineapple watermelon pomegranate kiwi lychee peach strawberries blueberries berries cherries gunda kachri karonda coconut gratedcoconut tendercoconut " +
+    "coriander mint currylv basil tulsi tulsileaves dill parsley rosemary thyme sage ginger garlic garlicchives freshturmeric gchilli bigchilli freshredchilli makrutleaves " +
+    "mushroom shiitake broccoli brusselssprouts kale collardgreens zucchini asparagus artichoke leek parsnip celery lotusstem lemongrass galangal avocado").split(" "),
+  "Atta, Rice & Dal":("rice basmatirice blackrice shortgrainrice arborio arboriorice samak poha murmura ricenoodlerolls " +
+    "toor moong urad chanadal masoor masoorwhole chickpea kabulichana cookedchickpeas greenchickpeas blackchickpeas driedblackchickpeas cookedblackchickpeas rajma lobia matki cookedmothbeans whitebeans cookedwhitebeans splitpeas cookedfavabeans sprouts kumatiya kadalacurry " +
+    "atta maida besan bajra jowar ragi makki kuttu singhara rajgira riceflour barleyflour sproutedwheatflour mothflour sattu suji polenta " +
+    "millet pearlbarley daliya sabudana rajgiraseeds puffedrajgira sangri soya crackedmaize couscous " +
+    "vermicelli noodles wheatnoodles glassnoodles pasta cannellonipastatubes jumbopastashells batter fermentedricebatter").split(" "),
+  "Oil, Ghee & Masala":("ghee mustardoil oliveoil coconutoil sesameoil chillioil truffleoil fryingoil oil " +
+    "turmeric redchillipowder corianderpowder cumin roastedcuminpowder drygingerpowder groundginger fennelpowder chaatmasala garammasala cholemasala pavbhajimasala jeeravanmasala picklemasala tandoorimasala currypowder asafoetida gingergarlicpaste rawpapayapaste " +
+    "cuminseeds corianderseeds mustardseeds fenugreekseeds fennel ajwain blackpepper cardamom cinnamon cloves bayleaf wholespices dryredchilli redchilli anardana saffron kasurimethi italianherbs " +
+    "sugar brownsugar icingsugar jaggery tamarind lemonzest orangezest bakingpowder cornflour vanillaessence vegstock").split(" "),
+  "Dairy & Bread":("milk condensedmilk curd buttermilk cream malai butter mawa khoya icecream " +
+    "paneer chhena cheese creamcheese cheddar gruyere feta ricottacheese parmesanstylevegetariancheese kaladi " +
+    "bread pav kulcha tortillas tofu soyachaap eggs").split(" ")
+};
+function pantrySortItems(group,items){
+  var names=PANTRY_SUBCATEGORIES[group];if(!names)return items;
+  var order=PANTRY_ITEM_ORDER[group],rank={};order.forEach(function(id,i){rank[id]=i});
+  return items.sort(function(a,b){
+    var sa=names.indexOf(pantrySubcategory(group,a[0])),sb=names.indexOf(pantrySubcategory(group,b[0]));
+    if(sa!==sb)return sa-sb;
+    var ra=Object.prototype.hasOwnProperty.call(rank,a[0])?rank[a[0]]:9999;
+    var rb=Object.prototype.hasOwnProperty.call(rank,b[0])?rank[b[0]]:9999;
+    return ra-rb||a[1].localeCompare(b[1]);
+  });
+}
+CATS.forEach(function(group){pantrySortItems(group[0],group[1])});
 function renderPantrySlides(){
   var el=$("pantrySlides");if(!el||!MFREADY)return;
   var cats=CATS.filter(function(c){return nonveg||!c[3]}).map(function(c){return [c[0],c[1].filter(function(x){return nonveg||NV.indexOf(x[0])<0})]}).filter(function(c){return c[1].length});
@@ -4372,16 +4442,11 @@ function renderPantrySlides(){
   if(typeof pantryTab!=="number")pantryTab=0;
   if(pantryTab>=cats.length)pantryTab=0;
   var c=cats[pantryTab],oldGrid=el.querySelector(".pantry-grid");
-  var exotic=/^(broccoli|zucchini|avocado|kale|brusselssprouts|asparagus|artichoke|leek|parsnip|celery|collardgreens|lotusstem|lemongrass|galangal|mushroom|shiitake|redbellpepper|yellowbellpepper)$/;
-  var freshFruit=/^(lemon|lime|coconut|tendercoconut|rawmango|mango|banana|apple|amla|papaya|orange|pineapple|pomegranate|mosambi|watermelon|kiwi|peach|lychee|pear|strawberries|blueberries|berries|cherries|passionfruitpulp|karonda|gunda|kachri)$/;
-  var corianderOthers=/^(coriander|mint|currylv|gchilli|bigchilli|freshredchilli|ginger|garlic|basil|tulsi|parsley|rosemary|thyme|sage|dill|freshturmeric|makrutleaves|bayleaf|garlicchives)$/;
-  var seasonal=/^(cauliflower|peas|methi|sarson|spinach|mooli|beetroot|sweetpotato|suran|tinda|turai|karela|pumpkin|watermelon|mango|rawmango|amla|gunda|kachri|karonda|bathua|radishpods|greenchickpeas)$/;
-  var vegSubgroups=[["Fresh Vegetables",function(id){return !freshFruit.test(id)&&!corianderOthers.test(id)&&!exotic.test(id)}],["Fresh Fruits",function(id){return freshFruit.test(id)}],["Exotics",function(id){return exotic.test(id)}],["Coriander & Others",function(id){return corianderOthers.test(id)}],["Seasonal",function(id){return seasonal.test(id)}]];
-  if(typeof pantryVegSub!=="number")pantryVegSub=0;
-  if(c[0]!=="Vegetables & Fruits")pantryVegSub=0;
-  var subgroup=vegSubgroups[pantryVegSub]||vegSubgroups[0];
-  var visibleItems=c[0]==="Vegetables & Fruits"?c[1].filter(function(x){return subgroup[1](x[0])}):c[1];
-  var layout=JSON.stringify([cats.map(function(group){return group[0]}),pantryTab,pantryVegSub,visibleItems.map(function(x){return x[0]})]);
+  var subgroups=(PANTRY_SUBCATEGORIES[c[0]]||[]).filter(function(name){return nonveg||name!=="Eggs"});
+  if(pantrySub>=subgroups.length)pantrySub=0;
+  var chosen=subgroups[pantrySub];
+  var visibleItems=chosen?c[1].filter(function(x){return pantrySubcategory(c[0],x[0])===chosen}):c[1];
+  var layout=JSON.stringify([cats.map(function(group){return group[0]}),pantryTab,pantrySub,visibleItems.map(function(x){return x[0]})]);
   var selectedCount=String(visibleItems.filter(function(x){return !!have[x[0]]}).length);
   // Keep the loaded images and scroll position when the visible ingredients are the same.
   if(oldGrid&&el.dataset.pantryLayout===layout){
@@ -4405,7 +4470,7 @@ function renderPantrySlides(){
   tr.appendChild(tb);
   var pn=document.createElement("div");pn.className="fpanel pantry-panel";
   var changedGroup=el.dataset.pantryGroup!==c[0];
-  var subtabs=c[0]==="Vegetables & Fruits"?"<div class='pantry-subtabs' role='tablist' aria-label='Produce types'>"+vegSubgroups.map(function(s,i){return "<button type='button' role='tab' class='"+(i===pantryVegSub?"on":"")+"' data-pantry-sub='"+i+"' aria-selected='"+(i===pantryVegSub)+"'>"+s[0]+"</button>"}).join("")+"</div>":"";
+  var subtabs=subgroups.length?"<div class='pantry-subtabs' role='tablist' aria-label='Ingredient types'>"+subgroups.map(function(name,i){return "<button type='button' role='tab' class='"+(i===pantrySub?"on":"")+"' data-pantry-sub='"+i+"' aria-selected='"+(i===pantrySub)+"'>"+name+"</button>"}).join("")+"</div>":"";
   pn.innerHTML=subtabs+"<div class='fph'><h3>"+pantryGroupLabel(c[0])+" (<span class='pantry-count'>"+selectedCount+"</span>)</h3><div class='pantry-head-actions'><div class='pantry-bulk' role='group' aria-label='Select pantry items'><button type='button' data-pantry-bulk='all'>Select all</button><button type='button' data-pantry-bulk='none'>Clear all</button></div></div></div>";
   var g=document.createElement("div");g.className="fgrid pantry-grid";
   g.innerHTML=visibleItems.map(function(x){return ingredientTileHTML(x[0],NAME[x[0]]||x[1],!!have[x[0]])}).join("");
@@ -4417,10 +4482,10 @@ function renderPantrySlides(){
   el.dataset.pantryLayout=layout;
   if(changedGroup)el.querySelector(".pantry-grid").scrollLeft=0;
 }
-var pantryTab=0,pantryVegSub=0;
+var pantryTab=0,pantrySub=0;
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pantry-bulk]");if(!b)return;var ids=Array.from(document.querySelectorAll("#pantrySlides .pantry-grid [data-i]"),function(tile){return tile.getAttribute("data-i")});if(!ids.length)return;var allItems=b.getAttribute("data-pantry-bulk")==="all";ids.forEach(function(id){if(allItems){have[id]=1;delete cart[id]}else delete have[id]});save();all();e.preventDefault();e.stopPropagation()},true);
-document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pantry-cat]");if(!b)return;pantryTab=+b.getAttribute("data-pantry-cat")||0;renderPantrySlides();e.preventDefault();e.stopPropagation()},true);
-document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pantry-sub]");if(!b)return;pantryVegSub=+b.getAttribute("data-pantry-sub")||0;renderPantrySlides();e.preventDefault();e.stopPropagation()},true);
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pantry-cat]");if(!b)return;var next=+b.getAttribute("data-pantry-cat")||0;if(next!==pantryTab){pantryTab=next;pantrySub=0}renderPantrySlides();e.preventDefault();e.stopPropagation()},true);
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pantry-sub]");if(!b)return;pantrySub=+b.getAttribute("data-pantry-sub")||0;renderPantrySlides();e.preventDefault();e.stopPropagation()},true);
 var _allWithPantry=all;all=function(){var r=_allWithPantry.apply(this,arguments);try{renderPantrySlides()}catch(e){}return r};
 // Keep badges and other features that read the recipe flag consistent with Veg Mode.
 MEALS.forEach(function(m){if(!isVegetarianDish(m))m[1]=0});
