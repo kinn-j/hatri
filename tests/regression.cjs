@@ -554,7 +554,9 @@ test('live pantry labels and elapsed soak time agree with recipe suggestions', a
     await page.locator('#rq').fill('Moong Dal Chilla');
     assert.match(await page.locator('#results [data-recipe="Moong%20Dal%20Chilla"] .tm').first().textContent(),/142 min/);
     await page.locator('#rq').fill('');
-    await page.locator('#slides [data-sf="t|t2"]').click();
+    await page.locator('#slides [data-mf-open]').click();
+    await page.locator('#moreFiltersDialog [data-mf-option="t|t2"]').click();
+    await page.locator('#moreFiltersDialog [data-mf-apply]').click();
     await page.locator('#rq').fill('Moong Dal Chilla');
     assert.equal(await page.locator('#results [data-recipe="Moong%20Dal%20Chilla"]').count(),0);
   } finally { await context.close(); }
@@ -612,9 +614,9 @@ test('search appears immediately and respects active region, time and diet', asy
   await context.close();
 });
 
-test('Clear all time remains cleared across reload; individual suggestions share one 100-dish limit', async () => {
+test('an unrestricted time filter remains unrestricted across reload; individual suggestions render in batches', async () => {
   const {page, context} = await open();
-  await page.evaluate(() => document.querySelector('[data-sf="t|#none"]').click());
+  await page.evaluate(() => { Object.keys(TS).forEach(key => delete TS[key]); syncT(); saveF(); });
   assert.equal(await page.evaluate(() => Object.keys(TS).length), 0);
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(() => window.MFREADY === true);
@@ -640,10 +642,11 @@ test('saved heaviness selections do not restrict recipes or appear in filters or
     await page.waitForFunction(() => window.MFREADY === true);
 
     const more = page.locator('[data-mf-open]');
-    assert.equal(await more.locator('.mf-count').innerText(), '2');
+    assert.equal(await more.locator('.mf-count').innerText(), '3');
     await more.click();
     const dialog = page.locator('#moreFiltersDialog');
-    assert.deepEqual(await dialog.locator('h3').allTextContents(), ['Region', 'Occasion']);
+    assert.deepEqual(await dialog.locator('h3').allTextContents(), ['Time I have (prep + cook)', 'Region', 'Occasion']);
+    assert.equal(await dialog.locator('[data-mf-option="t|t3"]').getAttribute('aria-pressed'), 'true');
     await dialog.locator('[data-mf-apply]').click();
     assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('rr-filters-v2'))), filters);
 
@@ -1320,15 +1323,15 @@ test('mobile pantry taps keep other ingredient photos and scroll position stable
   }
 });
 
-test('mobile dish and time selections and advanced filters preserve the controls', async () => {
+test('mobile dish cards and More filters time, region and occasion preserve selections', async () => {
   const {page, context} = await open({width: 390, height: 844}, {isMobile: true, hasTouch: true});
   try {
     const slides = page.locator('#slides');
     const dishes = slides.locator('.cr .sls');
     const main = slides.locator('[data-crs="Main"]');
     const bread = slides.locator('[data-crs="Bread"]');
-    const time = slides.locator('[data-sf="t|t2"]');
     const more = slides.locator('[data-mf-open]');
+    assert.equal(await slides.locator('.slr.sm, [data-sf^="t|"]').count(), 0, 'time is no longer on the Cook page');
     await page.waitForFunction(() => document.querySelector('#slides [data-crs="Bread"]').classList.contains('cp'));
     const breadTile = await bread.elementHandle();
     const background = await breadTile.evaluate(tile => getComputedStyle(tile).backgroundImage);
@@ -1347,19 +1350,20 @@ test('mobile dish and time selections and advanced filters preserve the controls
     await slides.locator('[data-remove-category="Main"]').tap();
     assert.equal(await main.getAttribute('aria-pressed'), 'false');
 
-    const timeTile = await time.elementHandle();
-    await time.focus();
-    await page.keyboard.press('Space');
-    assert.equal(await time.getAttribute('aria-pressed'), 'true');
-    assert.equal(await timeTile.evaluate(tile => document.activeElement === tile), true);
-    await slides.locator('[data-sf="t|#none"]').tap();
-    assert.equal(await time.getAttribute('aria-pressed'), 'false');
-    await slides.locator('[data-sf="t|#all"]').tap();
-    assert.equal(await time.getAttribute('aria-pressed'), 'true');
-
     const trigger = await more.elementHandle();
     await more.tap();
     const dialog = page.locator('#moreFiltersDialog');
+    const time = dialog.locator('[data-mf-option="t|t2"]');
+    assert.equal(await dialog.locator('[data-mf-option^="t|"]').count(), 6);
+    await time.focus();
+    await page.keyboard.press('Space');
+    assert.equal(await time.getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.evaluate(() => restr(TS,tIds())), false, 'time edits are draft-only');
+    await dialog.locator('[data-mf-close]').tap();
+    await more.tap();
+    assert.equal(await dialog.locator('[data-mf-option="t|t2"]').getAttribute('aria-pressed'), 'false', 'cancel preserves committed unrestricted selection');
+    await time.tap();
+    assert.equal(await time.getAttribute('aria-pressed'), 'true');
     const regionChoices = dialog.locator('.mf-region-choices .mf-choice');
     const positions = buttons => buttons.map(button => [button.offsetLeft, button.offsetTop]);
     const before = await regionChoices.evaluateAll(positions);
@@ -1371,12 +1375,9 @@ test('mobile dish and time selections and advanced filters preserve the controls
     assert.deepEqual(await regionChoices.evaluateAll(positions), before);
     await dialog.locator('[data-mf-apply]').tap();
     assert.equal(await dialog.isVisible(), false);
-    assert.equal(await more.locator('.mf-count').innerText(), '2');
+    assert.equal(await more.locator('.mf-count').innerText(), '3');
+    assert.deepEqual(await page.evaluate(() => Object.keys(TS)), ['t2']);
     assert.equal(await trigger.evaluate(button => button.isConnected), true);
-    await more.tap();
-    await dialog.locator('[data-mf-reset]').tap();
-    await dialog.locator('[data-mf-apply]').tap();
-    assert.equal(await more.locator('.mf-count').count(), 0);
     assert.equal(await breadTile.evaluate(tile => tile.isConnected && getComputedStyle(tile).backgroundImage), background);
     await page.locator('#nvBtn').tap();
     assert.equal(await page.locator('#nvBtn').getAttribute('aria-checked'), 'false');
@@ -1386,6 +1387,14 @@ test('mobile dish and time selections and advanced filters preserve the controls
     await kettle.tap();
     assert.equal(await kettle.getAttribute('aria-pressed'), 'true');
     assert.equal(await breadTile.evaluate(tile => tile.isConnected), true);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(() => window.MFREADY === true);
+    assert.deepEqual(await page.evaluate(() => Object.keys(TS)), ['t2'], 'time filter persists across reload');
+    await more.tap();
+    await dialog.locator('[data-mf-reset]').tap();
+    await dialog.locator('[data-mf-apply]').tap();
+    assert.equal(await more.locator('.mf-count').count(), 0);
+    assert.equal(await page.evaluate(() => restr(TS,tIds())), false, 'reset removes the time restriction');
   } finally {
     await context.close();
   }

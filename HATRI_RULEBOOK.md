@@ -42,6 +42,8 @@ The order of dishes does not change a saved meal's identity. Independent prefere
 
 Recipe cards, filters, and the recipe catalog omit heaviness ratings. Ignore saved heaviness selections when loading preferences and omit them when saving preferences.
 
+Keep **Time I have (prep + cook)** inside the **More filters** sheet, alongside Region and Occasion, not as a separate slider on the main Cook page. Keep all six existing time ranges and their multi-select semantics. Selections are draft-only until Apply; closing without applying discards edits, Reset filters restores unrestricted time/region/occasion, and the More filters badge includes Time when restricted. Preserve saved time filters and recipe matching across reloads.
+
 ## Adding recipes and ingredients
 
 For future recipe additions, generate or source a **dedicated, accurate photo file for every new dish**, not a photo borrowed from a different dish. Every new ingredient gets a separate recognizable ingredient photo; audit existing pantry IDs without image mappings and close those gaps in the same change. Store the image files in the repository, wire the first-render image paths and update the Excel image fields before opening a PR.

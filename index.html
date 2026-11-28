@@ -4230,9 +4230,9 @@ try{if(!localStorage.getItem("rr-allon-v1")){defaults();localStorage.setItem("rr
 document.addEventListener("click",function(e){var tg=e.target.closest?e.target:e.target.parentNode,c=tg.closest&&tg.closest("[data-reset]");if(c){defaults();syncT();saveF();renderCuis();renderResults()}});
 
 /* ===== Mobile sliders (categories + filters), Nykaa-style ===== */
-var EMO_T={t1:"⚡",t2:"⏱️",t3:"🕒",t4:"🕓",t5:"⏳",t6:"🫕"},EMO_O={Daily:"🏠",Festive:"🪔",Christmas:"🎄",Winter:"❄️",Vrat:"🙏",Sweets:"🍮"},
+var EMO_O={Daily:"🏠",Festive:"🪔",Christmas:"🎄",Winter:"❄️",Vrat:"🙏",Sweets:"🍮"},
 EMO_R={"Punjabi":"🫓","Rajasthani":"🏜️","Gujarati":"🥣","Maharashtrian":"🌶️","Bengali":"🌾","South Indian":"🥥","North Indian":"🍛","Bihari":"🥟","Odia":"🍚","Pahadi":"⛰️","Kashmiri":"🌸","Goan & Konkan":"🌴","Assam & NE":"🍵","Indo-Chinese":"🥡","Italian":"🍝"},
-PAL={cat:["#ffe9d2","#ffc58f"],tm:["#e0f0ff","#a9d2fb"],oc:["#ffe3ee","#ffb3d1"],rg:["#fff1c9","#ffd37a"]};
+PAL={cat:["#ffe9d2","#ffc58f"],oc:["#ffe3ee","#ffb3d1"],rg:["#fff1c9","#ffd37a"]};
 var PREF={meal:["chole-bhature","aloo-paratha"],Main:["aloo-gobi","bhindi-masala","chana-masala"],Bread:["aloo-paratha","ajwain-paratha"],Rice:["chana-biryani","bengali-khichuri"],Complete:["bisi-bele-bath","bajre-ki-khichdi"],Sweet:["besan-ladoo","badam-halwa","basundi"],Side:["adrak-chutney","aloo-raita"],Snack:["aloo-tikki","aloo-bonda"],Chaat:["aloo-tikki-chaat","bhel-chaat"],NoCook:["boiled-peanut-chaat","chana-chaat"],Pickle:["amla-pickle","apple-jam"],Baked:["banana-bread","chocolate-cake-eggless"],Drink:["badam-milk","carrot-juice"],all:["chole-bhature","aloo-paratha"]};
 var PREFNV={meal:["butter-chicken","chicken-curry"],Main:["chicken-curry","butter-chicken"],Rice:["chicken-biryani"],all:["butter-chicken"]};
 function photoFor(k){
@@ -4260,25 +4260,26 @@ function renderSlides(counts){
     var id=o[0],icon=id==="all"?"📋":o[1].split(" ")[0];
     return slTile("data-crs='"+id+"'",icon,categoryLabel(o),(counts[id]||0)+" "+("dishes"),!!sel[id],PAL.cat,hasPhotos?photoFor(id):null);
   }).join("");
-  var tm=TB.map(function(o){return slTile("data-sf='t|"+o[0]+"'",EMO_T[o[0]]||"⏱️",o[1],"",!!TS[o[0]],PAL.tm)}).join("");
   var summary=[];
+  if(restr(TS,tIds()))summary.push("Time");
   if(restr(RS,rIds()))summary.push("Region");
   if(restr(OS,oIds()))summary.push("Occasion");
-  var more="<button type='button' class='mf-trigger' data-mf-open aria-haspopup='dialog' aria-controls='moreFiltersDialog'><span class='mf-trigger-icon' aria-hidden='true'>⚙️</span><span class='mf-trigger-copy'><strong>More filters</strong><small>"+(summary.length?summary.join(" · ")+" selected":"Region · Occasion")+"</small></span>"+(summary.length?"<span class='mf-count' aria-label='"+summary.length+" active filter groups'>"+summary.length+"</span>":"")+"<span class='mf-chevron' aria-hidden='true'>›</span></button>";
-  var timeActions="<span class='sl-actions'><button type='button' data-sf='t|#all'>Select all</button><button type='button' data-sf='t|#none'>Clear all</button></span>";
-  renderHTML(el,slRow("cr","What do you want to make?",cat,"",categorySelection())+slRow("sm","Time I have",tm,timeActions)+more);
+  var more="<button type='button' class='mf-trigger' data-mf-open aria-haspopup='dialog' aria-controls='moreFiltersDialog'><span class='mf-trigger-icon' aria-hidden='true'>⚙️</span><span class='mf-trigger-copy'><strong>More filters</strong><small>"+(summary.length?summary.join(" · ")+" selected":"Time · Region · Occasion")+"</small></span>"+(summary.length?"<span class='mf-count' aria-label='"+summary.length+" active filter groups'>"+summary.length+"</span>":"")+"<span class='mf-chevron' aria-hidden='true'>›</span></button>";
+  renderHTML(el,slRow("cr","What do you want to make?",cat,"",categorySelection())+more);
 }
 /* Advanced filters keep the existing multi-select rules, but edit a draft until Apply. */
 var mfDraft=null,mfReturnFocus=null;
-function mfList(k){return k==="r"?rIds():oIds()}
+function mfList(k){return k==="t"?tIds():k==="r"?rIds():oIds()}
 function mfChoice(k,id,label){return "<button type='button' class='mf-choice' data-mf-option='"+escapeHTML(k+"|"+id)+"' aria-pressed='false'>"+escapeHTML(label)+"<span class='mf-check' aria-hidden='true'>✓</span></button>"}
 function mfGroup(k,title,caption,items){return "<section class='mf-group' aria-label='"+escapeHTML(title)+"'><div class='mf-group-head'><div><h3>"+title+"</h3><p>"+caption+"</p></div><button type='button' class='mf-any' data-mf-any='"+k+"' aria-pressed='false'>Any</button></div>"+items+"</section>"}
 function renderMoreFilterSheet(){
   if(!mfDraft)return;
+  var times=TB.map(function(x){return mfChoice("t",x[0],x[1])}).join("");
   var regions=REG.map(function(x){return mfChoice("r",x,(EMO_R[x]||"🗺️")+" "+x)}).join("");
   var other=WLD.concat([INTL]).map(function(x){return mfChoice("r",x,(EMO_R[x]||"🌍")+" "+x)}).join("");
   var occasions=OB.map(function(x){return mfChoice("o",x[0],(EMO_O[x[0]]||"🎉")+" "+x[1])}).join("");
-  $("mf-content").innerHTML=mfGroup("r","Region","Pick one or more cuisines","<div class='mf-search'><span aria-hidden='true'>⌕</span><input type='search' id='mf-region-search' placeholder='Search regions' aria-label='Search regions' autocomplete='off'><button class='search-clear' type='button' data-clear-for='mf-region-search' aria-label='Clear region search'>×</button></div><p class='mf-subhead'>Indian regions</p><div class='mf-choices mf-region-choices'>"+regions+"</div><p class='mf-subhead'>Other cuisines</p><div class='mf-choices mf-region-choices'>"+other+"</div><p class='mf-no-match' hidden>No matching regions</p>")+
+  $("mf-content").innerHTML=mfGroup("t","Time I have (prep + cook)","Pick one or more time ranges","<div class='mf-choices'>"+times+"</div>")+
+    mfGroup("r","Region","Pick one or more cuisines","<div class='mf-search'><span aria-hidden='true'>⌕</span><input type='search' id='mf-region-search' placeholder='Search regions' aria-label='Search regions' autocomplete='off'><button class='search-clear' type='button' data-clear-for='mf-region-search' aria-label='Clear region search'>×</button></div><p class='mf-subhead'>Indian regions</p><div class='mf-choices mf-region-choices'>"+regions+"</div><p class='mf-subhead'>Other cuisines</p><div class='mf-choices mf-region-choices'>"+other+"</div><p class='mf-no-match' hidden>No matching regions</p>")+
     mfGroup("o","Occasion","Select any that fit","<div class='mf-choices'>"+occasions+"</div>");
   syncMoreFilterSheet();
 }
@@ -4289,16 +4290,16 @@ function syncMoreFilterSheet(){
 }
 function mfSelectAll(k){var st=mfDraft[k];Object.keys(st).forEach(function(id){delete st[id]});mfList(k).forEach(function(id){st[id]=1})}
 function mfToggle(k,id){var st=mfDraft[k],list=mfList(k);if(!restr(st,list)){Object.keys(st).forEach(function(x){delete st[x]});st[id]=1}else{if(st[id])delete st[id];else st[id]=1;if(!anyOn(st))mfSelectAll(k)}}
-function mfOpen(trigger){var dialog=$("moreFiltersDialog");if(!dialog||dialog.open)return;mfReturnFocus=trigger;mfDraft={r:Object.assign({},RS),o:Object.assign({},OS)};renderMoreFilterSheet();dialog.showModal();dialog.querySelector(".mf-close").focus()}
+function mfOpen(trigger){var dialog=$("moreFiltersDialog");if(!dialog||dialog.open)return;mfReturnFocus=trigger;mfDraft={t:Object.assign({},TS),r:Object.assign({},RS),o:Object.assign({},OS)};renderMoreFilterSheet();dialog.showModal();dialog.querySelector(".mf-close").focus()}
 function mfCopy(target,source){Object.keys(target).forEach(function(k){delete target[k]});Object.keys(source).forEach(function(k){target[k]=source[k]})}
 document.addEventListener("click",function(e){
   var trigger=e.target.closest&&e.target.closest("[data-mf-open]");if(trigger){mfOpen(trigger);return}
   var dialog=$("moreFiltersDialog");if(!dialog||!dialog.open||!mfDraft)return;
   var opt=e.target.closest&&e.target.closest("[data-mf-option]");if(opt){var pair=opt.dataset.mfOption.split("|");mfToggle(pair[0],pair[1]);syncMoreFilterSheet();return}
   var any=e.target.closest&&e.target.closest("[data-mf-any]");if(any){mfSelectAll(any.dataset.mfAny);syncMoreFilterSheet();return}
-  if(e.target.closest&&e.target.closest("[data-mf-reset]")){["r","o"].forEach(mfSelectAll);syncMoreFilterSheet();return}
+  if(e.target.closest&&e.target.closest("[data-mf-reset]")){["t","r","o"].forEach(mfSelectAll);syncMoreFilterSheet();return}
   if(e.target.closest&&e.target.closest("[data-mf-apply]")){
-    mfCopy(RS,mfDraft.r);mfCopy(OS,mfDraft.o);
+    mfCopy(TS,mfDraft.t);mfCopy(RS,mfDraft.r);mfCopy(OS,mfDraft.o);syncT();
     saveF();dialog.close();renderCuis();renderResults();return;
   }
   if(e.target.closest&&e.target.closest("[data-mf-close]")){dialog.close();return}
