@@ -62,6 +62,7 @@ const sources = [
   ['quick-north-recipes.js', 'QUICK_NORTH_RECIPES'],
   ['street-food-recipes.js', 'STREET_FOOD_RECIPES'],
   ['north-chaat-recipes.js', 'NORTH_CHAAT_CATALOG'],
+  ['no-cook-recipes.js', 'NO_COOK_RECIPES'],
   ['rajasthani-recipes.js', 'RAJASTHANI_RECIPES'],
   ['seasonal-recipes.js', 'SEASONAL_RECIPES'],
   ['international-recipes.js', 'INTERNATIONAL_RECIPES'],
@@ -69,6 +70,9 @@ const sources = [
   ['desi-recipes.js', 'DESI_RECIPES'],
   ['additional-recipes.js', 'ADDITIONAL_RECIPES'],
 ];
+for (const item of context(fs.readFileSync(path.join(root, 'no-cook-recipes.js'), 'utf8'), 'NO_COOK_PANTRY')) {
+  add(ingredients, item[1]);
+}
 for (const [file, variable] of sources) {
   const list = context(fs.readFileSync(path.join(root, file), 'utf8'), variable);
   for (const item of list) {
