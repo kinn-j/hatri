@@ -20,6 +20,8 @@ Do not cap the meal generator or the rendered meal list at four, fifty, or any o
 
 Time filters count soaking that cannot overlap ordinary prep. Whole-meal estimates allow soaking for separate dishes to happen in parallel.
 
+Tapping any four-, five- or six-dish meal suggestion opens a separate, accessible meal-details tray/dialog, never an inline expansion that shifts the surrounding suggestion cards. The tray includes all member dishes and existing shopping-cart and Table actions; individual dish tiles can still open their complete recipe detail. A small close button and Escape close the tray, returning focus and scroll position to the original meal card. Tapping Add to Table on the meal card must not open the tray. Remove the **Decide for me** dice and its featured pick entirely; the main meal list includes every generated meal.
+
 Optimize the **total number of non-repeating meals first**, with six-dish meals preferred when counts tie, and pantry convenience afterward. Consider every eligible accompaniment instead of truncating each course to a small top-N shortlist. Retry alternative allocations and reserve recipes only after a complete match; optional salads must never reduce the number of complete meals. Keep international accompaniments with compatible cuisines and group generic Indian dal/sabzi dishes into meaningful everyday meals rather than mislabeling them as international. Audit unique eligible mains, breads, rice, curd dishes and sweets whenever meal counts seem unexpectedly low. The final four-dish availability upper bound is the minimum of half the main count (rounded down), the bread count and the sweet count; regional and time compatibility can reduce the actual maximum. Never inflate meal counts by repeating dishes or treating sweet rice puddings, millet dishes or unrelated cuisines as an ordinary rice accompaniment.
 
 ## Complete suggestions and diet categories
@@ -41,6 +43,8 @@ The order of dishes does not change a saved meal's identity. Independent prefere
 ## Recipe filters
 
 Recipe cards, filters, and the recipe catalog omit heaviness ratings. Ignore saved heaviness selections when loading preferences and omit them when saving preferences.
+
+Keep **Time I have (prep + cook)** inside the **More filters** sheet, alongside Region and Occasion, not as a separate slider on the main Cook page. Keep all six existing time ranges and their multi-select semantics. Selections are draft-only until Apply; closing without applying discards edits, Reset filters restores unrestricted time/region/occasion, and the More filters badge includes Time when restricted. Preserve saved time filters and recipe matching across reloads.
 
 ## Adding recipes and ingredients
 

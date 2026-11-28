@@ -280,7 +280,6 @@ async function loadPreferences(state) {
     }
     syncReady = state.ready = true;
     window.renderResults();
-    window.renderPick();
     window.renderKitchen();
     renderAccount();
   } catch (error) {
@@ -314,7 +313,6 @@ if (!isClaude && typeof window.saveMy === 'function') {
     window.MY[slug] = { ...(window.MY[slug] || {}), ...patch, at: Date.now() };
     queueSave();
     window.renderResults();
-    window.renderPick();
     window.renderKitchen();
   };
 }

@@ -9,7 +9,6 @@ const actions = [
   ["#pantrySlides [data-i],[data-pantry-bulk],#ings [data-i],#starter,#clear", "pantry_edit"],
   ["[data-cart-add-dish],[data-cart-add-listed],[data-cart-add-ingredient],[data-oi],[data-add]", "cart_add"],
   ["[data-cart-quantity],[data-cart-remove-dish]", "cart_edit"],
-  ["[data-decide]", "decide"],
   ["#nvBtn,#hostelBtn", "mode_change"],
   ["#winter-nonveg", "mode_change"]
 ];

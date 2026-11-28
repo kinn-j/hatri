@@ -46,6 +46,28 @@ test('category cards report catalog totals, not truncated suggestions or hidden 
   assert.equal(score.score(true).length,0,'ordinary filtered suggestions still honor active filters');
 });
 
+test('time options live in More filters and share its draft, apply and reset flow', () => {
+  const slides = src.slice(src.indexOf('function renderSlides(counts){'), src.indexOf('/* Advanced filters keep the existing'));
+  const more = src.slice(src.indexOf('function mfList(k){'), src.indexOf('/* ===== No-cook category'));
+  assert.doesNotMatch(slides, /Time I have|data-sf|slRow\("sm"/);
+  assert.match(slides, /summary\.push\("Time"\)/);
+  assert.match(more, /mfGroup\("t","Time I have \(prep \+ cook\)"/);
+  assert.match(more, /mfDraft=\{t:Object\.assign\(\{\},TS\)/);
+  assert.match(more, /mfCopy\(TS,mfDraft\.t\).*syncT\(\)/);
+  assert.match(more, /\["t","r","o"\]\.forEach\(mfSelectAll\)/);
+});
+
+test('whole-meal cards open a dialog rather than expanding inline and the dice is removed', () => {
+  const mealCode = src.slice(src.indexOf('function mealTileHTML('),src.indexOf('function dn(n)'));
+  assert.match(src, /<dialog id="mealTray" aria-labelledby="meal-tray-title">/);
+  assert.match(mealCode, /data-open-meal aria-haspopup='dialog' aria-controls='mealTray'/);
+  assert.match(mealCode, /mealTray\.showModal\(\)/);
+  assert.match(mealCode, /mealTray\.close\(\)/);
+  assert.doesNotMatch(mealCode, /insertAdjacentHTML|MOPEN/);
+  assert.doesNotMatch(src, /data-decide|data-closepick|🎲|Tonight’s pick|Tonight’s meal/);
+  assert.doesNotMatch(src, /\$\("pick"\)|id="pick"/, 'removed picker must not be referenced by search or any rendering path');
+});
+
 test('the complete catalog and search results automatically render every batch, with a show-all fallback', () => {
   const c=fn('var DISH_BATCH=100,', 'function searchText(', {});
   assert.equal(c.dishPage('browse:all'),100);
