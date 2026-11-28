@@ -632,7 +632,7 @@ test('saved heaviness selections do not restrict recipes or appear in filters or
 test('veg pantry excludes chicken stock; recipe guidance is corrected', async () => {
   const {page, context} = await open();
   await page.evaluate(() => {
-    pantryTab = CATS.findIndex(c => c[0] === 'Condiments'); renderPantrySlides();
+    pantryTab = CATS.findIndex(c => c[0] === 'Oil, Ghee & Masala'); renderPantrySlides();
   });
   assert.equal(await page.locator('#pantrySlides [data-i="chickenstock"]').count(), 0);
   await page.locator('#rq').fill('gajar halwa');
@@ -1213,9 +1213,9 @@ test('mobile pantry category and drawer selections keep neighboring controls and
     const tabs = page.locator('#pantrySlides .pantry-tabs');
     const vegetables = tabs.locator('[data-pantry-cat="0"]');
     const vegetableTab = await vegetables.elementHandle();
-    const fruit = tabs.locator('[data-pantry-cat="1"]');
-    await fruit.tap();
-    assert.equal(await fruit.getAttribute('aria-pressed'), 'true');
+    const grains = tabs.locator('[data-pantry-cat="1"]');
+    await grains.tap();
+    assert.equal(await grains.getAttribute('aria-pressed'), 'true');
     assert.equal(await vegetableTab.evaluate(tab => tab.isConnected), true);
     await vegetables.tap();
     assert.equal(await vegetables.getAttribute('aria-pressed'), 'true');
@@ -1237,6 +1237,35 @@ test('mobile pantry category and drawer selections keep neighboring controls and
   } finally {
     await context.close();
   }
+});
+
+test('existing pantry tabs expose five produce groups and hide eggs and meat in vegetarian mode', async () => {
+  const {page, context} = await open({width:390,height:844}, {isMobile:true,hasTouch:true});
+  try {
+    const picker=page.locator('#pantrySlides');
+    const categoryLabels=await picker.locator('.pantry-tabs .fl').allTextContents();
+    assert.ok(categoryLabels.includes('Vegetables & Fruits'));
+    for (const name of ['Atta, Rice & Dal','Oil, Ghee & Masala','Dairy & Bread','Sauces & Spreads'])
+      assert.ok(categoryLabels.includes(name),name);
+    assert.ok(!categoryLabels.includes('Meat & Fish'));
+    assert.equal(await picker.locator('[data-i="eggs"]').count(),0);
+    const subtabs=picker.locator('.pantry-subtabs [data-pantry-sub]');
+    assert.deepEqual(await subtabs.allTextContents(),[
+      'Fresh Vegetables','Fresh Fruits','Exotics','Coriander & Others','Seasonal'
+    ]);
+    for (const [sub,id] of [[0,'potato'],[1,'apple'],[2,'mushroom'],[3,'garlic'],[4,'peas']]) {
+      await subtabs.nth(sub).click();
+      assert.equal(await picker.locator(`.pantry-grid [data-i="${id}"]`).count(),1,`${id} in subcategory ${sub}`);
+    }
+    await page.evaluate(()=>{ nonveg=true;renderPantrySlides(); });
+    const nonvegLabels=await picker.locator('.pantry-tabs .fl').allTextContents();
+    assert.ok(nonvegLabels.includes('Dairy, Bread & Eggs'));
+    assert.ok(nonvegLabels.includes('Meat & Fish'));
+    await page.evaluate(()=>{
+      pantryTab=CATS.findIndex(category=>category[0]==='Dairy & Bread');renderPantrySlides();
+    });
+    assert.equal(await picker.locator('.pantry-grid [data-i="eggs"]').count(),1);
+  } finally { await context.close(); }
 });
 
 test('the cart rotates 1–2 missing-ingredient dishes in a two-column mobile grid', async () => {

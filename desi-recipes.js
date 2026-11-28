@@ -182,10 +182,10 @@ const DESI_RECIPES = [
     course: "Baked",
     serves: 2,
     prep: 10,
-    cook: 20,
-    pantry: ["puffpastry", "boiledpotato", "picklemasala", "sesame?"],
-    amounts: {"en": ["200 g puff pastry", "1 boiled potato", "1½ tsp pickle masala", "1 tsp sesame (optional)"]},
-    steps: {"en": ["Mash potato with pickle masala and let cool. Cut thawed pastry into four rectangles and divide filling between them.", "Fold, seal the edges with a fork and prick the tops. Brush with water, add sesame if desired and bake at 200°C until puffed and golden, about 20 minutes."]}
+    cook: 35,
+    pantry: ["puffpastry", "potato", "picklemasala", "sesame?"],
+    amounts: {"en": ["200 g puff pastry", "1 raw potato", "1½ tsp pickle masala", "1 tsp sesame (optional)"]},
+    steps: {"en": ["Boil the raw potato until tender (about 15 minutes for a small potato), drain and cool. Mash with pickle masala. Cut thawed pastry into four rectangles and divide the cooled filling between them.", "Fold, seal the edges with a fork and prick the tops. Brush with water, add sesame if desired and bake at 200°C until puffed and golden, about 20 minutes."]}
   },
   {
     name: "Bangalore Khara Buns",

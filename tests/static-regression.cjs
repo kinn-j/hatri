@@ -250,20 +250,106 @@ test('Gajar Halwa has needed sugar and an explicit English recipe', () => {
   assert.match(src, /STEPS\["Gajar Halwa"\]=\{"en":\[/);
 });
 
-test('pantry image fallback and accurate grains category exist', () => {
+test('pantry image fallback and grocery-style grain category exist', () => {
   assert.match(src, /class='pantry-fallback'/);
   assert.match(src, /document\.addEventListener\("error",function\(e\)/);
-  assert.match(src, /"Grains \/ Pulses":\[\]/);
+  assert.match(src, /"Atta, Rice & Dal":\[\]/);
   assert.match(src, /\.pantry-photo:focus-visible/);
 });
 
-test('pantry separates herbs and provides compact vegetable subcategories', () => {
-  assert.match(src, /"Herbs & aromatics":\[\]/);
-  assert.match(src, /herb\[id\].*Herbs & aromatics/);
-  assert.match(src, /\["Roots & tubers"/);
-  assert.match(src, /\["Gourds & squash"/);
+test('pantry retains the existing subcategory pills with the five requested produce groups', () => {
+  assert.match(src, /"Vegetables & Fruits":\[\]/);
+  for (const name of ['Fresh Vegetables','Fresh Fruits','Exotics','Coriander & Others','Seasonal']) {
+    assert.ok(src.includes(`["${name}",function(id)`), name);
+  }
+  for (const removed of ['All vegetables','Roots & tubers','Gourds & squash','Freshly Cut & Sprouts','Trusted Organics','Flowers & Leaves']) {
+    assert.doesNotMatch(src.slice(src.indexOf('var vegSubgroups='),src.indexOf('if(typeof pantryVegSub',src.indexOf('var vegSubgroups='))),new RegExp(`\\["${removed}"`));
+  }
   assert.match(src, /data-pantry-sub/);
-  assert.match(src, /visibleItems=c\[0\]==="Vegetables"/);
+  assert.match(src, /visibleItems=c\[0\]==="Vegetables & Fruits"/);
+  assert.match(src, /class='ft/);
+  assert.match(src, /class='pantry-subtabs'/);
+});
+
+test('pantry mapping places essential groceries correctly and preserves unique ingredient IDs', () => {
+  const example = [
+    ['Daily vegetables', [['potato','Potato'], ['tomato','Tomato'], ['broccoli','Broccoli']]],
+    ['Fruits & coconut', [['apple','Apple'], ['banana','Banana']]],
+    ['Herbs, chillies & aromatics', [['coriander','Coriander']]],
+    ['Grains & flours', [['bajra','Bajra flour'], ['rice','Rice'], ['bread','Bread']]],
+    ['Dairy', [['milk','Milk'], ['eggs','Eggs'], ['ghee','Ghee']]],
+    ['Kitchen basics & spices', [['greenchutney','Green chutney'], ['cumin','Cumin']]],
+    ['Non-veg — eggs, meat & fish', [['chicken','Chicken'], ['fish','Fish']]]
+  ];
+  const c = fn('/* ===== Smart pantry groups ===== */','function pantryGroupLabel(', {
+    CATS: example, NAME:{}, NV:['eggs','chicken','fish']
+  });
+  const lookup = Object.fromEntries(c.CATS.flatMap(group => group[1].map(item => [item[0],group[0]])));
+  assert.equal(Object.keys(lookup).length,16);
+  assert.equal(lookup.potato,'Vegetables & Fruits');
+  assert.equal(lookup.apple,'Vegetables & Fruits');
+  assert.equal(lookup.coriander,'Vegetables & Fruits');
+  assert.equal(lookup.rice,'Atta, Rice & Dal');
+  assert.equal(lookup.bajra,'Atta, Rice & Dal');
+  assert.equal(lookup.ghee,'Oil, Ghee & Masala');
+  assert.equal(lookup.cumin,'Oil, Ghee & Masala');
+  assert.equal(lookup.greenchutney,'Sauces & Spreads');
+  assert.equal(lookup.milk,'Dairy & Bread');
+  assert.equal(lookup.eggs,'Dairy & Bread');
+  assert.equal(lookup.chicken,'Meat & Fish');
+  assert.equal(lookup.fish,'Meat & Fish');
+  assert.equal(c.CATS.find(g => g[0]==='Meat & Fish')[3],1);
+});
+
+test('all core produce stays discoverable in exactly the five visible produce subcategories', () => {
+  const base=src.slice(src.indexOf('var CATS=['),src.indexOf('var NAME={}'));
+  const classifier=src.slice(src.indexOf('/* ===== Smart pantry groups ===== */'),src.indexOf('function pantryGroupLabel('));
+  const ctx=vm.createContext({NAME:{},NV:['eggs','chicken','fish','mutton','prawn']});
+  vm.runInContext(base+classifier,ctx);
+  const produce=ctx.CATS.find(group=>group[0]==='Vegetables & Fruits')[1];
+  const subsection=src.slice(src.indexOf('  var exotic=/^('),src.indexOf('  if(typeof pantryVegSub',src.indexOf('  var exotic=/^(')));
+  vm.runInContext(subsection,ctx);
+  assert.deepEqual(Array.from(ctx.vegSubgroups,sub=>sub[0]),[
+    'Fresh Vegetables','Fresh Fruits','Exotics','Coriander & Others','Seasonal'
+  ]);
+  for (const [id] of produce) assert.ok(ctx.vegSubgroups.some(sub=>sub[1](id)),`Unreachable produce ${id}`);
+  const section=(id)=>Array.from(ctx.vegSubgroups.filter(sub=>sub[1](id)),sub=>sub[0]);
+  assert.ok(section('potato').includes('Fresh Vegetables'));
+  assert.ok(section('apple').includes('Fresh Fruits'));
+  assert.ok(section('mushroom').includes('Exotics'));
+  assert.ok(section('garlic').includes('Coriander & Others'));
+  assert.ok(section('peas').includes('Seasonal'));
+  assert.ok(!section('ginger').includes('Fresh Vegetables'));
+  assert.match(src, /CATS\.filter\(function\(c\)\{return nonveg\|\|!c\[3\]\}\)/,
+    'the main pantry must also hide the meat group in vegetarian mode');
+});
+
+test('raw potato and bajra flour replace prepared pantry items with explicit cooking steps', () => {
+  const load=(file,name,variable)=>{
+    const js=fs.readFileSync(path.resolve(__dirname,'..',file),'utf8');
+    const c={};vm.runInNewContext(js+`\nthis.recipe=${variable}.find(r=>r.name===${JSON.stringify(name)});`,c);
+    return c.recipe;
+  };
+  const bajra=load('rajasthani-recipes.js','Bajra Churma','RAJASTHANI_RECIPES');
+  const kachori=load('street-food-recipes.js','Raj Kachori Chaat','STREET_FOOD_RECIPES');
+  const puff=load('desi-recipes.js','Achari Aloo Puff','DESI_RECIPES');
+  assert.ok(bajra.pantry.includes('bajra')&&!bajra.pantry.includes('cookedbajraroti'));
+  assert.match(bajra.steps.en.join(' '),/Cook each roti.*Rest uncovered for 5 minutes/);
+  for(const recipe of [kachori,puff]){
+    assert.ok(recipe.pantry.includes('potato')&&!recipe.pantry.includes('boiledpotato'));
+    assert.match(recipe.steps.en[0],/Boil the raw potato/);
+    assert.ok(recipe.cook>=25);
+  }
+  assert.ok(kachori.pantry.includes('cookedchickpeas'),
+    'chaat uses the distinct, explicitly ready-to-eat chickpea product');
+  assert.doesNotMatch(src,/\["boiledpotato","Boiled potato"\]/);
+  const northJs=fs.readFileSync(path.resolve(__dirname,'../north-chaat-recipes.js'),'utf8');
+  const north={};vm.runInNewContext(northJs+'\nthis.recipes=NORTH_CHAAT_CATALOG;',north);
+  for(const recipe of north.recipes){
+    assert.equal(new Set(recipe.pantry).size,recipe.pantry.length,recipe.name);
+    assert.ok(!recipe.pantry.includes('boiledpotato'),recipe.name);
+    if(recipe.steps.en.length>1)assert.match(recipe.steps.en[0],/^Boil the raw potatoes/);
+  }
 });
 
 test('cart suggestions prefer recipes that need fewer extra ingredients and use more of the cart', () => {
