@@ -52,6 +52,9 @@ async function open(viewport = { width: 390, height: 844 }, device = {}, transla
   await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, route => route.abort());
   await mockGoogleTranslate(context, translationRequests);
   const page = await context.newPage();
+  // A stalled WebKit tap must fail with a useful locator error, not consume
+  // the entire 20-minute CI job without producing another test result.
+  page.setDefaultTimeout(15_000);
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.MFREADY === true && document.querySelector('#pantrySlides .pantry-grid'));
   return { page, context };
@@ -100,6 +103,30 @@ test('app boots with bounded results and usable mobile layouts', async () => {
     assert.match(await hero.locator('.hero-slide').first().evaluate(el => getComputedStyle(el).backgroundImage), /hatri-pantry-header[.]webp/);
     await context.close();
   }
+});
+
+test('every live pantry ingredient has a photo source and generated specialty photos decode', async () => {
+  const {page, context} = await open();
+  try {
+    const audit = await page.evaluate(async () => {
+      // Inspect the final runtime catalog, including all late specialty registrations.
+      const ids = [...new Set(CATS.flatMap(group => group[1].map(item => item[0])))];
+      const missing = ids.filter(id => !ingredientPhotoUrl(id));
+      const added = ['blackrice', 'khoya', 'chhena', 'figs', 'gulkand', 'paanleaves', 'datejaggery', 'semolina'];
+      const failed = await Promise.all(added.map(async id => {
+        const src = ingredientPhotoUrl(id);
+        if (!src || !src.startsWith('images/ingredients/')) return id;
+        const image = new Image();
+        image.src = src;
+        try { await image.decode(); return image.naturalWidth > 0 ? '' : id; }
+        catch { return id; }
+      }));
+      return {count: ids.length, missing, failed: failed.filter(Boolean)};
+    });
+    assert.ok(audit.count >= 379, `${audit.count} final pantry ingredients audited`);
+    assert.deepEqual(audit.missing, [], 'every selectable ingredient has an image URL');
+    assert.deepEqual(audit.failed, [], 'all eight bundled specialty photos decode successfully');
+  } finally { await context.close(); }
 });
 
 test('Back to top appears from the second screen of suggestions on mobile and desktop', async () => {
@@ -965,17 +992,34 @@ test('offline service worker installs and controls subsequent navigation', async
     await page.waitForFunction(() => navigator.serviceWorker.controller?.state === 'activated', null, {timeout:20_000});
     await page.reload({waitUntil:'domcontentloaded'});
     await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, {timeout:10_000});
+    const spriteURL = await page.locator('#results .meal-preview image').first().getAttribute('href');
+    const onlineImage = await page.evaluate(async source => {
+      const img = new Image();
+      img.src = source;
+      await img.decode();
+      return img.naturalWidth;
+    }, spriteURL);
+    assert.ok(onlineImage > 0, 'preview image decodes while online');
     disconnectOrigin = true;
     await page.reload({waitUntil:'domcontentloaded'});
     await page.waitForFunction(() => window.MFREADY === true);
-    await page.evaluate(() => {
-      const preview = new Image();
-      preview.id = 'offline-preview-probe';
-      preview.src = document.querySelector('#results .meal-preview image').getAttribute('href');
-      document.body.append(preview);
-    });
-    await page.waitForFunction(() => document.getElementById('offline-preview-probe').naturalWidth ===
-      mealPreviewSize * mealPreviewColumns, null, {timeout:45_000});
+    const cached = await page.evaluate(async source => {
+      const response = await caches.match(new URL(source, location.href).href);
+      return {ok:!!response?.ok, type:response?.headers.get('content-type') || '', size:response ? (await response.arrayBuffer()).byteLength : 0};
+    }, spriteURL);
+    assert.equal(cached.ok, true, 'offline preview image is in service worker storage');
+    assert.match(cached.type, /image\//);
+    assert.ok(cached.size > 1000, 'offline preview image cache contains image data');
+    if (process.env.HATRI_BROWSER !== 'webkit') {
+      await page.evaluate(source => {
+        const preview = new Image();
+        preview.id = 'offline-preview-probe';
+        preview.src = source;
+        document.body.append(preview);
+      }, spriteURL);
+      await page.waitForFunction(() => document.getElementById('offline-preview-probe').naturalWidth ===
+        mealPreviewSize * mealPreviewColumns, null, {timeout:15_000});
+    }
     await page.locator('#rq').fill('gobi pakora');
     assert.match(await page.locator('#results .steps').first().textContent(), /250 g small cauliflower florets/);
   } finally { await context.close(); }
@@ -1231,8 +1275,9 @@ test('mobile pantry category and drawer selections keep neighboring controls and
     const drawer = page.locator('[data-vs="pantry"]');
     const grid = drawer.locator('.pgrid');
     const lauki = grid.locator('[data-i="lauki"]');
+    await lauki.scrollIntoViewIfNeeded();
     const photo = await lauki.locator('img').elementHandle();
-    await photo.evaluate(img => img.decode());
+    await photo.evaluate(img => { img.loading = 'eager'; return img.decode(); });
     const tomato = grid.locator('[data-i="tomato"]');
     await tomato.tap();
     assert.equal(await tomato.getAttribute('aria-pressed'), 'true');

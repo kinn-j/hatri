@@ -321,7 +321,16 @@ var INGREDIENT_LOCAL_IMAGES = {
   "lauki": "images/ingredients/lauki.webp",
   "poha": "images/ingredients/poha.webp",
   "soya": "images/ingredients/soya.webp",
-  "tinda": "images/ingredients/tinda.webp"
+  "tinda": "images/ingredients/tinda.webp",
+  // Individually generated photos for ingredients registered by the specialty catalog.
+  "blackrice": "images/ingredients/hatri-blackrice.webp",
+  "khoya": "images/ingredients/hatri-khoya.webp",
+  "chhena": "images/ingredients/hatri-chhena.webp",
+  "figs": "images/ingredients/hatri-figs.webp",
+  "gulkand": "images/ingredients/hatri-gulkand.webp",
+  "paanleaves": "images/ingredients/hatri-paanleaves.webp",
+  "datejaggery": "images/ingredients/hatri-datejaggery.webp",
+  "semolina": "images/ingredients/hatri-semolina.webp"
 };
 // Locally bundled photography for previously unmapped catalog ingredients.
 // Keep one real ingredient image per ID so the pantry never falls back to emoji.
