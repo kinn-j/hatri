@@ -68,6 +68,11 @@ test('whole-meal cards open a dialog rather than expanding inline and the dice i
   assert.doesNotMatch(src, /\$\("pick"\)|id="pick"/, 'removed picker must not be referenced by search or any rendering path');
 });
 
+test('category selection summaries cannot replace the horizontally scrolled dish-type rail', () => {
+  assert.match(src,/class='sls' data-scroll-strip='categories'/,
+    'the diffing renderer needs a stable rail key when a summary row is added');
+});
+
 test('the complete catalog and search results automatically render every batch, with a show-all fallback', () => {
   const c=fn('var DISH_BATCH=100,', 'function searchText(', {});
   assert.equal(c.dishPage('browse:all'),100);

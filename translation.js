@@ -18,7 +18,7 @@ globalThis.HatriTranslation = (() => {
     "Planner":"योजना", "My Kitchen":"मेरी रसोई", "Features":"सुविधाएँ", "Account":"खाता",
     "Profile":"प्रोफ़ाइल", "Settings":"सेटिंग्स", "Appearance":"दिखावट", "Day":"दिन", "Night":"रात",
     "Sign in with Google":"गूगल से साइन इन करें", "Log out":"लॉग आउट", "Profile and settings":"प्रोफ़ाइल और सेटिंग्स",
-    "Cook":"पकाएँ", "Kitchen":"रसोई", "Reels":"रील्स", "Shopping list":"खरीदारी की सूची",
+    "Cook":"पकाएँ", "Kitchen":"रसोई", "Reels":"रील्स", "Shop":"खरीदारी", "Shopping list":"खरीदारी की सूची",
     "Table":"खाने की योजना", "My Table":"मेरी खाने की योजना", "🍽️ My Table":"🍽️ मेरी खाने की योजना",
     "Some instructions are in English while Hindi translation is unavailable.":"हिंदी अनुवाद उपलब्ध न होने तक कुछ निर्देश अंग्रेज़ी में हैं।",
     "Back to Cook":"पकाने पर लौटें", "← Suggestions":"← सुझाव", "Retry":"फिर कोशिश करें",

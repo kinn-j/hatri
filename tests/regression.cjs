@@ -80,6 +80,42 @@ async function mockGoogleTranslate(context, requests = []) {
   });
 }
 
+test('four-tab pill navigation excludes Kitchen and keeps it available through Profile', async () => {
+  for (const width of [320,390,768]) {
+    const {page,context}=await open({width,height:844});
+    try {
+      const nav=await page.locator('.tabbar').evaluate(el => {
+        const rect=el.getBoundingClientRect();
+        return {
+          views:Array.from(el.querySelectorAll('button'),b=>b.dataset.view),
+          labels:Array.from(el.querySelectorAll('button'),b=>b.getAttribute('aria-label')),
+          radius:parseFloat(getComputedStyle(el).borderTopLeftRadius),
+          gradient:getComputedStyle(el).backgroundImage,
+          iconDirections:Array.from(el.querySelectorAll('button'),b=>getComputedStyle(b).flexDirection),
+          left:rect.left,right:rect.right,viewport:document.documentElement.clientWidth,
+        };
+      });
+      assert.deepEqual(nav.views,['recipes','reels','order','table']);
+      assert.deepEqual(nav.labels,['Cook','Reels','Shopping list','Table']);
+      assert.ok(nav.radius>=30,`${width}: floating pill corners`);
+      assert.match(nav.gradient,/linear-gradient/);
+      assert.ok(nav.iconDirections.every(direction=>direction==='row'),`${width}: horizontal icon and label`);
+      assert.ok(nav.left>=0&&nav.right<=nav.viewport+1,`${width}: navigator fits the viewport`);
+      assert.equal(await page.locator('.tabbar [aria-current="page"]').getAttribute('data-view'),'recipes');
+      await page.locator('.tabbar [data-view="table"]').click();
+      assert.equal(await page.locator('body').getAttribute('data-v'),'table');
+      assert.equal(await page.locator('.tabbar [aria-current="page"]').getAttribute('data-view'),'table');
+      await page.locator('[data-rr-profile-open]').click();
+      await page.locator('#rr-profile-drawer [data-view="kitchen"]').click();
+      assert.equal(await page.locator('body').getAttribute('data-v'),'kitchen','Kitchen remains reachable from Profile');
+      await page.locator('.tabbar [data-view="recipes"]').click();
+      await page.locator('.tabbar [data-view="order"]').click();
+      assert.match(await page.locator('body').getAttribute('class'),/sh-order/);
+      assert.equal(await page.locator('.tabbar [aria-current="page"]').getAttribute('data-view'),'order');
+    } finally {await context.close()}
+  }
+});
+
 test('app boots with bounded results and usable mobile layouts', async () => {
   for (const width of [320, 375, 390, 768, 1366]) {
     const {page, context} = await open({width, height: 844});
@@ -388,12 +424,14 @@ test('a pantry and filter backup restores valid filters and rejects malformed ma
   };
   try {
     await region('Punjabi');
-    await page.locator('.tabbar [data-view="kitchen"]').click();
+    await page.locator('[data-rr-profile-open]').click();
+    await page.locator('#rr-profile-drawer [data-view="kitchen"]').click();
     await page.locator('[data-bk="copy"]').click();
     const backup=await page.locator('#bkText').inputValue();
     await page.locator('.tabbar [data-view="recipes"]').click();
     await region('Bengali');
-    await page.locator('.tabbar [data-view="kitchen"]').click();
+    await page.locator('[data-rr-profile-open]').click();
+    await page.locator('#rr-profile-drawer [data-view="kitchen"]').click();
     await page.locator('#bkText').fill(backup);
     await page.locator('[data-bk="restore"]').click();
     assert.deepEqual(await page.evaluate(()=>Object.keys(RS)),['Punjabi']);
@@ -1215,7 +1253,8 @@ test('each Reel links to a complete recipe tray and remains navigable after clos
     assert.equal(await page.locator('body').getAttribute('data-v'),'recipes');
     await page.locator('.tabbar [data-view="table"]').click();
     assert.equal(await page.locator('body').getAttribute('data-v'),'table');
-    await page.locator('.tabbar [data-view="kitchen"]').click();
+    await page.locator('[data-rr-profile-open]').click();
+    await page.locator('#rr-profile-drawer [data-view="kitchen"]').click();
     assert.equal(await page.locator('body').getAttribute('data-v'),'kitchen');
     await page.goto(url+'?reel=sample-reel-1234567',{waitUntil:'domcontentloaded'});
     await page.locator('.reel-recipe-tile').waitFor();
@@ -1381,7 +1420,10 @@ test('mobile dish cards and More filters time, region and occasion preserve sele
     });
     assert.ok(left > 0);
 
-    await main.tap();
+    // A real tap on an offscreen tile first scrolls that tile into view.
+    // Dispatch the same click without that browser-driven movement so this
+    // assertion measures the app's rerender, not Playwright auto-scrolling.
+    await main.evaluate(button => button.click());
     assert.equal(await main.getAttribute('aria-pressed'), 'true');
     assert.equal(await breadTile.evaluate(tile => tile.isConnected && getComputedStyle(tile).backgroundImage), background);
     assert.equal(await dishes.evaluate(strip => strip.scrollLeft), left);
