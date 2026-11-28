@@ -430,7 +430,7 @@ body[data-v="reels"]>#reels-page{z-index:30;max-width:none;padding:0}
 .reels-form [hidden],.reel-card [hidden]{display:none}
 </style>
 <style id="hatri-reel-recipe-navigation">
-/* Keep the same five destinations visible throughout the app, including Reels. */
+/* Keep the same four bottom destinations visible throughout the app, including Reels. */
 body[data-v="reels"]>.nav{display:none!important}
 body[data-v="reels"]:not([class*="sh-"])>.tabbar{display:flex!important;z-index:65}
 body[data-v="reels"]>#reels-page{height:calc(100dvh - var(--reels-bottom));bottom:auto;--safe-bottom:0px}
@@ -729,10 +729,10 @@ body[data-v="table"] [data-vs="table"]{display:block}
 <input type="file" id="fileIn" accept="image/*" hidden><input type="file" id="fileIn2" accept="image/*" hidden>
 <div class="install" id="install"><span class="en">Install this app: iPhone Share ⬆️ → Add to Home Screen · Android ⋮ → Install app</span><button class="x" id="instX" aria-label="Close">×</button></div>
 <nav class="tabbar" aria-label="App tabs">
-<button data-view="recipes"><i>🍽️</i><span class="en">Cook</span></button><button data-view="reels"><i>▶️</i><span class="en">Reels</span></button>
-<button type="button" data-view="order"><i aria-hidden="true">🛒</i><span class="en">Shopping list</span><b id="cbadge" aria-live="polite"></b></button>
-<button type="button" data-view="table"><i aria-hidden="true">🍲</i><span class="en">Table</span><b id="tbadge" aria-live="polite"></b></button>
-<button data-view="kitchen"><i>👤</i><span class="en">Kitchen</span></button>
+<button type="button" data-view="recipes" aria-label="Cook" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15a4.5 4.5 0 0 1-.8-8.7A5 5 0 0 1 14 5a4.5 4.5 0 0 1 4 10"/><path d="M6 15h12v6H6z"/></svg><span class="en">Cook</span></button>
+<button type="button" data-view="reels" aria-label="Reels"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="2.5" width="16" height="19" rx="4"/><path d="m10 8 6 4-6 4z"/></svg><span class="en">Reels</span></button>
+<button type="button" data-view="order" aria-label="Shopping list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l1 13H4L5 8z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg><span class="en">Shop</span><b id="cbadge" aria-live="polite"></b></button>
+<button type="button" data-view="table" aria-label="Table"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7a5 5 0 0 1 5 5M3 4v7m-2-7v7m4-7v7M3 11v9"/></svg><span class="en">Table</span><b id="tbadge" aria-live="polite"></b></button>
 </nav>
 <div class="toast" id="toast"></div>
 <dialog class="rr-profile-drawer" id="rr-profile-drawer" aria-labelledby="rr-profile-title">
@@ -3722,6 +3722,12 @@ function setView(v){if(v==="order")renderCart();var B=document.body,sheet=v==="p
   if(v==="table")renderTable();
   B.classList.remove("sh-pantry","sh-plan","sh-order");
   Array.prototype.forEach.call(document.querySelectorAll('[data-vs="pantry"],[data-vs="plan"],[data-vs="order"]'),function(el){el.removeAttribute("role");el.removeAttribute("aria-modal");el.removeAttribute("tabindex")});
+  var activeTab=v==="pantry"||v==="plan"?"recipes":v;
+  Array.prototype.forEach.call(document.querySelectorAll(".tabbar button"),function(b){
+    var active=b.dataset.view===activeTab;
+    b.classList.toggle("on",active);
+    if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");
+  });
   if(isMob()&&sheet){
     if(!wasSheet)sheetReturnFocus=document.activeElement;
     if(B.dataset.v==="kitchen"||B.dataset.v==="reels")B.dataset.v="recipes";
@@ -3732,7 +3738,6 @@ function setView(v){if(v==="order")renderCart();var B=document.body,sheet=v==="p
   }
   B.style.overflow="";B.dataset.v=v;
   if(wasSheet&&sheetReturnFocus&&sheetReturnFocus.isConnected){sheetReturnFocus.focus({preventScroll:true});sheetReturnFocus=null}
-  Array.prototype.forEach.call(document.querySelectorAll(".tabbar button"),function(b){b.classList.toggle("on",b.dataset.view===v)});
   if(isMob()&&window.scrollTo)window.scrollTo(0,0)}
 document.addEventListener("keydown",function(e){
   var match=document.body.className.match(/\bsh-(pantry|plan|order)\b/);
@@ -5037,6 +5042,41 @@ body.searching .sh,body.searching [data-shuffle]{display:none!important}
   background:#fff;
   vertical-align:middle;
 }
+</style>
+<style id="hatri-pill-navigation">
+/* The shared four-destination navigator floats above the safe area. */
+@media(min-width:0px){
+  body{padding-bottom:calc(102px + env(safe-area-inset-bottom,0px))}
+  .tabbar{
+    box-sizing:border-box;left:50%;right:auto;bottom:calc(10px + env(safe-area-inset-bottom,0px));
+    transform:translateX(-50%);width:min(calc(100% - 20px),620px);
+    gap:3px;justify-content:stretch;padding:5px;
+    border:2px solid #464341;border-radius:999px;
+    background:linear-gradient(110deg,#242222,#0e0e0f 65%,#1c1b1b);
+    box-shadow:0 8px 24px #0005,inset 0 2px 4px #ffffff10;
+    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  }
+  .tabbar button{
+    display:flex;flex:1 1 0;flex-direction:row;align-items:center;justify-content:center;
+    min-width:0;min-height:54px;gap:6px;padding:8px 5px;
+    border-radius:999px;background:transparent;color:#f5f3f0;
+    font-size:clamp(12px,3.2vw,15px);font-weight:550;line-height:1.15;
+    white-space:nowrap;touch-action:manipulation;transition:background .16s ease,color .16s ease;
+  }
+  .tabbar>button{flex:1 1 0!important}
+  .tabbar button svg{width:24px;height:24px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .tabbar button.on{
+    color:#fff;font-weight:700;background:linear-gradient(135deg,#3d393a,#292728);
+    box-shadow:inset 0 1px 2px #ffffff17,0 2px 7px #0006;
+  }
+  .tabbar button.on svg{color:#4be39a;filter:drop-shadow(0 0 3px #29d78144)}
+  .tabbar button:focus-visible{outline:3px solid #79eab1;outline-offset:-3px}
+  .tabbar #cbadge:not(:empty),.tabbar #tbadge:not(:empty){top:2px;right:5px;left:auto;line-height:16px;background:#42c785;color:#092515}
+  .fab,.suggestions-up{bottom:calc(104px + env(safe-area-inset-bottom,0px))}
+  body[data-v="reels"]{--reels-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+}
+@media(max-width:360px){.tabbar{gap:0;padding:4px}.tabbar button{gap:4px;padding:7px 2px;min-height:52px}.tabbar button svg{width:20px;height:20px}}
+@media(prefers-reduced-motion:reduce){.tabbar button{transition:none}}
 </style>
 <script>
 (function(){
