@@ -1107,6 +1107,7 @@ test('mobile pantry taps keep other ingredient photos and scroll position stable
     const lauki = grid.locator('[data-i="lauki"]');
     const beans = grid.locator('[data-i="beans"]');
     const photo = await lauki.locator('img').elementHandle();
+    await lauki.scrollIntoViewIfNeeded();
     await photo.evaluate(img => img.decode());
     const scrollLeft = await grid.evaluate(el => {
       el.scrollLeft = 120;
@@ -1115,21 +1116,26 @@ test('mobile pantry taps keep other ingredient photos and scroll position stable
     assert.ok(scrollLeft > 0);
 
     for (const [button, selected] of [[beans, true], [lauki, true], [beans, false], [lauki, false]]) {
+      // The gesture may intentionally scroll to a distant vegetable family.
+      // Verify that the pantry rerender itself does not change that position.
+      await button.scrollIntoViewIfNeeded();
+      const before = await grid.evaluate(el => el.scrollLeft);
       await button.tap();
       assert.equal(await button.getAttribute('aria-pressed'), String(selected));
       assert.equal(await button.locator('.pantry-check').isVisible(), selected);
       assert.equal(await photo.evaluate(img => img.isConnected && img.complete && img.naturalWidth > 0), true);
-      assert.equal(await grid.evaluate(el => el.scrollLeft), scrollLeft);
+      assert.equal(await grid.evaluate(el => el.scrollLeft), before);
     }
 
     const panel = page.locator('#pantrySlides .pantry-panel');
+    const bulkScrollLeft = await grid.evaluate(el => el.scrollLeft);
     for (const action of ['all', 'none']) {
       await panel.locator(`[data-pantry-bulk="${action}"]`).tap();
       const selected = action === 'all' ? await grid.locator('.pantry-photo').count() : 0;
       assert.equal(await grid.locator('[aria-pressed="true"]').count(), selected);
       assert.match(await panel.locator('h3').innerText(), new RegExp(`\\(${selected}\\)$`));
       assert.equal(await photo.evaluate(img => img.isConnected), true);
-      assert.equal(await grid.evaluate(el => el.scrollLeft), scrollLeft);
+      assert.equal(await grid.evaluate(el => el.scrollLeft), bulkScrollLeft);
     }
   } finally {
     await context.close();
@@ -1239,31 +1245,62 @@ test('mobile pantry category and drawer selections keep neighboring controls and
   }
 });
 
-test('existing pantry tabs expose five produce groups and hide eggs and meat in vegetarian mode', async () => {
+test('existing pantry tabs group similar produce, grocery staples and dairy without revealing non-veg items', async () => {
   const {page, context} = await open({width:390,height:844}, {isMobile:true,hasTouch:true});
   try {
     const picker=page.locator('#pantrySlides');
+    const subtabs=picker.locator('.pantry-subtabs [data-pantry-sub]');
+    const category=(name)=>picker.locator('.pantry-tabs button').filter({hasText:name});
+    const ids=()=>picker.locator('.pantry-grid [data-i]').evaluateAll(tiles=>tiles.map(tile=>tile.dataset.i));
     const categoryLabels=await picker.locator('.pantry-tabs .fl').allTextContents();
     assert.ok(categoryLabels.includes('Vegetables & Fruits'));
     for (const name of ['Atta, Rice & Dal','Oil, Ghee & Masala','Dairy & Bread','Sauces & Spreads'])
       assert.ok(categoryLabels.includes(name),name);
     assert.ok(!categoryLabels.includes('Meat & Fish'));
     assert.equal(await picker.locator('[data-i="eggs"]').count(),0);
-    const subtabs=picker.locator('.pantry-subtabs [data-pantry-sub]');
     assert.deepEqual(await subtabs.allTextContents(),[
-      'Fresh Vegetables','Fresh Fruits','Exotics','Coriander & Others','Seasonal'
+      'Fresh Vegetables','Fresh Fruits','Coriander & Others','Exotics'
     ]);
-    for (const [sub,id] of [[0,'potato'],[1,'apple'],[2,'mushroom'],[3,'garlic'],[4,'peas']]) {
+    const vegetables=await ids();
+    const onions=['onion','pearlonion','springonion'];
+    assert.deepEqual(vegetables.slice(0,3),onions,'onion varieties must be consecutive');
+    for(const seasonal of ['cauliflower','peas','methi','pumpkin'])assert.ok(vegetables.includes(seasonal),seasonal);
+    for (const [sub,id] of [[0,'potato'],[1,'mango'],[2,'garlic'],[3,'mushroom']]) {
       await subtabs.nth(sub).click();
       assert.equal(await picker.locator(`.pantry-grid [data-i="${id}"]`).count(),1,`${id} in subcategory ${sub}`);
+    }
+
+    await category('Atta, Rice & Dal').click();
+    assert.deepEqual(await subtabs.allTextContents(),['Rice & Poha','Dal & Pulses','Atta & Flours','Grains & Staples','Noodles & Batters']);
+    for (const [sub,id] of [[0,'rice'],[1,'toor'],[2,'bajra'],[3,'millet'],[4,'vermicelli']]){
+      await subtabs.nth(sub).click();
+      assert.ok((await ids()).includes(id),`${id} in grain subcategory ${sub}`);
+    }
+    await subtabs.nth(1).click();
+    await picker.locator('[data-pantry-bulk="all"]').click();
+    assert.equal(await picker.locator('.pantry-grid [aria-pressed="true"]').count(),(await ids()).length);
+    await subtabs.nth(0).click();
+    assert.equal(await picker.locator('.pantry-grid [data-i="rice"]').getAttribute('aria-pressed'),'false',
+      'select all affects only the visible dal subcategory');
+    await category('Oil, Ghee & Masala').click();
+    assert.deepEqual(await subtabs.allTextContents(),['Oil & Ghee','Ground Masala','Khada Masala','Kitchen Basics']);
+    for (const [sub,id] of [[0,'ghee'],[1,'redchillipowder'],[2,'cuminseeds'],[3,'sugar']]){
+      await subtabs.nth(sub).click();
+      assert.ok((await ids()).includes(id),`${id} in masala subcategory ${sub}`);
+    }
+    await category('Dairy & Bread').click();
+    assert.deepEqual(await subtabs.allTextContents(),['Milk & Dairy','Paneer & Cheese','Bread & Flatbreads','Plant Proteins']);
+    for (const [sub,id] of [[0,'milk'],[1,'paneer'],[2,'bread'],[3,'tofu']]){
+      await subtabs.nth(sub).click();
+      assert.ok((await ids()).includes(id),`${id} in dairy subcategory ${sub}`);
     }
     await page.evaluate(()=>{ nonveg=true;renderPantrySlides(); });
     const nonvegLabels=await picker.locator('.pantry-tabs .fl').allTextContents();
     assert.ok(nonvegLabels.includes('Dairy, Bread & Eggs'));
     assert.ok(nonvegLabels.includes('Meat & Fish'));
-    await page.evaluate(()=>{
-      pantryTab=CATS.findIndex(category=>category[0]==='Dairy & Bread');renderPantrySlides();
-    });
+    await category('Dairy, Bread & Eggs').click();
+    assert.ok((await subtabs.allTextContents()).includes('Eggs'));
+    await subtabs.filter({hasText:'Eggs'}).click();
     assert.equal(await picker.locator('.pantry-grid [data-i="eggs"]').count(),1);
   } finally { await context.close(); }
 });

@@ -257,16 +257,23 @@ test('pantry image fallback and grocery-style grain category exist', () => {
   assert.match(src, /\.pantry-photo:focus-visible/);
 });
 
-test('pantry retains the existing subcategory pills with the five requested produce groups', () => {
+test('pantry retains the existing subcategory pills with four produce groups and grocery subcategories', () => {
   assert.match(src, /"Vegetables & Fruits":\[\]/);
-  for (const name of ['Fresh Vegetables','Fresh Fruits','Exotics','Coriander & Others','Seasonal']) {
-    assert.ok(src.includes(`["${name}",function(id)`), name);
+  const expected={
+    'Vegetables & Fruits':['Fresh Vegetables','Fresh Fruits','Coriander & Others','Exotics'],
+    'Atta, Rice & Dal':['Rice & Poha','Dal & Pulses','Atta & Flours','Grains & Staples','Noodles & Batters'],
+    'Oil, Ghee & Masala':['Oil & Ghee','Ground Masala','Khada Masala','Kitchen Basics'],
+    'Dairy & Bread':['Milk & Dairy','Paneer & Cheese','Bread & Flatbreads','Plant Proteins','Eggs']
+  };
+  const section=src.slice(src.indexOf('var PANTRY_SUBCATEGORIES='),src.indexOf('function pantrySubcategory('));
+  for(const [category,subgroups] of Object.entries(expected)){
+    const ctx={};vm.runInNewContext(section,ctx);
+    assert.deepEqual(Array.from(ctx.PANTRY_SUBCATEGORIES[category]),subgroups,category);
   }
-  for (const removed of ['All vegetables','Roots & tubers','Gourds & squash','Freshly Cut & Sprouts','Trusted Organics','Flowers & Leaves']) {
-    assert.doesNotMatch(src.slice(src.indexOf('var vegSubgroups='),src.indexOf('if(typeof pantryVegSub',src.indexOf('var vegSubgroups='))),new RegExp(`\\["${removed}"`));
-  }
+  assert.ok(!expected['Vegetables & Fruits'].includes('Seasonal'));
+  assert.match(src, /subgroups=\(PANTRY_SUBCATEGORIES\[c\[0\]\]\|\|\[\]\)/);
   assert.match(src, /data-pantry-sub/);
-  assert.match(src, /visibleItems=c\[0\]==="Vegetables & Fruits"/);
+  assert.match(src, /pantrySubcategory\(c\[0\],x\[0\]\)===chosen/);
   assert.match(src, /class='ft/);
   assert.match(src, /class='pantry-subtabs'/);
 });
@@ -301,25 +308,37 @@ test('pantry mapping places essential groceries correctly and preserves unique i
   assert.equal(c.CATS.find(g => g[0]==='Meat & Fish')[3],1);
 });
 
-test('all core produce stays discoverable in exactly the five visible produce subcategories', () => {
+test('every core pantry item maps to one relevant subcategory and similar produce stays adjacent', () => {
   const base=src.slice(src.indexOf('var CATS=['),src.indexOf('var NAME={}'));
   const classifier=src.slice(src.indexOf('/* ===== Smart pantry groups ===== */'),src.indexOf('function pantryGroupLabel('));
   const ctx=vm.createContext({NAME:{},NV:['eggs','chicken','fish','mutton','prawn']});
   vm.runInContext(base+classifier,ctx);
-  const produce=ctx.CATS.find(group=>group[0]==='Vegetables & Fruits')[1];
-  const subsection=src.slice(src.indexOf('  var exotic=/^('),src.indexOf('  if(typeof pantryVegSub',src.indexOf('  var exotic=/^(')));
+  const subsection=src.slice(src.indexOf('var PANTRY_SUBCATEGORIES='),src.indexOf('function renderPantrySlides'));
   vm.runInContext(subsection,ctx);
-  assert.deepEqual(Array.from(ctx.vegSubgroups,sub=>sub[0]),[
-    'Fresh Vegetables','Fresh Fruits','Exotics','Coriander & Others','Seasonal'
-  ]);
-  for (const [id] of produce) assert.ok(ctx.vegSubgroups.some(sub=>sub[1](id)),`Unreachable produce ${id}`);
-  const section=(id)=>Array.from(ctx.vegSubgroups.filter(sub=>sub[1](id)),sub=>sub[0]);
-  assert.ok(section('potato').includes('Fresh Vegetables'));
-  assert.ok(section('apple').includes('Fresh Fruits'));
-  assert.ok(section('mushroom').includes('Exotics'));
-  assert.ok(section('garlic').includes('Coriander & Others'));
-  assert.ok(section('peas').includes('Seasonal'));
-  assert.ok(!section('ginger').includes('Fresh Vegetables'));
+  const sub=(group,id)=>ctx.pantrySubcategory(group,id);
+  for(const category of ctx.CATS){
+    if(!ctx.PANTRY_SUBCATEGORIES[category[0]])continue;
+    for(const [id] of category[1])assert.ok(ctx.PANTRY_SUBCATEGORIES[category[0]].includes(sub(category[0],id)),`${id}: ${category[0]}`);
+  }
+  assert.equal(sub('Vegetables & Fruits','cauliflower'),'Fresh Vegetables');
+  assert.equal(sub('Vegetables & Fruits','peas'),'Fresh Vegetables');
+  assert.equal(sub('Vegetables & Fruits','mango'),'Fresh Fruits');
+  assert.equal(sub('Vegetables & Fruits','garlic'),'Coriander & Others');
+  assert.equal(sub('Vegetables & Fruits','mushroom'),'Exotics');
+  assert.equal(sub('Atta, Rice & Dal','rice'),'Rice & Poha');
+  assert.equal(sub('Atta, Rice & Dal','toor'),'Dal & Pulses');
+  assert.equal(sub('Atta, Rice & Dal','bajra'),'Atta & Flours');
+  assert.equal(sub('Oil, Ghee & Masala','ghee'),'Oil & Ghee');
+  assert.equal(sub('Oil, Ghee & Masala','redchillipowder'),'Ground Masala');
+  assert.equal(sub('Oil, Ghee & Masala','cuminseeds'),'Khada Masala');
+  assert.equal(sub('Dairy & Bread','milk'),'Milk & Dairy');
+  assert.equal(sub('Dairy & Bread','paneer'),'Paneer & Cheese');
+  assert.equal(sub('Dairy & Bread','bread'),'Bread & Flatbreads');
+  assert.equal(sub('Dairy & Bread','eggs'),'Eggs');
+  const produce=ctx.CATS.find(g=>g[0]==='Vegetables & Fruits')[1];
+  produce.push(['pearlonion','Pearl onions'],['springonion','Spring onions']);
+  ctx.pantrySortItems('Vegetables & Fruits',produce);
+  assert.deepEqual(Array.from(produce.slice(0,3),item=>item[0]),['onion','pearlonion','springonion']);
   assert.match(src, /CATS\.filter\(function\(c\)\{return nonveg\|\|!c\[3\]\}\)/,
     'the main pantry must also hide the meat group in vegetarian mode');
 });
