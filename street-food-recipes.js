@@ -1,14 +1,14 @@
 // Small-batch chaat, street snacks and dumplings. Times assume the ingredients listed.
 const STREET_FOOD_RECIPES = [
   {
-    name: "Raj Kachori Chaat", region: "North Indian", course: "Snack", prep: 12, cook: 0, serves: 2, appliances: ["N"],
-    pantry: ["rajkachorishells", "cookedchickpeas", "boiledpotato", "curd", "greenchutney", "tamarindchutney", "sev", "chaatmasala", "pomegranate?"],
+    name: "Raj Kachori Chaat", region: "North Indian", course: "Snack", prep: 12, cook: 25, serves: 2, appliances: ["I"],
+    pantry: ["rajkachorishells", "cookedchickpeas", "potato", "curd", "greenchutney", "tamarindchutney", "sev", "chaatmasala", "pomegranate?"],
     source: ["NDTV Food", "https://food.ndtv.com/recipe-raj-kachori-218068"],
     amounts: {
-      en: ["2 large ready-made hollow raj kachori shells", "½ cup cooked chickpeas and 1 small boiled potato, diced", "½ cup plain curd, whisked, and ½ tsp chaat masala", "2 tbsp each green chutney, sweet tamarind chutney and sev", "2 tbsp pomegranate seeds (optional)"]
+      en: ["2 large ready-made hollow raj kachori shells", "½ cup ready-to-eat cooked chickpeas and 1 small raw potato", "½ cup plain curd, whisked, and ½ tsp chaat masala", "2 tbsp each green chutney, sweet tamarind chutney and sev", "2 tbsp pomegranate seeds (optional)"]
     },
     steps: {
-      en: ["Start with crisp ready-made shells and cooled, fully cooked chickpeas and potato. Mix the chickpeas and diced potato with half the chaat masala.", "Set the shells upright in shallow bowls. Tap a small hole in the top of each with the back of a spoon and gently widen it. Divide the potato and chickpea filling between the shells.", "Spoon over curd and both chutneys. Finish with sev, the remaining chaat masala and optional pomegranate. Serve straight away while the shells are crisp."]
+      en: ["Boil the raw potato in water for 20–25 minutes until fork-tender. Drain, cool completely and dice. Use fully cooked, ready-to-eat chickpeas; never use dry, uncooked chickpeas here. Mix with the potato and half the chaat masala.", "Set the crisp shells upright in shallow bowls. Tap a small hole in each and gently widen it. Divide the potato and chickpea filling between the shells.", "Spoon over curd and both chutneys. Finish with sev, remaining chaat masala and optional pomegranate. Serve immediately while the shells are crisp."]
     }
   },
   {

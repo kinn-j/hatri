@@ -13,7 +13,7 @@ const RAJASTHANI_PANTRY = {
     ["karonda", "Fresh karonda berries"]
   ],
   "Dals, pulses & more": [
-    ["cookedblackchickpeas", "Cooked black chickpeas"],
+    ["cookedblackchickpeas", "Ready-to-eat black chickpeas"],
     ["kumatiya", "Food-grade dried kumatiya seeds"]
   ],
   "Grains & flours": [
@@ -23,7 +23,6 @@ const RAJASTHANI_PANTRY = {
     ["sproutedwheatflour", "Sprouted wheat flour"]
   ],
   "Specialty & other": [
-    ["cookedbajraroti", "Cooked bajra rotis"],
     ["ediblegond", "Edible gond crystals"],
     ["mishri", "Rock sugar crystals (mishri)"],
     ["namkeenboondi", "Plain salted boondi"],
@@ -487,14 +486,14 @@ const RAJASTHANI_RECIPES = [
     }
   },
   {
-    name: "Bajra Churma", region: "Rajasthani", course: "Sweet", prep: 7, cook: 0, serves: 3, appliances: ["N"],
-    pantry: ["cookedbajraroti", "jaggery", "ghee", "cardamom?"],
+    name: "Bajra Churma", region: "Rajasthani", course: "Sweet", prep: 12, cook: 20, serves: 3, appliances: ["T"],
+    pantry: ["bajra", "jaggery", "ghee", "cardamom?"],
     source: ["Nisha Madhulika", "https://www.nishamadhulika.com/en/184-maleeda-recipe.html"],
     amounts: {
-      en: ["2 freshly cooked bajra rotis, still warm, ¼ cup grated jaggery and 2 tbsp melted ghee", "1 pinch cardamom (optional)"]
+      en: ["150 g bajra flour and about 120 ml warm water to make 2 rotis", "¼ cup grated jaggery and 2 tbsp melted ghee", "1 pinch cardamom (optional)"]
     },
     steps: {
-      en: ["Start with cooked rotis. Tear them into small pieces and pulse coarsely or rub between your palms once cool enough to handle.", "Mix the warm crumbs with grated jaggery, ghee and optional cardamom. Rub until the jaggery and ghee are evenly dispersed.", "Serve the loose churma warm, or press it into small balls while it is still pliable."]
+      en: ["Knead bajra flour with warm water and a pinch of salt until it holds together. Pat into two rotis between your palms or sheets of parchment.", "Cook each roti on a hot dry tawa, turning until both sides are cooked through. Rest uncovered for 5 minutes so the rotis dry slightly, then tear and crumble while still warm.", "Mix the crumbs with grated jaggery, melted ghee and optional cardamom. Rub evenly and serve loose, or press into balls while pliable."]
     }
   },
   {

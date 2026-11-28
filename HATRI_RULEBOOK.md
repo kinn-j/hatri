@@ -1,5 +1,13 @@
 # Hatri rule book
 
+## Pantry ingredient classification
+
+Keep the existing category rail, subcategory pills, photographic ingredient tiles, spacing, and selection behavior. Organize ingredient IDs under the grocery-style categories Vegetables & Fruits; Atta, Rice & Dal; Oil, Ghee & Masala; Dairy & Bread; Dry Fruits & Cereals; Sauces & Spreads; Bakery & Snacks; Drinks & Specialty; and Meat & Fish (visible only with Veg Mode off). In non-vegetarian mode, dairy may be labeled Dairy, Bread & Eggs. Eggs and animal-derived meat, fish and stock must never appear in the vegetarian pantry selector, including its drawer or search results.
+
+The Vegetables & Fruits category has exactly five subcategory views: Fresh Vegetables, Fresh Fruits, Exotics, Coriander & Others, and Seasonal. Do not restore the older roots/gourds/leafy/peas subdivisions, Freshly Cut & Sprouts, Trusted Organics, or Flowers & Leaves. Every selectable produce ID must remain discoverable in at least one of the five views. The Seasonal view may also include an item from a standard produce view, but selecting it must retain the same canonical pantry ID.
+
+Prefer raw, purchasable ingredients over cooked preparation states. For example, boiled potato is potato and cooked bajra roti must be made from bajra flour with the cooking and drying/resting directions in its recipe. Do not silently equate dry beans to ready-to-eat beans in genuine no-cook recipes; use a clearly labeled shelf-stable ready-to-eat product where appropriate or require cooking and revise the timing/category. Whenever ingredient IDs change, update English and Hindi instructions, measured quantities, the recipe spreadsheet and regression coverage together.
+
 ## Whole meals
 
 Build whole meals in descending tiers: first **six dishes** (two mains, bread, rice, curd and sweet), then **five dishes** (two mains, bread, curd and sweet, omitting rice), then **four dishes** (two mains, bread and sweet, omitting rice and curd). Only enter the next tier after exhausting feasible meals in the previous tier using the remaining recipes. Two mains, one bread and one sweet are never optional. All dishes inside a meal must be distinct. Across one set of whole-meal suggestions, each dish may appear only once, including any optional salad. The rule covers all result groups and the featured meal shown alongside the list.

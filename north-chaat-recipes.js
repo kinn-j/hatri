@@ -791,10 +791,14 @@ const NORTH_CHAAT_RECIPES = [
 ];
 
 const NORTH_CHAAT_CATALOG = NORTH_CHAAT_RECIPES.map(function(row){
-  var aliases={boiledpotato:"potato",cookedchickpeas:"chickpea",roastedpeanuts:"peanut",kalachana:"blackchickpeas",hing:"asafoetida"};
+  // Cooked legumes and roasted peanuts are distinct ready-to-eat products:
+  // uncooked chickpeas cannot safely satisfy a ready-to-eat chaat ingredient.
+  var aliases={boiledpotato:"potato",kalachana:"blackchickpeas",hing:"asafoetida"};
+  var boilPotato=row[3].includes("boiledpotato");
+  var potatoPreparation="Boil the raw potatoes in water until fork-tender (about 20 minutes), drain and cool before using them in this chaat.";
   var ownPhoto="north-chaat-"+row[0].toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")+".webp";
-  return {name:row[0],region:row[1],course:"Snack",prep:12,cook:12,serves:2,
-    pantry:row[3].map(function(id){return aliases[id]||id}),amounts:{en:[row[4]]},steps:{en:[row[5]]},photo:ownPhoto};
+  return {name:row[0],region:row[1],course:"Snack",prep:12,cook:boilPotato?32:12,serves:2,
+    pantry:Array.from(new Set(row[3].map(function(id){return aliases[id]||id}))),amounts:{en:[row[4]]},steps:{en:boilPotato?[potatoPreparation,row[5]]:[row[5]]},photo:ownPhoto};
 });
 const NORTH_CHAAT_PANTRY = [
   ["papdi","Papdi (crispy wheat wafers)","chaat-papdi.webp"],
