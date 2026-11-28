@@ -57,7 +57,7 @@ Mark any untranslated instructions as English and identify the fallback to the r
 
 ## Offline app shell
 
-Every local script required to restore saved pantry, cart, Table and recipe state must be precached in the service worker shell, including `preferences.js`. Keep the shell's network-cache allowlist synchronized, and advance the cache version when updating the shell. Test that saved data survives installation over an older release and an offline reload in both Chromium and WebKit.
+Every local script required to restore saved pantry, cart, Table and recipe state must be precached in the service worker shell, including `preferences.js`. Treat HTML, JavaScript and the manifest as one atomic, versioned offline shell: install every required asset before activation, bypass stale HTTP-cache responses during installation, and serve these shell assets cache-first. Do not overwrite individual shell assets from network responses after installation, which could mix release versions. Derive the shell request allowlist from the precache list and advance the cache version whenever a shell asset changes. Leave saved state in local storage untouched across worker upgrades. Test that saved pantry, cart and Table selections survive installation over an older release and repeated offline reloads in both Chromium and WebKit.
 
 ## Community recipe videos
 
