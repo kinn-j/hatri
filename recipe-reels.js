@@ -10,6 +10,14 @@ const dialog = document.getElementById('reels-upload-dialog');
 const form = document.getElementById('reels-upload-form');
 const videoInput = document.getElementById('reels-video-input');
 const videoName = document.getElementById('reels-video-name');
+const previewVideo = document.getElementById('reels-preview-video');
+const previewEmpty = document.getElementById('reels-preview-empty');
+const next = document.getElementById('reels-upload-next');
+const galleryControls = document.getElementById('reels-gallery-controls');
+const detailsPanel = document.getElementById('reels-create-details');
+const mapRecipeButton = document.getElementById('reels-map-recipe-open');
+const mapRecipeLabel = document.getElementById('reels-map-recipe-label');
+const recipeSearchRow = document.getElementById('reels-recipe-search-row');
 const status = document.getElementById('reels-upload-status');
 const progress = document.getElementById('reels-upload-progress');
 const openUpload = document.getElementById('reels-upload-open');
@@ -24,7 +32,7 @@ const editRecipeInput = document.getElementById('reel-edit-recipe');
 const MAX_BYTES = 100 * 1024 * 1024;
 const extensions = {mp4:'video/mp4', webm:'video/webm', mov:'video/quicktime'};
 const cards = new Map();
-let signedInUser, activeUpload, unsubscribe, wantedFeed, managing, generation = 0;
+let signedInUser, activeUpload, unsubscribe, wantedFeed, managing, previewURL, generation = 0;
 let ownFeed = false;
 
 // Recipe names are the stable catalog identities used by the rest of Hatri.
@@ -100,7 +108,7 @@ function openManagement(kind, entry) {
   }
   manageDialog.querySelector('h2').textContent = {edit:'Edit video',delete:'Remove video',report:'Report video'}[kind];
   if (kind === 'edit') {
-    for (const key of ['title','caption','credit']) manageForm.elements.namedItem(key).value = entry.item[key] || '';
+    for (const key of ['caption','credit']) manageForm.elements.namedItem(key).value = entry.item[key] || '';
     editRecipeInput.value = entry.item.recipeName || linkedRecipe(entry.item)?.name || '';
   }
   manageDialog.showModal();
@@ -115,7 +123,11 @@ manageForm.addEventListener('submit', async event => {
   const fields = Object.fromEntries(new FormData(manageForm));
   try {
     const data = {id:job.entry.item.id, action:job.kind, ...fields};
-    if (job.kind === 'edit') data.recipeName = exactRecipe(data.recipeName).name;
+    if (job.kind === 'edit') {
+      data.recipeName = exactRecipe(data.recipeName).name;
+      // Existing backend records still require title; it is internal, not a Reel UI field.
+      data.title = data.recipeName.slice(0,80);
+    }
     await call(job.kind === 'report' ? 'reportReel' : 'manageReel', data);
     if (job.kind === 'edit' && wantedFeed?.startsWith('post:')) loadFeed();
     if (job.kind === 'delete' && wantedFeed?.startsWith('post:')) message('This video has been removed.');
@@ -191,8 +203,8 @@ function makeCard(item) {
   copy.className = 'reel-copy';
   const author = document.createElement('div');
   author.className = 'reel-author';
-  const title = document.createElement('h2'), caption = document.createElement('p');
-  author.translate = title.translate = caption.translate = false;
+  const caption = document.createElement('p');
+  author.translate = caption.translate = false;
   const playError = document.createElement('p');
   playError.setAttribute('role','status');
   playError.hidden = true;
@@ -200,17 +212,17 @@ function makeCard(item) {
   const hint = document.createElement('p');
   hint.className = 'reels-swipe-hint';
   hint.textContent = 'Swipe up for the next recipe video ↑';
-  copy.append(author,title,caption,playError,recipeArea,hint);
+  copy.append(author,caption,playError,recipeArea,hint);
   const actions = document.createElement('div');
   actions.className = 'reel-actions';
-  const entry = {card,video,author,title,caption,playError,recipeArea,actions,item};
+  const entry = {card,video,author,caption,playError,recipeArea,actions,item};
   const share = action('Share', async () => {
     const url = new URL(location.href);
     url.searchParams.delete('reels');
     url.searchParams.set('reel', entry.item.id);
     url.hash = '';
     try {
-      if (navigator.share) await navigator.share({title:title.textContent, text:caption.textContent, url:url.href});
+      if (navigator.share) await navigator.share({title:linkedRecipe(entry.item)?.name || 'Hatri reel', text:caption.textContent, url:url.href});
       else if (navigator.clipboard) { await navigator.clipboard.writeText(url.href); window.toast?.('Video link copied.'); }
       else window.prompt('Copy this video link',url.href);
     } catch (error) {
@@ -236,13 +248,12 @@ function makeCard(item) {
   return entry;
 }
 function updateCard(entry, item) {
-  const {video, author, title, caption} = entry;
+  const {video, author, caption} = entry;
   entry.item = item;
   author.textContent = item.credit || 'Hatri cook';
-  title.textContent = item.title || 'Recipe video';
   caption.textContent = item.caption || '';
   renderRecipeLink(entry,item);
-  video.setAttribute('aria-label',title.textContent);
+  video.setAttribute('aria-label',`Recipe reel: ${linkedRecipe(item)?.name || 'unlinked recipe'}`);
   if (entry.subtitles === item.subtitles && entry.subtitleLanguage === item.subtitleLanguage) return;
   video.querySelector('track')?.remove();
   if (entry.captionURL) URL.revokeObjectURL(entry.captionURL);
@@ -403,25 +414,74 @@ onAuthStateChanged(auth,user => {
   }
 });
 
-function showVideoName() {
-  const file = videoInput.files[0];
-  videoName.translate = !file;
-  videoName.textContent = file?.name || 'No video selected';
+function clearPreview() {
+  previewVideo.pause();
+  previewVideo.removeAttribute('src');
+  previewVideo.load();
+  if (previewURL) URL.revokeObjectURL(previewURL);
+  previewURL = null;
+  previewVideo.hidden = true;
+  previewEmpty.hidden = false;
 }
+function showVideoName() {
+  clearPreview();
+  const file = videoInput.files[0];
+  const mime = file && (Object.values(extensions).includes(file.type) ? file.type : extensions[file.name.split('.').pop().toLowerCase()]);
+  const valid = !!(file && mime && file.size > 0 && file.size <= MAX_BYTES);
+  videoName.translate = !file;
+  videoName.textContent = !file ? 'No video selected' : valid ? file.name : 'Choose an MP4, WebM, or MOV video up to 100 MB.';
+  next.disabled = !valid;
+  if (valid) {
+    previewURL = URL.createObjectURL(file);
+    previewVideo.src = previewURL;
+    previewVideo.hidden = false;
+    previewEmpty.hidden = true;
+  }
+}
+function setUploadStage(details) {
+  dialog.classList.toggle('is-details',details);
+  galleryControls.hidden = details;
+  detailsPanel.hidden = !details;
+  next.textContent = details ? '‹ Back' : 'Next';
+  if (details) previewVideo.pause();
+}
+function showRecipeSearch() {
+  recipeSearchRow.hidden = false;
+  mapRecipeButton.setAttribute('aria-expanded','true');
+  recipeInput.focus();
+}
+function syncMappedRecipe() {
+  mapRecipeLabel.textContent = exactRecipe(recipeInput.value)?.name || 'Add / map a recipe';
+}
+mapRecipeButton.addEventListener('click',() => {
+  if (recipeSearchRow.hidden) showRecipeSearch();
+  else { recipeSearchRow.hidden = true; mapRecipeButton.setAttribute('aria-expanded','false'); }
+});
+recipeInput.addEventListener('input',syncMappedRecipe);
 videoInput.addEventListener('change',showVideoName);
 document.getElementById('reels-video-pick').addEventListener('click',() => videoInput.click());
+next.addEventListener('click',() => {
+  if (activeUpload) return;
+  if (detailsPanel.hidden) { if (!next.disabled) setUploadStage(true); }
+  else setUploadStage(false);
+});
 openUpload.addEventListener('click',() => {
   if (!signedInUser) return profile();
   if (activeUpload) return;
   form.reset();
   recipeInput.setCustomValidity('');
   showVideoName();
+  syncMappedRecipe();
+  recipeSearchRow.hidden = true;
+  mapRecipeButton.setAttribute('aria-expanded','false');
+  setUploadStage(false);
   status.textContent = '';
   progress.value = 0;
   dialog.showModal();
 });
 cancel.addEventListener('click',() => { if (stopUpload()) dialog.close(); });
 dialog.addEventListener('cancel',event => { if (!stopUpload()) event.preventDefault(); });
+dialog.addEventListener('close',clearPreview);
 
 function transfer(job, policy, file) {
   return new Promise((resolve,reject) => {
@@ -441,6 +501,7 @@ form.addEventListener('submit',async event => {
   event.preventDefault();
   if (!signedInUser || activeUpload) return;
   const data = new FormData(form), file = videoInput.files[0], captionFile = form.elements.namedItem('subtitles').files[0];
+  if (recipeSearchRow.hidden && !exactRecipe(recipeInput.value)) showRecipeSearch();
   const recipe = selectedRecipe(recipeInput,status);
   if (!recipe) return;
   const contentType = file && (Object.values(extensions).includes(file.type) ? file.type : extensions[file.name.split('.').pop().toLowerCase()]);
@@ -450,12 +511,12 @@ form.addEventListener('submit',async event => {
   }
   if (captionFile && captionFile.size > 24_576) { status.textContent = 'Choose a WebVTT caption file up to 24 KB.'; return; }
   const job = activeUpload = {uid:signedInUser.uid};
-  publish.disabled = openUpload.disabled = true;
+  publish.disabled = openUpload.disabled = next.disabled = true;
   status.textContent = 'Preparing upload…';
   try {
     const subtitles = captionFile ? await captionFile.text() : '';
     if (job.cancelled || job.uid !== signedInUser?.uid) return;
-    const {id,policy} = await call('startReel',{title:data.get('title'),recipeName:recipe.name,caption:data.get('caption'),
+    const {id,policy} = await call('startReel',{title:recipe.name.slice(0,80),recipeName:recipe.name,caption:data.get('caption'),
       credit:data.get('credit'),subtitleLanguage:data.get('subtitleLanguage'),subtitles,contentType,sizeBytes:file.size});
     job.id = id;
     if (job.cancelled || job.uid !== signedInUser?.uid) return;
@@ -474,6 +535,7 @@ form.addEventListener('submit',async event => {
     if (job.id && !job.done && job.uid === signedInUser?.uid) await call('cancelReel',{id:job.id}).catch(() => {});
     if (activeUpload === job) activeUpload = null;
     openUpload.disabled = publish.disabled = cancel.disabled = false;
+    next.disabled = !videoInput.files[0];
   }
 });
 syncFeed();

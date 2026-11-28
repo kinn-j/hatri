@@ -15,6 +15,14 @@ const context = {};
 const script = fs.readFileSync(path.join(root, 'hindi-catalog.js'), 'utf8');
 new vm.Script(script);
 vm.runInNewContext(script, context);
+// Interface labels live in the app's separately cached offline UI dictionary.
+// Parse only its static object: this does not execute browser-only translation code.
+const translator = fs.readFileSync(path.join(root, 'translation.js'), 'utf8');
+const marker = 'const offline = new Map(Object.entries(';
+const uiStart = translator.indexOf(marker) + marker.length;
+const uiEnd = translator.indexOf('}));', uiStart);
+assert.ok(uiStart >= marker.length && uiEnd > uiStart, 'offline UI dictionary is present');
+const offlineUI = vm.runInNewContext('(' + translator.slice(uiStart, uiEnd + 1) + ')');
 vm.runInNewContext(fs.readFileSync(path.join(root, 'north-chaat-recipes.js'), 'utf8') +
   '\n;globalThis.NORTH_CHAAT_RECIPES=NORTH_CHAAT_RECIPES;globalThis.NORTH_CHAAT_PANTRY=NORTH_CHAAT_PANTRY;', context);
 vm.runInNewContext(fs.readFileSync(path.join(root, 'north-chaat-hindi.js'), 'utf8'), context);
@@ -27,6 +35,8 @@ test('Hindi recipe pack is available in both apps and the installed PWA', () => 
   assert.match(html, /<script src="\.\/hindi-catalog\.js"><\/script>/);
   assert.match(legacy, /import\(hindiCatalogUrl\.href\)/);
   assert.match(sw, /'\.\/hindi-catalog\.js'/);
+  assert.match(sw, /'\.\/translation\.js'/);
+  assert.match(html, /<script src="\.\/translation\.js"><\/script>/);
   assert.match(sw, /'\.\/north-chaat-hindi\.js'/);
   assert.match(sw, /'\.\/no-cook-hindi\.js'/);
   assert.ok(pack && pack.titles && pack.steps && pack.amounts && pack.ingredients);
@@ -40,7 +50,10 @@ test('all authored recipe titles, amounts and methods have a packaged Hindi tran
     const corpus = JSON.parse(fs.readFileSync(output, 'utf8'));
     const missing = {};
     for (const type of ['titles', 'ingredients', 'amounts', 'steps', 'interfaceText']) {
-      missing[type] = corpus[type].filter(text => !pack[type]?.[text] || !/\p{Script=Devanagari}/u.test(pack[type][text]));
+      missing[type] = corpus[type].filter(text => {
+      const translated = type === 'interfaceText' ? offlineUI[text] || pack[type]?.[text] : pack[type]?.[text];
+      return !translated || !/\p{Script=Devanagari}/u.test(translated);
+    });
     }
     for (const [type, values] of Object.entries(missing)) {
       assert.deepEqual(values.slice(0, 15), [], `${type}: ${values.length} missing or non-Hindi translations (first 15)`);
