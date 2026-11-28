@@ -51,7 +51,7 @@ globalThis.HatriTranslation = (() => {
     "2 See what you can cook":"२ देखें क्या बना सकते हैं", "3 Refine with Filters":"३ फ़िल्टर से सुझाव चुनें",
     "Quick start: common veg + dal":"आसान शुरुआत: आम सब्ज़ियाँ और दाल", "Clear all":"सब हटाएँ",
     "Basics at home (oil, salt, haldi, masalas)":"घर में तेल, नमक, हल्दी और मसाले हैं",
-    "Show recipes":"व्यंजन दिखाएँ", "Close":"बंद करें", "Close filters":"फ़िल्टर बंद करें",
+    "Show recipes":"व्यंजन दिखाएँ", "Close":"बंद करें", "Close filters":"फ़िल्टर बंद करें", "Close meal details":"भोजन विवरण बंद करें",
     "More filters":"और फ़िल्टर", "Fine-tune your recipe suggestions":"व्यंजनों के सुझाव अपनी पसंद के अनुसार चुनें",
     "Reset filters":"फ़िल्टर रीसेट करें", "Apply filters":"फ़िल्टर लागू करें",
     "Region":"क्षेत्र", "Occasion":"अवसर", "Time":"समय", "Ready in":"तैयार होने में",

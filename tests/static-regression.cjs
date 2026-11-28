@@ -65,6 +65,7 @@ test('whole-meal cards open a dialog rather than expanding inline and the dice i
   assert.match(mealCode, /mealTray\.close\(\)/);
   assert.doesNotMatch(mealCode, /insertAdjacentHTML|MOPEN/);
   assert.doesNotMatch(src, /data-decide|data-closepick|🎲|Tonight’s pick|Tonight’s meal/);
+  assert.doesNotMatch(src, /\$\("pick"\)|id="pick"/, 'removed picker must not be referenced by search or any rendering path');
 });
 
 test('the complete catalog and search results automatically render every batch, with a show-all fallback', () => {

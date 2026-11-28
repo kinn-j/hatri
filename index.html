@@ -1385,7 +1385,7 @@ function warmHindiSearch(query,labels,refresh){
     task.pending.delete(text);
   });
 }
-function renderSearch(r,q){renderHTML($("pick"),"");var tk=q.split(/\s+/).filter(Boolean);
+function renderSearch(r,q){var tk=q.split(/\s+/).filter(Boolean);
   if(/\p{Script=Devanagari}/u.test(q))warmHindiSearch(q,MEALS.flatMap(searchLabels),renderResults);
   var vratMatches=!sel.all&&vratOnly()?new Set(score(true).map(function(m){return m.recipe})):null;
   var L=MEALS.filter(function(m){
