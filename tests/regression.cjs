@@ -1187,6 +1187,31 @@ test('closed browse cards render full recipe content only when opened', async ()
   } finally { await context.close(); }
 });
 
+test('recipe tray has live pantry markers and no Google photo, reference or duplicate ingredient chips', async () => {
+  const {page,context} = await open();
+  try {
+    await page.evaluate(() => {
+      have = {cabbage:1,mustardseeds:1,turmeric:1};
+      const recipe = MEALS.find(item => item[0] === 'Cabbage Sabzi');
+      showDishDetails(document.body,recipe);
+    });
+    const tray = page.locator('#dtray[open]');
+    const rows = tray.locator('.recipe-ingredient-list li');
+    assert.equal(await rows.count(),7);
+    for (const [index,available] of [[0,true],[1,false],[2,false],[3,true],[4,true],[5,false],[6,false]]) {
+      assert.equal(await rows.nth(index).locator('.recipe-ingredient-mark').getAttribute('aria-label'),
+        available?'Available in pantry':'Not in pantry');
+    }
+    assert.equal(await tray.locator('.recipe-ingredient-mark:not(.available) svg').count(),4);
+    assert.equal(await tray.locator('.dt-description, .meal > .chips, .meal > .bar').count(),0);
+    assert.equal(await tray.locator('a[href*="google.com/search"], a:has-text("Recipe reference")').count(),0);
+    await page.evaluate(() => { have.carrot=1; have.gchilli=1; renderResults(); });
+    assert.equal(await rows.nth(1).locator('.recipe-ingredient-mark').getAttribute('aria-label'),'Available in pantry');
+    assert.equal(await rows.nth(6).locator('.recipe-ingredient-mark').getAttribute('aria-label'),'Available in pantry');
+    assert.equal(await rows.count(),7,'pantry changes must not duplicate the measured list');
+  } finally { await context.close(); }
+});
+
 test('community video code loads once when opening Reels', async () => {
   const context = await browser.newContext({ serviceWorkers: 'block' });
   try {

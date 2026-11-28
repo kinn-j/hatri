@@ -209,6 +209,11 @@ body[data-v="recipes"]:not(.searching) .hero{display:block}
   .mode-switch{flex:1;min-width:0;justify-content:center;min-height:44px}
 }
 .steps{margin-top:8px;font-size:13.5px}.steps summary{cursor:pointer;color:var(--accent);font-weight:600}.steps ol,.steps ul{margin:6px 0 0;padding-left:20px}.steps li{margin:4px 0}.steps .recipe-section{margin:12px 0 4px}
+.steps .recipe-ingredient-list{list-style:none;padding-left:0;margin-top:8px}
+.recipe-ingredient-list li{display:flex;align-items:flex-start;gap:9px;line-height:1.5}
+.recipe-ingredient-mark{width:19px;height:21px;display:inline-flex;align-items:center;justify-content:center;flex:none;margin-top:0;color:#eb791c}
+.recipe-ingredient-mark.available{color:#27984a;font-size:20px;font-weight:800}
+.recipe-ingredient-mark svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .hstl{border:1px dashed var(--green);border-radius:12px;padding:10px;margin-bottom:12px}
 main#planner{grid-template-columns:1fr;max-width:900px}
 @media(min-width:860px){main#planner{grid-template-columns:1fr}main#planner .left{position:static}}
@@ -1370,15 +1375,14 @@ function card(m,expanded){
   var thumbnail="<span class='tile"+(im?" photo":"")+"' aria-hidden='true' style='background:linear-gradient(135deg,"+c[0]+","+c[1]+")'>"+
     (im?recipeImage(im):"")+"<span class='recipe-photo-fallback'>"+emo(m.n)+"</span></span>";
   var opener=expanded?"":"<button type='button' class='dish-opener meal-dish-opener' data-open-dish='"+MEALS.indexOf(m.recipe)+"' aria-haspopup='dialog' aria-controls='dtray'>"+thumbnail+"<b>"+escapeHTML(dn(m.n))+"</b></button>";
-  var link="<a href='https://www.google.com/search?tbm=isch&q="+encodeURIComponent(m.n+" recipe")+"' target='_blank' rel='noopener'>📷 photos</a>";
-  return "<div class='meal' data-recipe='"+encodeURIComponent(m.n)+"'><div class='mh'><div>"+opener+"<div class='meta'><span class='dot "+(m.v?"veg":"nv")+"'></span>"+diet+m.cu+" · Prep "+m.p+" min · "+(m.c?"Cook "+m.c+" min":"No cooking")+" · Ready in ~"+ready+" min"+(m.s&&!isLong(m)&&!m.ov?" incl. soak":"")+(m.ov?" · soak while you chop":"")+(m.f?" · 🎉 "+m.f:"")+(ptag(m)?" · "+ptag(m):"")+" · "+link+(UPL?" · <button class='x' data-up='"+sl+"' style='font-size:12px;color:var(--accent)'>📷 "+(im?"change":"add")+" photo</button>":"")+"</div></div>"+
+  return "<div class='meal' data-recipe='"+encodeURIComponent(m.n)+"'><div class='mh'><div>"+opener+"<div class='meta'><span class='dot "+(m.v?"veg":"nv")+"'></span>"+diet+m.cu+" · Prep "+m.p+" min · "+(m.c?"Cook "+m.c+" min":"No cooking")+" · Ready in ~"+ready+" min"+(m.s&&!isLong(m)&&!m.ov?" incl. soak":"")+(m.ov?" · soak while you chop":"")+(m.f?" · 🎉 "+m.f:"")+(ptag(m)?" · "+ptag(m):"")+(UPL?" · <button class='x' data-up='"+sl+"' style='font-size:12px;color:var(--accent)'>📷 "+(im?"change":"add")+" photo</button>":"")+"</div></div>"+
    "<div class='table-recipe-actions'>"+(m.x.length?"<button class='btn sm"+(all?"":" primary")+"' data-add='"+escapeHTML(m.n)+"'>"+cartLabel+"</button>":"<span class='chip have'>Ready to cook</span>")+tableDishButton(m.recipe)+"</div></div>"+
    (m.s?"<div class='soak'>💧 "+soakTxt(m)+"</div>":"")+(m.oc.indexOf("Vrat")>-1?"<div class='soak' style='border-color:#e8590c'>🙏 Vrat-friendly — use sendha namak; no onion or garlic</div>":"")+extra(m,expanded)+
-   "<div class='bar'><i style='width:"+pct+"%'></i></div><div class='chips'>"+
+   (expanded?"":"<div class='bar'><i style='width:"+pct+"%'></i></div><div class='chips'>"+
    m.h.map(function(i){return "<span class='chip have'>"+NAME[i]+"</span>"}).join("")+
    m.x.map(shoppingIngredient).join("")+
    m.oh.map(function(i){return "<span class='chip have' style='background:transparent;border:1px solid var(--ok)'>"+NAME[i]+" · optional</span>"}).join("")+
-   m.ox.map(function(i){return "<button class='chip opt' data-oi='"+i+"'>"+(cart[i]?"✓ ":"+ ")+NAME[i]+" · optional</button>"}).join("")+"</div></div>";
+   m.ox.map(function(i){return "<button class='chip opt' data-oi='"+i+"'>"+(cart[i]?"✓ ":"+ ")+NAME[i]+" · optional</button>"}).join("")+"</div>")+"</div>";
 }
 // Rendering is progressive for mobile performance, but every matching recipe
 // remains available: there is no maximum number of dishes or meal suggestions.
@@ -2780,6 +2784,55 @@ function rateRow(m){var sl=slug(m.n),my=kitchenRating(MY[sl]),r=my.rating,ph=my.
 function recipeList(tag,items){
   return "<"+tag+">"+items.map(function(item){return "<li>"+escapeHTML(item)+"</li>"}).join("")+"</"+tag+">";
 }
+// Match measured recipe lines to the pantry's canonical ingredient IDs, including
+// optional ingredients and pantry staples omitted from a dish's suggestion score.
+// A line mentioning several ingredients is available only if all are selected.
+function recipeIngredientIds(line){
+  function clean(value){return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim()}
+  var text=" "+clean(line)+" ",aliases={
+    gchilli:["green chilli","green chillies","green chili","green chilies"],
+    dryredchilli:["dried red chilli","dried red chillies","dry red chilli","dry red chillies"],
+    cumin:["cumin powder","ground cumin","jeera powder"],
+    cuminseeds:["cumin seeds","whole cumin","jeera seeds"],
+    mustardoil:["mustard oil"],mustardseeds:["mustard seeds","rai seeds"],
+    coriander:["fresh coriander","coriander leaves","cilantro"],
+    corianderpowder:["ground coriander","coriander powder"],
+    turmeric:["turmeric powder","haldi"],redchillipowder:["red chilli powder","chilli powder"],
+    moong:["split yellow moong","yellow moong dal","split moong dal"],
+    toor:["toor dal","arhar dal","pigeon pea dal"],
+    atta:["wheat flour","whole wheat flour"],suji:["semolina","rava"],
+    curd:["yogurt","yoghurt","dahi"],besan:["gram flour","chickpea flour"],
+    oil:["oil","neutral oil","cooking oil"],salt:["salt","table salt"]
+  };
+  var ids=Object.keys(NAME).concat(["oil","salt"]),candidates=[];
+  ids.forEach(function(id){
+    var label=(NAME[id]||id).replace(/\s*\([^)]*\)/g,"");
+    var words=(aliases[id]||[]).concat([label]);
+    words.forEach(function(word){
+      var query=clean(word),start=text.indexOf(" "+query+" ");
+      if(start!==-1&&query.length>=3)candidates.push({id:id,start:start,end:start+query.length+2,size:query.length});
+    });
+  });
+  candidates.sort(function(a,b){return b.size-a.size||a.start-b.start});
+  var matched=[],idsSeen={},ranges=[];
+  candidates.forEach(function(item){
+    if(idsSeen[item.id]||ranges.some(function(range){return item.start<range.end&&item.end>range.start}))return;
+    matched.push(item.id);idsSeen[item.id]=1;ranges.push({start:item.start,end:item.end});
+  });
+  return matched;
+}
+function recipeIngredientAvailable(id){
+  if(id==="oil")return ["oil","fryingoil","vegetableoil","sunfloweroil","canolaoil","oliveoil","mustardoil","coconutoil","sesameoil"].some(function(key){return !!have[key]});
+  return !!have[id];
+}
+function recipeIngredientList(lines){
+  var cartIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/><path d="M2 3h2l2.4 11.4a2 2 0 0 0 2 1.6h11a2 2 0 0 0 2-1.6L23 7H5"/></svg>';
+  return "<ul class='recipe-ingredient-list'>"+lines.map(function(line){
+    var ids=recipeIngredientIds(line),available=ids.length>0&&ids.every(recipeIngredientAvailable);
+    return "<li><span class='recipe-ingredient-mark"+(available?" available":"")+"' role='img' aria-label='"+
+      (available?"Available in pantry":"Not in pantry")+"'>"+(available?"✓":cartIcon)+"</span>"+escapeHTML(line)+"</li>";
+  }).join("")+"</ul>";
+}
 function recipeSafety(m){
   var raw=m.ing.filter(function(id){return !id.endsWith("?")});
   if(!m.c)return "";
@@ -2803,12 +2856,8 @@ function recipePanel(m,expanded){
     credit+='<p class="note">'+reel.creator+' · <a href="'+reel.written+'" target="_blank" rel="noopener">'+("Written recipe")+"</a></p>";
   }
   var ingredients=measured?"<p>Serves "+measured.serves+"</p>"+
-    "<div data-localized lang='en'>"+recipeList("ul",measured.amounts.en)+"</div>":
-    recipeList("ul",m.ing.map(function(id){return nmx(id.replace(/\?$/,""))}));
-  if(measured&&measured.source&&!reel){
-    credit+="<p class='note'><a href='"+escapeHTML(measured.source[1])+"' target='_blank' rel='noopener'>"+
-      ("Recipe reference")+" · "+escapeHTML(measured.source[0])+"</a></p>";
-  }
+    "<div data-localized lang='en'>"+recipeIngredientList(measured.amounts.en)+"</div>":
+    recipeIngredientList(m.ing.map(function(id){return nmx(id.replace(/\?$/,""))||id.replace(/\?$/,'')}));
   var ingredientTitle="Ingredients",methodTitle="Method";
   var fasting=isV(m)?"<p class='note'>"+("Use sendha namak and ingredients permitted by your household’s fasting practice.")+"</p>":"";
   var safety=recipeSafety(m);
@@ -4213,11 +4262,9 @@ if(typeof INSTAGRAM_RECIPES!=="undefined"){
 var dishDialog=$("dtray"),openDish=null,dishTrigger=null,detailPhoto=null;
 function renderDishDetails(){
   var m=dishState(openDish),name=m.n,img=detailPhoto||IMG[pslug(name)];
-  var ingredients=m.ing.filter(function(id){return !id.endsWith("?")}).slice(0,4).map(function(id){return nmx(id)||id});
-  var description=ingredients.length?"<p class='sub dt-description'>"+escapeHTML(("Made with "+ingredients.join(", ")+"."))+"</p>":"";
   $("dish-title").textContent=(dn(name));
   renderHTML($("dish-detail-body"),"<div class='dt-photo'>"+(img?recipeImage(img,true):"")+
-    "<span class='recipe-photo-fallback' aria-hidden='true'>"+emo(name)+"</span></div>"+description+card(m,true));
+    "<span class='recipe-photo-fallback' aria-hidden='true'>"+emo(name)+"</span></div>"+card(m,true));
 }
 function showDishDetails(trigger,recipe){
   if(!dishDialog.open){

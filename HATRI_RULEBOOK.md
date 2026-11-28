@@ -42,6 +42,10 @@ Every individual recipe and four-/five-/six-dish meal suggestion must offer an *
 
 The order of dishes does not change a saved meal's identity. Independent preference changes should survive edits from another tab or device. Backup codes include the current planner filters and accept older pantry and cart backups.
 
+## Recipe detail presentation
+
+Recipe pop-ups must not display a generated "Made with" description, Google Images photo-search links, or external chef/recipe-reference credits. In the measured Ingredients list, use a green check for an ingredient available in the selected pantry and an orange shopping-cart icon for an unavailable item; if a line combines several tracked ingredients, mark it available only when all are selected. Keep measurements and Hindi translations intact, and refresh indicators when the pantry changes. Do not duplicate the ingredient-chip list below the recipe in the pop-up; retain the pantry and shopping chips on ordinary suggestion cards.
+
 ## Bottom navigation
 
 The bottom navigation always has exactly four destinations, in order: Cook, Reels, Shopping list and Table. Never include Kitchen in this bar; My Kitchen and its backup/account tools remain available from Profile and settings. Use the same compact dark, rounded floating navigator in light and dark themes, with horizontal vector icons and labels, a separate charcoal active pill, and a green active icon. Keep tap targets, text contrast, safe-area spacing, screen-reader names, and active-page indication usable on narrow phones. Reels retains the shared navigator; shopping-list overlays may temporarily cover it without losing the selected destination.

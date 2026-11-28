@@ -35,7 +35,34 @@ test('startup loader is self-contained, accessible and released after first rend
   assert.ok(appReady > src.indexOf('MFREADY=true;syncT();'),
     'do not dismiss before the recipe catalog and Suggestions are initialized');
   assert.match(src, /requestAnimationFrame\(function\(\)\{\s*loader\.hidden=true/);
-  assert.match(sw, /hatri-v76-atomic-offline-shell/);
+  assert.match(sw, /hatri-v77-atomic-offline-shell/);
+});
+
+test('recipe detail ingredients reflect the real pantry without extra links or repeated chips', () => {
+  const c = fn('function recipeIngredientIds(', 'function recipeSafety(', {
+    NAME:{cabbage:'Cabbage',carrot:'Carrot',mustardseeds:'Mustard seeds',turmeric:'Turmeric',gchilli:'Green chilli',
+      almonds:'Almonds',cashews:'Cashews',rice:'Rice',riceflour:'Rice flour'},
+    have:{cabbage:1,mustardseeds:1,turmeric:1,almonds:1,riceflour:1},
+    escapeHTML:s=>s
+  });
+  const rows=c.recipeIngredientList(['350 g cabbage, sliced','½ carrot, optional','1 tbsp oil',
+    '½ tsp mustard seeds','¼ tsp turmeric','½ tsp salt','1 green chilli, optional']);
+  assert.equal((rows.match(/class='recipe-ingredient-mark available'/g)||[]).length,3);
+  assert.equal((rows.match(/aria-label='Not in pantry'/g)||[]).length,4);
+  assert.deepEqual(Array.from(c.recipeIngredientIds('1 cup mixed almonds and cashews')).sort(),['almonds','cashews']);
+  assert.match(c.recipeIngredientList(['1 cup mixed almonds and cashews']),/Not in pantry/,
+    'a mixed ingredient line requires every ingredient to be available');
+  assert.deepEqual(Array.from(c.recipeIngredientIds('1 cup rice flour')),['riceflour'],
+    'rice flour must not be mistaken for whole rice');
+  c.have.cashews=1;
+  assert.match(c.recipeIngredientList(['1 cup mixed almonds and cashews']),/Available in pantry/);
+  const detail=src.slice(src.indexOf('function renderDishDetails(){'),src.indexOf('function showDishDetails('));
+  assert.doesNotMatch(detail,/Made with|dt-description/);
+  const cards=src.slice(src.indexOf('function card(m,expanded){'),src.indexOf('var DISH_BATCH='));
+  assert.doesNotMatch(cards,/google\.com\/search|📷 photos/);
+  assert.match(cards,/expanded\?"":/,'the duplicate chips are omitted inside recipe pop-ups');
+  const panel=src.slice(src.indexOf('function recipePanel(m,expanded){'),src.indexOf('function renderKitchen(){'));
+  assert.doesNotMatch(panel,/Recipe reference|measured\.source/);
 });
 
 test('category cards report catalog totals, not truncated suggestions or hidden advanced filters', () => {
