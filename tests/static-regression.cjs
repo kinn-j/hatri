@@ -411,7 +411,7 @@ test('PWA registers offline worker and caches the required shell files', () => {
   assert.match(sw, /const CACHE = 'hatri-v\d+[^']*'/);
   assert.match(sw, /'\.\/hindi-catalog\.js'/);
   assert.ok(sw.includes("'./translation.js'"));
-  for (const item of ['auth.js','recipe-reels.js','ingredient-images.js','recipe-details.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp','seasonal-recipes.js','winter-recipes.js','desi-recipes.js','additional-recipes.js','activity.js','international-recipes.js','hero-carousel.js','images/hatri-dinner-header.webp','images/hatri-christmas-header.webp','images/mushroom-barley-soup.webp']) assert.ok(sw.includes(`'./${item}'`));
+  for (const item of ['preferences.js','auth.js','recipe-reels.js','ingredient-images.js','recipe-details.js','index.html','manifest.webmanifest','images/hatri-pantry-header.webp','seasonal-recipes.js','winter-recipes.js','desi-recipes.js','additional-recipes.js','activity.js','international-recipes.js','hero-carousel.js','images/hatri-dinner-header.webp','images/hatri-christmas-header.webp','images/mushroom-barley-soup.webp']) assert.ok(sw.includes(`'./${item}'`));
   new vm.Script(sw);
 });
 
@@ -451,6 +451,13 @@ test('community video feed keeps media out of Firestore and enforces its upload 
   assert.match(reels, /collection\(db,\s*'publicRecipeVideos'\)/);
   assert.match(reels, /MAX_BYTES = 100 \* 1024 \* 1024/);
   assert.match(reels, /where\('status','==','published'\).*limit\(30\)/);
+  assert.match(src, /id="reels-recipe-input"[^>]*list="reels-recipe-options"/);
+  assert.match(src, /body\[data-v="reels"\]:not\(\[class\*="sh-"\]\)>\.tabbar\{display:flex!important/);
+  assert.match(reels, /tile\.dataset\.openDish = String\(recipe\.index\)/);
+  assert.match(reels, /document\.getElementById\('dtray'\)\.addEventListener\('close'/);
+  const backend = fs.readFileSync(path.resolve(__dirname,'../functions/index.cjs'),'utf8');
+  assert.match(backend,/title,recipeName,caption,credit,subtitles,subtitleLanguage/);
+  assert.match(backend,/validated\(reelRecipe,request\.data\)/);
   const auth = fs.readFileSync(path.resolve(__dirname, '../auth.js'), 'utf8');
   assert.match(auth, /connectAuthEmulator\(auth, `http:\/\/\$\{location\.hostname\}:9099`/);
   assert.match(auth, /connectFirestoreEmulator\(database, location\.hostname, 8080\)/);
@@ -546,3 +553,4 @@ test('every catalog image has a unique slot in the shared WebP preview', () => {
   assert.equal(mealPreviewAsset, `./images/meal-previews.webp?v=${revision}`);
   assert.ok(sw.includes(`const MEAL_PREVIEW = '${mealPreviewAsset}';`));
 });
+

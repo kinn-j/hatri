@@ -419,6 +419,31 @@ body[data-v="reels"]>#reels-page{z-index:30;max-width:none;padding:0}
 .reels-form progress{width:100%;accent-color:var(--accent)}
 .reels-form [hidden],.reel-card [hidden]{display:none}
 </style>
+<style id="hatri-reel-recipe-navigation">
+/* Keep the same five destinations visible throughout the app, including Reels. */
+body[data-v="reels"]>.nav{display:none!important}
+body[data-v="reels"]:not([class*="sh-"])>.tabbar{display:flex!important;z-index:65}
+body[data-v="reels"]>#reels-page{height:calc(100dvh - var(--reels-bottom));bottom:auto;--safe-bottom:0px}
+body[data-v="reels"]{--reels-bottom:calc(70px + env(safe-area-inset-bottom,0px))}
+body[data-v="reels"] .reels-feed,body[data-v="reels"] .reel-card{height:calc(100dvh - var(--reels-bottom))}
+body[data-v="reels"] .reels-top{top:calc(8px + env(safe-area-inset-top,0px));left:10px;right:76px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0}
+body[data-v="reels"] .reels-top .btn{min-height:36px;background:#173c2ee8;color:#fff;border:1px solid #ffffff66}
+body[data-v="reels"] .reels-plus{top:calc(8px + env(safe-area-inset-top,0px));width:42px;height:42px;right:14px;font-size:26px}
+body[data-v="reels"] .reel-copy{bottom:20px;right:94px;pointer-events:none}
+body[data-v="reels"] .reel-actions{bottom:24px;right:10px;max-width:80px}
+body[data-v="reels"] .reel-actions .btn{background:#153829e8;color:#fff;border:1px solid #ffffff70;white-space:normal;overflow-wrap:anywhere;font-size:12px}
+.reel-recipe-tile{pointer-events:auto;display:flex;align-items:center;gap:10px;width:min(100%,340px);margin-top:14px;padding:8px;border:1px solid #ffffff70;border-radius:15px;background:#10291de8;color:#fff;text-align:left;box-shadow:0 8px 24px #0006;cursor:pointer;font:inherit;text-shadow:none}
+.reel-recipe-tile img,.reel-recipe-fallback{flex:none;width:64px;height:64px;object-fit:cover;border-radius:10px;background:#314736}
+.reel-recipe-fallback{display:grid;place-items:center;font-size:30px}
+.reel-recipe-tile strong{display:block;line-height:1.25;font-size:14px}
+.reel-recipe-tile small{display:block;opacity:.86;font-size:12px;margin-top:3px}
+.reel-recipe-tile:focus-visible,.reels-top button:focus-visible,.reel-actions button:focus-visible{outline:3px solid #ffd58e;outline-offset:3px}
+.reel-recipe-missing{margin:10px 0 0!important;color:#fff;font-size:12px;max-width:310px}
+.reels-swipe-hint{font-size:12px;opacity:.85;margin:9px 0 0}
+.reels-form input[list]{width:100%}
+.reels-form .reel-recipe-help{margin:5px 0 10px;font-size:12px;color:var(--muted)}
+@media(max-width:360px){body[data-v="reels"] .reels-top h1{display:none}.reel-recipe-tile img,.reel-recipe-fallback{width:50px;height:50px}.reel-recipe-tile strong{font-size:12px}}
+</style>
 <style id="hatri-table-styles">
 /* Table is a dedicated cooking shortlist, not another shopping cart. */
 body[data-v="table"] [data-vs="table"]{display:block}
@@ -558,8 +583,9 @@ body[data-v="table"] [data-vs="table"]{display:block}
 </main>
 <main id="reels-page" aria-labelledby="reels-title">
   <div class="reels-top">
-    <button class="btn sm" type="button" id="reels-back">Back to Cook</button>
+    <button class="btn sm" type="button" id="reels-back">← Suggestions</button>
     <h1 id="reels-title">Hatri Reels</h1>
+    <button class="btn sm" type="button" id="reels-explore" hidden>All reels</button>
     <button class="btn sm" type="button" id="reels-mine">My videos</button>
   </div>
   <button class="reels-plus" id="reels-upload-open" type="button" aria-label="Upload a recipe video">+</button>
@@ -568,8 +594,10 @@ body[data-v="table"] [data-vs="table"]{display:block}
 <dialog id="reels-upload-dialog" class="reels-dialog" aria-labelledby="reels-upload-title">
   <form class="reels-form" id="reels-upload-form">
     <h2 id="reels-upload-title">Share your recipe</h2>
-    <p class="note">Your video, recipe name, caption, and chosen display name will be public.</p>
-    <label for="reels-title-input">Recipe name</label><input id="reels-title-input" name="title" maxlength="80" required>
+    <p class="note">Each video is linked to a Hatri recipe. Your video title, caption, selected recipe, and display name will be public.</p>
+    <label for="reels-recipe-input">Linked Hatri recipe</label><input id="reels-recipe-input" name="recipeName" list="reels-recipe-options" maxlength="140" autocomplete="off" placeholder="Search a dish (e.g. Aloo Paratha)" required aria-describedby="reels-recipe-help"><datalist id="reels-recipe-options"></datalist>
+    <p id="reels-recipe-help" class="reel-recipe-help">Select an existing recipe from the suggestions.</p>
+    <label for="reels-title-input">Video title</label><input id="reels-title-input" name="title" maxlength="80" required>
     <label for="reels-caption-input">Caption</label><textarea id="reels-caption-input" name="caption" maxlength="240"></textarea>
     <label for="reels-credit-input">Public display name (optional)</label><input id="reels-credit-input" name="credit" maxlength="40" placeholder="Hatri cook">
     <button class="btn" type="button" id="reels-video-pick" aria-describedby="reels-video-name">Choose video</button>
@@ -587,6 +615,7 @@ body[data-v="table"] [data-vs="table"]{display:block}
   <form class="reels-form">
     <h2 id="reels-manage-title">Manage video</h2>
     <div data-reel-management="edit" hidden>
+      <label for="reel-edit-recipe">Linked Hatri recipe</label><input id="reel-edit-recipe" name="recipeName" list="reels-recipe-options" maxlength="140" autocomplete="off" required>
       <label for="reel-edit-title">Recipe name</label><input id="reel-edit-title" name="title" maxlength="80" required>
       <label for="reel-edit-caption">Caption</label><textarea id="reel-edit-caption" name="caption" maxlength="240"></textarea>
       <label for="reel-edit-credit">Public display name (optional)</label><input id="reel-edit-credit" name="credit" maxlength="40">
@@ -3628,7 +3657,7 @@ function setView(v){if(v==="order")renderCart();var B=document.body,sheet=v==="p
   Array.prototype.forEach.call(document.querySelectorAll('[data-vs="pantry"],[data-vs="plan"],[data-vs="order"]'),function(el){el.removeAttribute("role");el.removeAttribute("aria-modal");el.removeAttribute("tabindex")});
   if(isMob()&&sheet){
     if(!wasSheet)sheetReturnFocus=document.activeElement;
-    if(B.dataset.v==="kitchen")B.dataset.v="recipes";
+    if(B.dataset.v==="kitchen"||B.dataset.v==="reels")B.dataset.v="recipes";
     B.classList.add("sh-"+v);B.style.overflow="hidden";
     var e=document.querySelector('[data-vs="'+v+'"]');
     if(e){e.scrollTop=0;e.setAttribute("role","dialog");e.setAttribute("aria-modal","true");e.setAttribute("tabindex","-1");e.focus({preventScroll:true})}
@@ -5017,10 +5046,7 @@ body.searching .sh,body.searching [data-shuffle]{display:none!important}
     });
   }
   document.addEventListener("hatri:view-change",loadReels);
-  $("reels-back").addEventListener("click",function(){
-    if(history.state?.hatriReels)history.back();
-    else setView("recipes");
-  });
+  $("reels-back").addEventListener("click",function(){setView("recipes")});
   window.addEventListener("popstate",function(){
     if(reelRoute(new URL(location.href)))setView("reels");
     else if(document.body.dataset.v==="reels")setView("recipes");

@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
-const {MAX_BYTES, reelDraft, matchesVideoHeader} = require('../functions/reel-data.cjs');
+const {MAX_BYTES, reelDraft, reelRecipe, matchesVideoHeader} = require('../functions/reel-data.cjs');
 
 const source = fs.readFileSync(path.join(__dirname, '../preferences.js'), 'utf8');
 const {HatriPreferences: preferences} = vm.runInNewContext(source + '\nthis');
@@ -21,11 +21,13 @@ test('stale preference edits preserve other changes and apply removals by identi
 });
 
 test('the trusted upload metadata requires a title, format and positive bounded size', () => {
-  const clip = {title:'Recipe',contentType:'video/webm',sizeBytes:MAX_BYTES};
+  const clip = {title:'Recipe',recipeName:'Aloo Paratha',contentType:'video/webm',sizeBytes:MAX_BYTES};
   assert.equal(reelDraft(clip).sizeBytes,MAX_BYTES);
-  for (const invalid of [{sizeBytes:0},{sizeBytes:MAX_BYTES+1},{title:' '},{contentType:'text/plain'},{subtitles:'invalid'}]) {
+  assert.equal(reelDraft(clip).recipeName,'Aloo Paratha');
+  for (const invalid of [{sizeBytes:0},{sizeBytes:MAX_BYTES+1},{title:' '},{recipeName:' '},{recipeName:'<script>'},{contentType:'text/plain'},{subtitles:'invalid'}]) {
     assert.throws(() => reelDraft({...clip,...invalid}));
   }
+  assert.deepEqual(reelRecipe({recipeName:'  Gajar Halwa  '}),{recipeName:'Gajar Halwa'});
   assert.equal(reelDraft({...clip,subtitles:'WEBVTT\n\n00:00.000 --> 00:01.000\nMix well.'}).subtitleLanguage,'en');
 });
 

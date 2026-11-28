@@ -55,12 +55,19 @@ Author app text and recipe content in English and retain stable recipe and ingre
 
 Mark any untranslated instructions as English and identify the fallback to the reader. Voice search is offered only when speech recognition is available on-device for the chosen language. Community video titles, captions, and credits remain verbatim.
 
+## Offline app shell
+
+Every local script required to restore saved pantry, cart, Table and recipe state must be precached in the service worker shell, including `preferences.js`. Keep the shell's network-cache allowlist synchronized, and advance the cache version when updating the shell. Test that saved data survives installation over an older release and an offline reload in both Chromium and WebKit.
+
 ## Community recipe videos
 
 Community recipe videos are public once published. A signed-in user may upload an MP4, WebM, or MOV video up to 100 MB, with the binary stored in Firebase Storage and only its metadata stored in Firestore. Anonymous users may browse public videos but may not upload, edit, or delete posts. The feed shows one video per viewport, advances by vertical scroll, and loads at most 30 newest posts per initial query.
+
+Each new video must select an exact, existing Hatri recipe by its stable English catalog name and publish that `recipeName` in the public video metadata; editing a video can update this link. Display a photographic tile linked to that recipe on each reel, opening the existing complete recipe tray (image, ingredients, method, Hindi support and actions). Closing the tray restores the current reel's scroll position and playback. Older posts without a `recipeName` may link only by an exact existing catalog title; never guess an unrelated dish. If no exact match exists, identify the missing link and let the creator attach a recipe through Edit. Reels must retain the same navigable Cook, Reels, Shopping list, Table and Kitchen destinations as other views, with a direct return to Suggestions.
 
 Keep drafts and staging files private. The backend validates the declared size, format, and uploaded file header before publication. Cancel stops an upload before publication. A cook can start up to five uploads per UTC day, with at least 30 seconds between starts. A credit is optional and defaults to Hatri cook. Published records exclude account identifiers. Viewers can open a direct post link, use native playback controls and creator-provided captions, and signed-in users can report a post. Creators can edit their metadata and remove their posts.
 
 ## Activity sharing
 
 Activity sharing is opt-in per browser and account. The server checks consent, deduplicates named events, and limits recorded events per account. Typed and dictated recipe queries are excluded. Activity records expire after 90 days.
+

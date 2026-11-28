@@ -10,6 +10,14 @@ function reelText(input) {
   return {title, caption, credit};
 }
 
+function reelRecipe(input) {
+  const recipeName = typeof input?.recipeName === 'string' ? input.recipeName.trim() : '';
+  if (!recipeName || recipeName.length > 140 || /[\x00-\x1f\x7f<>]/.test(recipeName)) {
+    throw Error('Select a valid Hatri recipe for this video.');
+  }
+  return {recipeName};
+}
+
 function reelDraft(input) {
   if (!TYPES.has(input?.contentType) || !Number.isInteger(input?.sizeBytes) ||
       input.sizeBytes < 1 || input.sizeBytes > MAX_BYTES) throw Error('Choose an MP4, WebM, or MOV video up to 100 MB.');
@@ -17,7 +25,7 @@ function reelDraft(input) {
   if (Buffer.byteLength(subtitles) > 24_576 || (subtitles && !/^WEBVTT(?:[ \t][^\r\n]*)?\r?\n/.test(subtitles))) {
     throw Error('Choose a WebVTT caption file up to 24 KB.');
   }
-  return {...reelText(input), contentType:input.contentType, sizeBytes:input.sizeBytes,
+  return {...reelText(input), ...reelRecipe(input), contentType:input.contentType, sizeBytes:input.sizeBytes,
     subtitles, subtitleLanguage:input.subtitleLanguage === 'hi' ? 'hi' : 'en'};
 }
 
@@ -36,4 +44,4 @@ function matchesVideoHeader(data, type) {
     brands.some(brand => /^(?:iso[m2-9]|mp4[12]|avc1|dash|M4V |MSNV|cmf[cs])$/.test(brand));
 }
 
-module.exports = {MAX_BYTES, REEL_ID, reelText, reelDraft, matchesVideoHeader};
+module.exports = {MAX_BYTES, REEL_ID, reelText, reelRecipe, reelDraft, matchesVideoHeader};
