@@ -774,13 +774,51 @@ test('whole meals show themed six-, five- and four-dish sets and clearly separat
       assert.equal(new Set(await grid.locator('.meal-caption').allTextContents()).size, 6);
       assert.equal(await grid.evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length), 3);
       await cards.first().locator('summary').first().click();
-      const dishes = cards.first().locator('.mbody details.tile');
+      const tray = page.locator('#mealTray');
+      assert.equal(await tray.isVisible(),true);
+      assert.equal(await cards.first().evaluate(card => card.open),false,'meal stays collapsed in Suggestions');
+      const dishes = tray.locator('.mbody details.tile');
       await dishes.first().waitFor();
       assert.equal(await dishes.count(), 6);
+      await tray.locator('#meal-tray-close').click();
+      assert.equal(await tray.isVisible(),false);
     } finally {
       await context.close();
     }
   }
+});
+
+test('meal tray closes without moving Suggestions and does not turn Table into an opener', async () => {
+  const {page, context} = await open({width:390,height:844},{isMobile:true,hasTouch:true});
+  try {
+    assert.equal(await page.locator('[data-decide],.fab').count(),0,'Decide for me has no visible entry point');
+    const meal=page.locator('#results details.mtile').first();
+    await meal.locator('summary').scrollIntoViewIfNeeded();
+    const before=await page.evaluate(()=>window.scrollY);
+    const summary=meal.locator('summary').first();
+    await summary.tap();
+    const tray=page.locator('#mealTray');
+    assert.equal(await tray.isVisible(),true);
+    assert.equal(await meal.evaluate(el=>el.open),false);
+    assert.equal(await tray.locator('.mbody details.tile').count(),6);
+    await page.keyboard.press('Escape');
+    assert.equal(await tray.isVisible(),false);
+    assert.equal(await page.evaluate(()=>window.scrollY),before);
+    assert.equal(await summary.evaluate(el=>document.activeElement===el),true,'close restores card focus');
+    await summary.tap();
+    const addMeal=tray.locator('[data-addm]');
+    if(await addMeal.count()){
+      await addMeal.tap();
+      assert.equal(await tray.isVisible(),true,'cart actions keep the meal tray open');
+      assert.match(await tray.locator('[data-addm]').innerText(),/Added|Add meal to cart/);
+    }
+    await tray.locator('#meal-tray-close').tap();
+    assert.equal(await tray.isVisible(),false);
+    await meal.locator('summary .table-add').tap();
+    assert.equal(await tray.isVisible(),false,'Table selection must not open the tray');
+    assert.equal(await meal.evaluate(el=>el.open),false);
+    assert.equal(await page.locator('#tbadge').innerText(),'1');
+  } finally {await context.close()}
 });
 
 test('meal photos and expanded dishes work without a photo index on mobile', async () => {
@@ -797,10 +835,12 @@ test('meal photos and expanded dishes work without a photo index on mobile', asy
     assert.equal(await photos.count(), 6);
     await photos.evaluateAll(images => Promise.all(images.map(image => image.decode())));
     await meal.locator('summary').first().click();
-    const firstDish = meal.locator('.mbody details.tile > summary').first();
+    const firstDish = page.locator('#mealTray .mbody details.tile > summary').first();
     await firstDish.click();
     await page.locator('#dtray[open] .dt-photo img').evaluate(image => image.decode());
     assert.ok(await page.locator('#dtray .steps ol li').count() > 0);
+    await page.locator('#dish-detail-close').click();
+    assert.equal(await page.locator('#mealTray').isVisible(),true,'closing recipe returns to its meal tray');
   } finally { await context.close(); }
 });
 

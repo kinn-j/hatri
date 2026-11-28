@@ -57,6 +57,16 @@ test('time options live in More filters and share its draft, apply and reset flo
   assert.match(more, /\["t","r","o"\]\.forEach\(mfSelectAll\)/);
 });
 
+test('whole-meal cards open a dialog rather than expanding inline and the dice is removed', () => {
+  const mealCode = src.slice(src.indexOf('function mealTileHTML('),src.indexOf('function dn(n)'));
+  assert.match(src, /<dialog id="mealTray" aria-labelledby="meal-tray-title">/);
+  assert.match(mealCode, /data-open-meal aria-haspopup='dialog' aria-controls='mealTray'/);
+  assert.match(mealCode, /mealTray\.showModal\(\)/);
+  assert.match(mealCode, /mealTray\.close\(\)/);
+  assert.doesNotMatch(mealCode, /insertAdjacentHTML|MOPEN/);
+  assert.doesNotMatch(src, /data-decide|data-closepick|🎲|Tonight’s pick|Tonight’s meal/);
+});
+
 test('the complete catalog and search results automatically render every batch, with a show-all fallback', () => {
   const c=fn('var DISH_BATCH=100,', 'function searchText(', {});
   assert.equal(c.dishPage('browse:all'),100);

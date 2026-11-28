@@ -402,6 +402,16 @@ img.recipe-photo:not([hidden])+.recipe-photo-fallback{display:none}
 .dish-opener:focus-visible,#dtray .dt-x:focus-visible,.tile>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .meal-dish-opener{display:flex;align-items:center;gap:10px;margin-bottom:4px}
 .recipe-personal-photo{display:inline-flex}
+#mealTray{width:min(calc(100% - 24px),760px);max-height:90dvh;padding:0;border:0;border-radius:22px;background:var(--surface);color:var(--text);box-shadow:0 24px 80px rgba(0,0,0,.4);overflow:hidden}
+#mealTray[open]{display:flex;flex-direction:column}
+#mealTray::backdrop{background:rgba(7,25,17,.68)}
+.meal-tray-header{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.meal-tray-header h2{margin:0;font-size:18px;line-height:1.3;color:var(--text)}
+.meal-tray-close{display:grid;place-items:center;flex:none;width:30px;height:30px;border:1px solid var(--line);border-radius:50%;padding:0;background:var(--surface);color:var(--text);font:500 22px/1 system-ui;cursor:pointer}
+.meal-tray-close:focus-visible,.mtile>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.meal-tray-scroll{min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 14px 20px}
+.meal-tray-scroll .mbody{border:0;padding:0}
+@media(max-width:600px){#mealTray{inset:auto 0 0;width:100%;max-width:none;max-height:87dvh;margin:0;border-radius:24px 24px 0 0}.meal-tray-scroll{padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}}
 </style>
 <style id="hatri-reels-styles">
 body[data-v="reels"]{background:#09120e;overflow:hidden}body[data-v="reels"]>.hero,body[data-v="reels"]>.sect,body[data-v="reels"]>#planner,body[data-v="reels"]>#christmas-page,body[data-v="reels"]>#winter-page,body[data-v="reels"]>#kitchen,body[data-v="reels"]>#features,body[data-v="reels"]>.foot,body[data-v="reels"]>.fab,body[data-v="reels"]>.install,body[data-v="reels"]>.tabbar{display:none!important}body[data-v="reels"]>.nav{position:fixed;top:0;left:0;right:0;background:linear-gradient(#07100ddd,transparent);border:0;color:#fff;z-index:20}body[data-v="reels"]>.nav .logo,body[data-v="reels"]>.nav .logo span{color:#fff!important}#reels-page{display:none}body[data-v="reels"]>#reels-page{display:block;position:fixed;inset:0;z-index:10;background:#09120e;color:#fff}.reels-feed{height:100dvh;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior-y:contain}.reel-card{position:relative;height:100dvh;scroll-snap-align:start;scroll-snap-stop:always;background:#15241d;isolation:isolate}.reel-card video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#15241d}.reel-card:after{content:"";position:absolute;inset:35% 0 0;background:linear-gradient(transparent,rgba(0,0,0,.78));z-index:-0;pointer-events:none}.reel-copy{position:absolute;z-index:1;left:clamp(18px,5vw,64px);right:88px;bottom:clamp(30px,8vh,82px);text-shadow:0 2px 10px #000}.reel-copy h2{margin:0 0 8px;font-size:clamp(23px,4vw,38px);color:#fff}.reel-copy p{margin:0;color:#fff;max-width:620px;line-height:1.45}.reel-author{font-weight:800;margin-bottom:8px}.reel-meta{opacity:.8;font-size:12px;margin-top:10px}.reel-actions{position:absolute;right:18px;bottom:clamp(35px,10vh,100px);z-index:2;display:grid;gap:12px}.reel-actions button,.reels-plus{width:52px;height:52px;border-radius:50%;border:1px solid #ffffff55;background:#10251dcc;color:#fff;font-size:23px;cursor:pointer;box-shadow:0 6px 20px #0005}.reels-plus{position:fixed;right:18px;top:78px;z-index:25;font-size:32px;background:#f6a23a;color:#281707;border:0}.reels-top{position:absolute;z-index:2;top:74px;left:18px;right:82px}.reels-top h1{font-size:19px;margin:0;color:#fff}.reels-top p{margin:0;font-size:12px;opacity:.78}.reels-empty{height:100%;display:grid;place-items:center;padding:24px;text-align:center}.reels-empty .card{max-width:460px;background:#12251c;color:#fff;border-color:#315440}.reels-empty h1{color:#fff}.reels-dialog{width:min(560px,calc(100% - 28px));border:0;border-radius:24px;background:var(--surface);color:var(--text);padding:0}.reels-dialog::backdrop{background:#001008aa}.reels-form{padding:22px}.reels-form h2{margin-top:0}.reels-form label{display:block;font-weight:700;margin:14px 0 6px}.reels-form input,.reels-form textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:11px;background:var(--surface);color:var(--text);font:inherit}.reels-form textarea{min-height:84px;resize:vertical}.reels-form .row{justify-content:flex-end;margin-top:16px}.reels-progress{height:6px;border-radius:6px;background:var(--line);overflow:hidden;margin-top:12px}.reels-progress b{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}@media(min-width:760px){.reels-feed{margin:0 auto;width:min(100%,720px);box-shadow:0 0 80px #0008}.reels-plus{right:max(24px,calc(50% - 330px))}}
@@ -532,7 +542,7 @@ body[data-v="table"] [data-vs="table"]{display:block}
 </head>
 <body>
 <nav class="nav"><a class="logo" href="#top">🍛 <span>Hatri</span></a><div class="links"><a href="#planner">Planner</a><a href="#kitchen">My Kitchen</a><a href="#features">Features</a></div>
-  <button class="btn sm" id="acctBtn" data-view="kitchen" aria-label="Account and sync">☁️ <span id="acctLbl">Account</span></button><button class="btn sm" id="langBtn" aria-label="Language">Hindi</button><button class="btn primary sm" data-decide="1">🎲 Decide for me</button>
+  <button class="btn sm" id="acctBtn" data-view="kitchen" aria-label="Account and sync">☁️ <span id="acctLbl">Account</span></button><button class="btn sm" id="langBtn" aria-label="Language">Hindi</button>
   <div class="rr-top-account" id="navAccount">
     <button class="rr-profile-trigger" type="button" data-rr-profile-open aria-haspopup="dialog" aria-controls="rr-profile-drawer" aria-label="Profile and settings"><span aria-hidden="true">👤</span></button>
   </div>
@@ -635,7 +645,7 @@ body[data-v="table"] [data-vs="table"]{display:block}
     <button class="suggestions-up" id="suggestions-up" type="button" aria-label="Back to top" hidden>
       <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m-6 6 6-6 6 6"/></svg>
     </button>
-    <div id="pick"></div><div id="results" style="margin-top:8px"></div></section>
+    <div id="results" style="margin-top:8px"></div></section>
 </main>
 <main id="reels-page" aria-labelledby="reels-title">
   <div class="reels-top">
@@ -714,12 +724,10 @@ body[data-v="table"] [data-vs="table"]{display:block}
 <div class="fc"><b>🪔 Festive, vrat, sweets</b><p>Navratri vrat dishes, Diwali sweets and everyday meals in one place.</p></div>
 <div class="fc"><b>🌶️ Regional and local</b><p>Punjabi, Rajasthani, South Indian, Gujarati, Maharashtrian, and Bengali recipes.</p></div>
 <div class="fc"><b>🌿 Seasonal vegetables</b><p>Winter and summer groups, with what’s in season now highlighted.</p></div>
-<div class="fc"><b>🎲 Decide for me</b><p>One tap picks a dish that fits your time, pantry and occasion.</p></div>
 </div><p class="sub" style="margin-top:14px">Coming soon: family recipe vault, weekly planner, quick delivery of missing items.</p></section>
 <footer class="foot"><b>🍛 Hatri</b><span>Home-style recipes with estimated times. Made for everyone who decides what’s for dinner, every day.</span></footer>
 <input type="file" id="fileIn" accept="image/*" hidden><input type="file" id="fileIn2" accept="image/*" hidden>
 <div class="install" id="install"><span class="en">Install this app: iPhone Share ⬆️ → Add to Home Screen · Android ⋮ → Install app</span><button class="x" id="instX" aria-label="Close">×</button></div>
-<button class="fab" data-decide="1" aria-label="Decide for me">🎲</button>
 <nav class="tabbar" aria-label="App tabs">
 <button data-view="recipes"><i>🍽️</i><span class="en">Cook</span></button><button data-view="reels"><i>▶️</i><span class="en">Reels</span></button>
 <button type="button" data-view="order"><i aria-hidden="true">🛒</i><span class="en">Shopping list</span><b id="cbadge" aria-live="polite"></b></button>
@@ -770,6 +778,10 @@ body[data-v="table"] [data-vs="table"]{display:block}
 <dialog id="dtray" aria-labelledby="dish-title">
   <header class="dt-h"><h2 id="dish-title"></h2><button type="button" class="dt-x" id="dish-detail-close" aria-label="Close recipe" autofocus>✕</button></header>
   <div class="dt-b" id="dish-detail-body"></div>
+</dialog>
+<dialog id="mealTray" aria-labelledby="meal-tray-title">
+  <header class="meal-tray-header"><h2 id="meal-tray-title"></h2><button type="button" class="meal-tray-close" id="meal-tray-close" aria-label="Close meal details">×</button></header>
+  <div class="meal-tray-scroll" id="meal-tray-content"></div>
 </dialog>
 <script src="./vrat-recipes.js"></script>
 <script src="./instagram-recipes.js"></script>
@@ -1177,7 +1189,7 @@ MEALS.forEach(function(m){var o=OPT[m[0]];if(o)m[5]=m[5].map(function(i){return 
 var OCC={"Aloo Jeera":["Daily","Vrat"],"Cucumber Raita":["Daily","Vrat"],"Sabudana Khichdi":["Vrat"],"Sabudana Vada":["Vrat"],"Dal Baati":["Festive"],"Undhiyu":["Festive"],"Dal Makhani":["Daily","Festive"],"Chicken Biryani":["Festive"],"Kosha Mangsho":["Festive"],"Laal Maas":["Festive"],"Punjabi Mutton Curry":["Festive"],"Gatte ki Sabzi":["Daily","Festive"],"Makki di Roti":["Festive"],"Sarson da Saag":["Festive"],"Tamarind Rice (Pulihora)":["Festive"],"Pav Bhaji":["Daily","Festive"]};
 var FEST={"Makki di Roti":"Lohri","Sarson da Saag":"Lohri","Undhiyu":"Uttarayan","Dal Baati":"Family gatherings","Chicken Biryani":"Eid / celebrations","Tamarind Rice (Pulihora)":"Ugadi","Dal Makhani":"Celebrations","Kosha Mangsho":"Durga Puja / Sunday lunch","Laal Maas":"Celebrations","Punjabi Mutton Curry":"Celebrations"};
 MEALS.forEach(function(m){if(!m[8])m[8]=OCC[m[0]]||["Daily"];if(!m[9])m[9]=FEST[m[0]]||""});
-var occ="All",tmax=0,lastPick=null;
+var occ="All",tmax=0;
 var CCOL={"Punjabi":["#ffb347","#ff6b35"],"Rajasthani":["#f6d365","#e8590c"],"South Indian":["#a8e063","#2f9e44"],"Gujarati":["#ffe066","#f08c00"],"Maharashtrian":["#ff8787","#c92a2a"],"Bengali":["#74c0fc","#1c7ed6"],"Street & chaat":["#faa2c1","#d6336c"],"Chutneys & sides":["#8ce99a","#2b8a3e"],"Everyday":["#ffd8a8","#e67700"]};
 function emo(n){var t=n.toLowerCase();
  if(/prawn|chingri/.test(t))return"🦐";if(/fish|maach|macher/.test(t))return"🐟";
@@ -1286,35 +1298,6 @@ function renderCuis(){
   "<h3>What do you want to make?</h3><div class='chips'>"+CRS.map(function(o){return chip(!!sel[o[0]],"data-crs",o[0],o[1])}).join("")+"</div><small style='display:block;opacity:.7;margin-top:4px'>Tap more than one to combine, e.g. Snack + Drink</small>"+(crs==="meal"?"<div class='chips' style='margin-top:6px'>"+chip(wSide,"data-wd","1","🥗 Suggest a salad")+chip(wProt,"data-wp","1","💪 Add protein")+"</div>":"")+"<h3>Time I have (prep + cook)</h3><div class='chips'>"+T.map(function(t){return chip(tmax===t[0],"data-tm",t[0],t[1])}).join("")+"</div>"+
   "<h3>Regions ("+n+" of "+CUIS.length+" on)</h3><div class='chips'>"+CUIS.map(function(c){return chip(cuis[c],"data-cu",c,c)}).join("")+"</div>"+
   "<div class='chips' style='margin-top:10px'><button class='btn sm' data-cuall='1'>All regions</button><button class='btn sm' data-cuall='0'>None</button></div>";
-}
-function renderPick(meals){
-  var el=$("pick");if(sel.meal&&lastMeal){renderPickMeal(el,meals);return}if(!lastPick){renderHTML(el,"");return}
-  var m=score(true).find(function(x){return x.n===lastPick});
-  if(!m){renderHTML(el,"");return}
-  var any=Object.keys(have).length>0;
-  var why=(any?(m.x.length===0?"Everything is already at home":m.x.length+" item"+(m.x.length>1?"s":"")+" to order"):"Picked from your filters — tick your pantry for a better match")+" · "+dishElapsed(m.p,m.c,m.s)+" min"+(tmax?" (fits your "+(tmax>=60?tmax/60+" hr":tmax+" min")+")":"");
-  renderHTML(el,"<div class='card' style='border-color:var(--accent)'><div class='row' style='margin:0 0 8px;justify-content:space-between'><div><h2 style='margin:0'>🎲 Tonight’s pick</h2><div class='sub'>"+why+"</div></div><div class='row' style='margin:0'><button class='btn sm primary' data-decide='1'>🎲 Another</button><button class='btn sm' data-closepick='1'>Close</button></div></div>"+card(m)+"</div>");
-}
-function decide(){
-  var meals=sel.meal?buildMeals():[];
-  var options=crs==="meal"&&meals.length?meals:meals.concat(score(true).filter(function(m){return !isLong(m)}));
-  if(!options.length){toast("Nothing fits — try a longer time or more regions");return}
-  var pick=pickSuggestion(options,lastMeal||lastPick,function(m){return m.key||m.n},function(m){return (m.miss||m.x).length});
-  lastMeal=pick.key||null;
-  lastPick=pick.n||null;
-  renderResults();$("pick").scrollIntoView({behavior:"smooth",block:"start"});
-}
-// Every result has a chance, with fewer missing ingredients still favored.
-function pickSuggestion(options,previous,key,missing){
-  var alternatives=options.filter(function(item){return key(item)!==previous});
-  var pool=alternatives.length?alternatives:options;
-  var weights=pool.map(function(item){return 1/Math.pow(1+missing(item),2)});
-  var draw=Math.random()*weights.reduce(function(total,weight){return total+weight},0);
-  for(var i=0;i<pool.length-1;i++){
-    draw-=weights[i];
-    if(draw<0)return pool[i];
-  }
-  return pool[pool.length-1];
 }
 function matchesFilters(m,wholeMeal){
   return matchesModes(m)&&(wholeMeal||timeOK(m))&&regOK(m)&&occOK(m);
@@ -1431,7 +1414,7 @@ function renderResults(){
   var html="",openTiles=new Set(Array.from(r.querySelectorAll("details.tile[open]"),function(tile){return tile.dataset.recipe}));
   if(!Object.keys(have).length)html="<div class='card' style='display:flex;gap:10px;align-items:center;justify-content:space-between'><span class='sub'>Pick ingredients to see what you can cook right now</span><button class='btn sm primary' data-view='pantry'>Pick ingredients</button></div>";
   if(sel.meal){
-    var listed=meals.filter(function(meal){return meal.key!==lastMeal});
+    var listed=meals;
     var ready=meals.filter(function(meal){return !meal.miss.length}).length;
     var counts=[6,5,4].map(function(n){return meals.filter(function(m){return m.items.length===n}).length});
     html+="<section class='meal-sets' data-total-meals='"+meals.length+"'><h2>"+("Whole meals")+" <small>· "+meals.length+" "+("complete sets")+"</small></h2>"+
@@ -1452,7 +1435,7 @@ function renderResults(){
   if(visibleDishes.length)html+="<div class='sec'><h2>"+title+"</h2><small>"+totalDishes+" "+("dishes")+" · "+visibleDishes.length+" shown</small></div>"+
     (sel.all?"<p class='sub'>All catalog dishes in your current Veg/Hostel Mode. Time, region and occasion filters are paused.</p>":"")+suggestionGroups(visibleDishes,false,openTiles)+dishPageFooter(visibleDishes.length,totalDishes);
   else if(!meals.length)html+="<p class='card empty'>"+(vrat?("No vrat dishes match these filters."):("No dishes match these filters."))+"</p>";
-  renderHTML(r,html);renderPick(meals);observeMoreDishes();
+  renderHTML(r,html);observeMoreDishes();
 }
 function suggestionGroups(items,meals,openTiles){
   var ready=[],nearby=[],soak=[],shopping=[];
@@ -1484,14 +1467,12 @@ document.addEventListener("click",function(e){
   else if(t.dataset.tableRemove!==undefined){var index=Number(t.dataset.tableRemove);if(Number.isInteger(index)&&index>=0&&index<tableSelections.length){tableSelections.splice(index,1);renderTable();renderResults();save();toast("Removed from Table")}}
   else if(t.dataset.occ){occ=t.dataset.occ;renderCuis();renderResults()}
   else if(t.dataset.tm!==undefined){tmax=+t.dataset.tm;renderCuis();renderResults()}
-  else if(t.dataset.decide){setView("recipes");decide()}
-  else if(t.dataset.closepick){lastPick=null;lastMeal=null;renderResults()}
   else if(t.dataset.cu){cuis[t.dataset.cu]?delete cuis[t.dataset.cu]:cuis[t.dataset.cu]=1;renderCuis();renderResults();save()}
   else if(t.dataset.cuall){cuis={};if(t.dataset.cuall==="1")CUIS.forEach(function(c){cuis[c]=1});renderCuis();renderResults();save()}
   else if(t.dataset.i){have[t.dataset.i]?delete have[t.dataset.i]:have[t.dataset.i]=1;delete cart[t.dataset.i];all()}
   else if(t.dataset.rate){var pr=t.dataset.rate.split("|");saveMy(pr[0],{rating:+pr[1]}).catch(function(e){toast("Couldn’t save — "+((e&&e.code)||"please try again"))})}
   else if(t.dataset.cp){CPslug=t.dataset.cp;$("fileIn2").click()}
-  else if(t.dataset.shuffle){seedStr=String(Math.random());lastPick=null;lastMeal=null;renderResults()}
+  else if(t.dataset.shuffle){seedStr=String(Math.random());renderResults()}
   else if(t.dataset.wp){wProt=!wProt;renderCuis();renderResults()}
   else if(t.dataset.cat){curCat=+t.dataset.cat;$("q").value="";renderIngs()}
   else if(t.dataset.view){setView(t.dataset.view)}
@@ -1500,25 +1481,24 @@ document.addEventListener("click",function(e){
     var removed=t.dataset.removeCategory,category=removed||t.dataset.crs;
     if(removed&&!sel[removed])return;
     var area=t.closest("#slides,#cuis,#ttabs"),focused=document.activeElement===t;
-    pickCrs(category);lastPick=null;lastMeal=null;renderCuis();renderResults();save();
+    pickCrs(category);renderCuis();renderResults();save();
     var next=focused&&area&&area.querySelector(removed?"[data-remove-category],[data-crs]":"[data-crs='"+CSS.escape(category)+"']");
     if(next)next.focus({preventScroll:true});
   }
   else if(t.dataset.addm){var cm=MEALK[decodeURIComponent(t.dataset.addm)];if(cm){toggleRecipeIngredients(cm.miss,cm.key,cm.items.flatMap(function(m){return m.ing}))}}
   else if(t.dataset.app){
     app[t.dataset.app]=app[t.dataset.app]?0:1;
-    lastPick=null;lastMeal=null;
     renderModes();renderResults();save();
   }
   else if(t.id==="nvBtn"){
     nonveg=!nonveg;
     if(!nonveg)NV.forEach(function(i){delete cart[i]});
-    lastPick=null;lastMeal=null;all();
+    all();
     toast((nonveg?"Veg mode off — all recipes":"Veg mode on — vegetarian only"));
   }
   else if(t.id==="hostelBtn"){
     hostel=!hostel;
-    lastPick=null;lastMeal=null;all();
+    all();
   }
   else if(t.dataset.up){upSlug=t.dataset.up;$("fileIn").click()}
   else if(t.dataset.cartQuantity){changeCartQuantity(t)}
@@ -1543,7 +1523,7 @@ document.addEventListener("click",function(e){
   }
   else if(t.dataset.oi){
     var id=t.dataset.oi,focused=document.activeElement===t&&t.classList.contains("shop-item");
-    var area=focused&&t.closest("#dtray,#pick,#results"),tile=focused&&t.closest("details.tile[data-recipe]");
+    var area=focused&&t.closest("#dtray,#mealTray,#results"),tile=focused&&t.closest("details.tile[data-recipe]");
     if(cart[id])delete cart[id];else{
       var recipeTile=t.closest("[data-recipe]"),recipeName=recipeTile&&decodeURIComponent(recipeTile.dataset.recipe);
       var recipe=recipeName&&MEALS.find(function(m){return m[0]===recipeName});
@@ -2674,10 +2654,10 @@ function pslug(n){return slug(n).replace(/^air-fryer-/,"")}
   try{
     var u=await claude.use("user");
     db=await claude.use("db");
-    if(db){db.collection("dishImages").onSnapshot(function(sn){uploadedPhotos={};var afk=[];sn.docs.forEach(function(d){var x=d.data();if(x&&x.id){if(d.id.indexOf("air-fryer-")===0)afk.push([d.id.slice(10),x.id]);else uploadedPhotos[d.id]=x.id}});afk.forEach(function(a){if(!uploadedPhotos[a[0]])uploadedPhotos[a[0]]=a[1]});IMG=Object.assign({},bundledPhotos,uploadedPhotos);renderResults();renderPick();renderCart()},function(){})}
+    if(db){db.collection("dishImages").onSnapshot(function(sn){uploadedPhotos={};var afk=[];sn.docs.forEach(function(d){var x=d.data();if(x&&x.id){if(d.id.indexOf("air-fryer-")===0)afk.push([d.id.slice(10),x.id]);else uploadedPhotos[d.id]=x.id}});afk.forEach(function(a){if(!uploadedPhotos[a[0]])uploadedPhotos[a[0]]=a[1]});IMG=Object.assign({},bundledPhotos,uploadedPhotos);renderResults();renderCart()},function(){})}
     assets=await claude.use("assets");
     UPL=!!(db&&assets&&u&&await u.canEdit());
-    if(UPL){$("bulkBtn").hidden=false;renderResults();renderPick()}
+    if(UPL){$("bulkBtn").hidden=false;renderResults()}
   }catch(e){}
 })();
 $("fileIn").addEventListener("change",async function(){
@@ -2689,7 +2669,7 @@ $("fileIn").addEventListener("change",async function(){
     var blob=await new Promise(function(r){c.toBlob(r,"image/jpeg",.85)});
     var res=await assets.upload(blob);
     await db.doc("dishImages/"+upSlug).set({id:res.id});
-    IMG[upSlug]=res.id;renderResults();renderPick();toast("Photo saved");
+    IMG[upSlug]=res.id;renderResults();toast("Photo saved");
   }catch(e){toast("Couldn’t upload — "+((e&&e.code)||"please try again"))}
 });
 $("bulkBtn").addEventListener("click",function(){$("fileBulk").click()});
@@ -2703,7 +2683,7 @@ $("fileBulk").addEventListener("change",async function(){
       c.width=Math.round(bm.width*k);c.height=Math.round(bm.height*k);c.getContext("2d").drawImage(bm,0,0,c.width,c.height);
       var blob=await new Promise(function(r){c.toBlob(r,"image/jpeg",.85)});var res=await assets.upload(blob);
       await db.doc("dishImages/"+sl).set({id:res.id});IMG[sl]=res.id;ok++}catch(e){skip++}}
-  renderResults();renderPick();toast(ok+" photos saved"+(skip?" · "+skip+" skipped":""))});
+  renderResults();toast(ok+" photos saved"+(skip?" · "+skip+" skipped":""))});
 
 var HOSTEL={"Aloo Paratha": ["T"], "Methi Thepla": ["T"], "Besan Chilla": ["T"], "Moong Dal Chilla": ["T"], "Bread Omelette": ["T"], "Egg Bhurji": ["I", "T"], "Dal Tadka": ["I", "R"], "Moong Dal Khichdi": ["R", "I"], "Veg Pulao": ["R", "I"], "Poha": ["K", "I"], "Upma": ["I"], "Aloo Jeera": ["I"], "Cabbage Sabzi": ["I"], "Bhindi Masala": ["I"], "Paneer Bhurji": ["I", "T"], "Curd Rice": ["R", "I"], "Lemon Rice": ["R", "I"], "Egg Curry": ["I"], "Sev Tamatar": ["I"], "Aloo Chaat": ["R", "I"], "Dhaniya Chutney": ["N"], "Mint Chutney (Pudina)": ["N"], "Cucumber Raita": ["N"], "Pudina Raita": ["N"], "Suji Halwa": ["I"], "Seviyan Kheer": ["I", "R"], "Rice Kheer": ["R"], "Bengali Khichuri": ["R"], "Samak Rice Khichdi": ["R", "I"], "Sabudana Khichdi": ["I"], "Makhana Kheer": ["I"], "Tomato Rasam": ["I", "R"], "Veg Maggi (Noodles)": ["K", "I", "R"], "Masala Oats": ["K", "I", "R"], "Rice Cooker Rice + Tadka Dal": ["R"]},STEPS={"Aloo Paratha": {"en": ["Boil 2 potatoes in your pot or rice cooker (15–20 min), then peel and mash. (One vessel? Do this first, then switch to the tava.)", "Mix the mash with chopped green chilli, coriander, salt, red chilli and a pinch of garam masala.", "Knead atta with water and a pinch of salt into a soft dough. Rest 10 min.", "Roll a small ball, put a spoon of filling inside, seal like a pouch, flatten and roll gently.", "Heat the tava on medium. Cook the paratha about 1 min per side.", "Add a little oil or butter on each side and press until golden. Serve with curd or pickle."]}, "Dal Tadka": {"en": ["Wash 1/2 cup toor dal. Soak 30 min if you can.", "In the pot add dal, 2 cups water, turmeric and salt. Cook covered on medium until soft (20–25 min). Mash lightly.", "Pour the dal into a bowl and wipe the pot.", "Heat 1 tbsp oil in the same pot. Add jeera, chopped garlic and green chilli.", "Add chopped onion and tomato with red chilli powder. Fry 3–4 min (just a little frying).", "Pour the dal back, simmer 3 min, add coriander. Serve with rice or roti."]}, "Rice Cooker Rice + Tadka Dal": {"en": ["Wash 1 cup rice, add 2 cups water and salt, press Cook. When it clicks to Warm, take the rice out into a bowl.", "Wash 1/2 cup toor dal (soak 30 min if possible). Boil water in the kettle.", "Wipe the cooker pot, press Cook and add 1 tbsp oil. When hot, add jeera, garlic and green chilli, then onion and tomato. Fry 3–4 min.", "Add the dal, turmeric, salt and 2.5 cups hot kettle water. Close the lid.", "Cook until soft (about 25–35 min; if it switches to Warm, press Cook again). Mash lightly.", "Add coriander and serve over the rice you kept aside."]}},TIP={"Poha": {"en": "Kettle trick: rinse poha, cover with hot kettle water for 5 min, drain, then toss with salt, haldi and lemon."}, "Dal Tadka": {"en": "Rice cooker trick: cook rice first and take it out, then use the same pot for dal and tadka."}, "Moong Dal Khichdi": {"en": "Rice cooker: rice + moong + 4 parts water, salt, haldi. Press Cook and stir once."}, "Veg Pulao": {"en": "Rice cooker: fry onion 2 min on Cook, add rice, peas, 1:2 water and salt, close the lid."}, "Masala Oats": {"en": "Kettle: pour hot water over oats and veggies, cover 4 min, add salt and masala."}, "Veg Maggi (Noodles)": {"en": "Kettle: pour hot water over noodles, cover 4 min, drain, then mix the masala."}};
 
@@ -2813,7 +2793,7 @@ function renderKitchen(){var k=$("mykit");if(!k)return;
    return ["<div class='kc'>"+(photo?"<img src='"+escapeHTML(photoSrc(photo))+"' data-dish-photo='"+encodeURIComponent(name)+"' role='button' tabindex='0' aria-label='"+escapeHTML("Enlarge photo of "+name)+"' alt=''>":"<div class='tile' style='width:100%;height:110px'>"+emo(name)+"</div>")+"<b>"+escapeHTML(name)+"</b><div>"+"★★★★★".slice(0,entry.rating)+"</div></div>"];
  });
  renderHTML(k,cards.length?"<div class='kgrid'>"+cards.join("")+"</div>":"<p class='sub'>Nothing saved yet — rate a recipe"+(asx?" or add a photo of something you cooked.":".")+"</p>")}
-async function saveMy(sl,patch){var o=Object.assign({},MY[sl]||{},patch,{at:Date.now()});await dbx.doc("data/users/"+ME+"/d-"+sl).set(o);MY[sl]=o;renderResults();renderPick();renderKitchen()}
+async function saveMy(sl,patch){var o=Object.assign({},MY[sl]||{},patch,{at:Date.now()});await dbx.doc("data/users/"+ME+"/d-"+sl).set(o);MY[sl]=o;renderResults();renderKitchen()}
 function renderCuis(){
   var n=Object.keys(cuis).length;
   var O=[["All","All"],["Daily","Daily"],["Festive","Festive"],["Vrat","Vrat / Upvas"],["Sweets","Sweets"]],T=[[0,"Any"],[20,"20 min"],[30,"30 min"],[45,"45 min"],[60,"1 hr"],[90,"1.5 hr"],[120,"2 hr"]];
@@ -2828,7 +2808,7 @@ document.addEventListener("toggle",function(e){var t=e.target;if(t.classList&&t.
 STEPS["Chole Bhature"]={"en": ["Soak chickpeas overnight, then pressure cook with salt and turmeric until soft (6–7 whistles).", "Fry onion, ginger and garlic; add tomato and chole masala, then the chickpeas, and simmer 15 min.", "Knead maida with curd, salt, a pinch of sugar and a little water into a soft dough; rest 30 min.", "Roll thick ovals and deep-fry in hot oil, pressing lightly so they puff; drain.", "Serve hot bhature with chole, onion rings and pickle."]};
 STEPS["Gajar Halwa"]={"en":["Wash, peel and grate 500 g carrots. Measure 500 ml full-fat milk, 2 tbsp ghee and 3–4 tbsp sugar (adjust to taste).","Simmer the grated carrots in milk in a heavy pan, stirring often, until the carrots soften and most of the milk evaporates (25–35 minutes).","Add the ghee and stir over medium-low heat for 8–10 minutes until glossy and fragrant; do not let it burn.","Add sugar and stir until the released moisture cooks off. Finish with optional cardamom and toasted dry fruits; serve warm."]};
 
-var wSide=true,crs="meal",lastMeal=null,MEALK={},MOPEN={};
+var wSide=true,crs="meal",MEALK={};
 var sel={meal:1};
 function resetCategories(category){sel={};sel[category]=1;crs=category}
 function pickCrs(v){
@@ -3064,8 +3044,8 @@ function mealPreview(index){
   return "<svg class='meal-preview' aria-hidden='true' viewBox='"+x+" "+y+" "+mealPreviewSize+" "+mealPreviewSize+"' preserveAspectRatio='xMidYMid slice'>"+
     "<image href='"+mealPreviewAsset+"' width='"+(mealPreviewColumns*mealPreviewSize)+"' height='"+(mealPreviewRows*mealPreviewSize)+"'></image></svg>";
 }
-function mealTileHTML(c,force){
-  var items=c.items,n=items.length,open=force||!!MOPEN[c.key];
+function mealTileHTML(c){
+  var items=c.items,n=items.length;
   var ims=items.map(function(m){
     var key=pslug(m.n),im=IMG[key],preview=mealPreview(mealPhotoPreviews[bundledPhotoPath(key)]);
     var g=CCOL[m.cu]||CCOL.Everyday;
@@ -3074,31 +3054,46 @@ function mealTileHTML(c,force){
     return "<span class='mc' style='background:"+background+"'>"+fallback+preview+(im?recipeImage(im):"")+"<span class='meal-caption'>"+escapeHTML(dn(m.n))+"</span></span>";
   }).join("");
   var ok=!c.miss.length;
-  return "<details class='mtile' data-mk='"+encodeURIComponent(c.key)+"'"+(open?" open":"")+"><summary><div class='mos n"+n+"'>"+ims+
+  return "<details class='mtile' data-mk='"+encodeURIComponent(c.key)+"'><summary role='button' data-open-meal aria-haspopup='dialog' aria-controls='mealTray'><div class='mos n"+n+"'>"+ims+
     "<span class='st "+(ok?"ok":"wn")+"'>"+(ok?"✓ Ready":"+"+c.miss.length+" to buy")+"</span><span class='tm'>⏱ ~"+c.t+" min</span></div>"+
-    "<div class='mtx'><b>"+escapeHTML((c.theme))+" · "+(n+"-dish meal")+"</b><small>"+(ok?"Everything is at home":"Need "+c.miss.map(function(i){return NAME[i]}).join(", "))+"</small><span class='hint'>See the dishes</span></div>"+tableMealButton(c)+"</summary>"+
-    (open?mealBodyHTML(c):"")+"</details>";
+    "<div class='mtx'><b>"+escapeHTML((c.theme))+" · "+(n+"-dish meal")+"</b><small>"+(ok?"Everything is at home":"Need "+c.miss.map(function(i){return NAME[i]}).join(", "))+"</small><span class='hint'>See the dishes</span></div>"+tableMealButton(c)+"</summary></details>";
 }
 function mealBodyHTML(c){
   var items=c.items,done=cartDishComplete(c.key,items.flatMap(function(m){return m.ing}),c.miss),protein=protBadge(c);
   return "<div class='mbody'><div class='mrow'>"+(protein?"<small>"+protein+"</small>":"")+(c.miss.length?"<button class='btn sm"+(done?"":" primary")+"' data-addm='"+encodeURIComponent(c.key)+"'>"+(done?"Added ✓":c.miss.every(function(i){return cartQuantity(i)})?("Add meal to cart"):"Add missing")+"</button>":"<span class='chip have'>Ready to cook</span>")+tableMealButton(c)+"</div>"+
     "<div class='tgrid'>"+items.map(function(dish){return tileHTML(dish)}).join("")+"</div>"+(c.salad?"<p>"+("Optional salad")+" · <button type='button' class='x' data-open-dish='"+MEALS.indexOf(c.salad.recipe)+"'>"+escapeHTML(dn(c.salad.n))+"</button></p>":"")+"</div>";
 }
-document.addEventListener("toggle",function(e){
-  var d=e.target;
-  if(!d.classList||!d.classList.contains("mtile"))return;
-  var key=decodeURIComponent(d.dataset.mk);
-  if(d.open){
-    MOPEN[key]=1;
-    if(!d.querySelector(".mbody")&&MEALK[key])d.insertAdjacentHTML("beforeend",mealBodyHTML(MEALK[key]));
-  }else delete MOPEN[key];
-},true);
-function dn(n){return n}
-function renderPickMeal(el,meals){
-  var c=(meals||buildMeals()).find(function(m){return m.key===lastMeal});
-  if(!c){renderHTML(el,"");return}
-  renderHTML(el,"<div class='card' style='border-color:var(--accent)'><div class='row' style='margin:0 0 8px;justify-content:space-between'><h2 style='margin:0'>🎲 Tonight’s meal</h2><div class='row' style='margin:0'><button class='btn sm primary' data-decide='1'>🎲 Another</button><button class='btn sm' data-closepick='1'>Close</button></div></div><div class='tgrid mealgrid'>"+mealTileHTML(c,true)+"</div></div>");
+var mealTray=$("mealTray"),mealTrayItem=null,mealReturnFocus=null;
+function renderMealTray(){
+  if(!mealTrayItem)return;
+  var meal=MEALK[mealTrayItem.key]||mealTrayItem;
+  $("meal-tray-title").textContent=meal.theme+" · "+meal.items.length+"-dish meal";
+  renderHTML($("meal-tray-content"),mealBodyHTML(meal));
 }
+function showMealTray(trigger,meal){
+  mealReturnFocus=trigger;mealTrayItem=meal;
+  renderMealTray();
+  mealTray.showModal();
+  $("meal-tray-content").scrollTop=0;
+  $("meal-tray-close").focus({preventScroll:true});
+}
+document.addEventListener("click",function(e){
+  var summary=e.target.closest&&e.target.closest("details.mtile > summary[data-open-meal]");
+  if(!summary)return;
+  // Suppress the native inline expansion for both the tray opener and its Table action.
+  e.preventDefault();
+  if(e.target.closest("[data-table-meal]"))return;
+  var tile=summary.closest("details.mtile"),meal=tile&&MEALK[decodeURIComponent(tile.dataset.mk)];
+  if(meal)showMealTray(summary,meal);
+},true);
+$("meal-tray-close").addEventListener("click",function(){mealTray.close()});
+mealTray.addEventListener("click",function(e){if(e.target===mealTray)mealTray.close()});
+mealTray.addEventListener("close",function(){
+  var trigger=mealReturnFocus;
+  mealTrayItem=mealReturnFocus=null;
+  if(trigger&&trigger.isConnected)trigger.focus({preventScroll:true});
+});
+function dn(n){return n}
 HOSTEL["Chapati (Roti)"]=["T"];HOSTEL["Steamed Rice"]=["R","I"];HOSTEL["Jeera Rice"]=["R","I"];
 STEPS["Chapati (Roti)"]={"en":["Knead atta with water and a pinch of salt into a soft dough; rest 15 min.","Divide into lemon-size balls and roll thin rounds, dusting with dry flour.","Heat the tava on medium-high; cook 20–30 sec until bubbles appear, then flip.","Cook the other side, then puff it on the flame or press gently with a cloth.","Brush a little ghee and keep covered."]};
 STEPS["Steamed Rice"]={"en":["Wash the rice 2–3 times until the water runs clearer.","Add 2 cups water per cup of rice and a pinch of salt.","Bring to a boil, cover and cook on low 12–15 min (or press Cook in a rice cooker).","Rest 5 min and fluff with a fork."]};
@@ -3704,8 +3699,8 @@ $("langBtn").addEventListener("click",function(){setLang(LANG==="hi"?"en":"hi")}
   try{
     var u=await claude.use("user");dbx=await claude.use("db");asx=await claude.use("assets");
     if(u&&u.id&&dbx){ME=await u.id();
-      dbx.collection("data/users/"+ME).onSnapshot(function(sn){MY={};sn.docs.forEach(function(d){MY[d.id.replace(/^d-/,"")]=d.data()});renderResults();renderPick();renderKitchen()},function(){});
-      renderResults();renderPick();renderKitchen()}
+      dbx.collection("data/users/"+ME).onSnapshot(function(sn){MY={};sn.docs.forEach(function(d){MY[d.id.replace(/^d-/,"")]=d.data()});renderResults();renderKitchen()},function(){});
+      renderResults();renderKitchen()}
   }catch(e){}
 })();
 $("fileIn2").addEventListener("change",async function(){
@@ -4217,11 +4212,13 @@ document.addEventListener("click",function(e){
 var _rr2=renderResults;renderResults=function(){
   var r=_rr2.apply(this,arguments);
   if(dishDialog.open)renderDishDetails();
+  if(mealTray.open)renderMealTray();
   if(typeof renderActiveCollection==="function")renderActiveCollection();
   return r;
 };
 var _sv2=setView;setView=function(){
   if(dishDialog.open)dishDialog.close();
+  if(mealTray.open)mealTray.close();
   var result=_sv2.apply(this,arguments);
   document.dispatchEvent(new Event("hatri:view-change"));
   return result;
@@ -4670,7 +4667,6 @@ main#planner>*,main#planner section,#results{min-width:0;max-width:100%}
 .tgrid.mealgrid{grid-template-columns:1fr}
 @media(min-width:701px){.tgrid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.tgrid.mealgrid{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}}
 .mtile{border:1px solid var(--line);border-radius:22px;background:var(--surface);overflow:hidden;box-shadow:0 8px 22px rgba(15,61,40,.16);min-width:0}
-.mtile[open]{grid-column:1/-1}
 .mtile>summary{list-style:none;cursor:pointer;display:block}
 .mtile>summary::-webkit-details-marker{display:none}
 .mos{display:grid;gap:3px;height:220px;position:relative;background:var(--accent-bg)}
@@ -4695,7 +4691,7 @@ main#planner>*,main#planner section,#results{min-width:0;max-width:100%}
 .mtx b{display:block;font-size:15.5px;line-height:1.25;overflow-wrap:anywhere}
 .mtx small{display:block;margin-top:3px;font-size:12px;color:var(--muted)}
 .mtx .hint{display:block;margin-top:6px;font-size:12px;font-weight:600;color:var(--accent)}
-.mtile[open] .hint::after{content:" ▴"}.mtile:not([open]) .hint::after{content:" ▾"}
+.mtile .hint::after{content:" ↗"}
 .mbody{padding:0 12px 14px;border-top:1px solid var(--line)}
 .mbody .mrow{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:10px 0 0}
 .mbody .tgrid{margin-top:12px;margin-bottom:0}
@@ -5030,7 +5026,7 @@ main#planner{box-shadow:none!important}
 }
 .pantry-photo[aria-pressed="true"] .pantry-check{display:grid}
 .more-results{display:block;margin:14px auto 20px;min-width:190px;border:1px solid var(--accent);color:var(--accent);background:var(--surface);font-weight:700}
-body.searching #pantrySlides,body.searching #slides,body.searching #pick{display:none!important}
+body.searching #pantrySlides,body.searching #slides{display:none!important}
 body.searching .sh,body.searching [data-shuffle]{display:none!important}
 @media(prefers-reduced-motion:reduce){.sl,.tile,.mtile{scroll-behavior:auto}}
 #ings .ic-photo{
