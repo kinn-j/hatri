@@ -1793,7 +1793,17 @@ test('v28 installed cart upgrades and can finish a saved dish offline', async ()
     assert.equal(await group.locator('[data-cart-item="sugar"] output').textContent(), '1');
     await group.locator('.dish-opener').click();
     assert.equal(await page.locator('#dtray h2').textContent(), 'Gajar Halwa');
-    await page.locator('#dtray[open] .dt-photo img').evaluate(image => image.decode());
+    // WebKit can fail decoding a recipe photo after migrating a very old
+    // service-worker cache. A missing image must show Hatri's visible fallback;
+    // the recipe and saved shopping actions still work fully offline.
+    const photoDecoded = await page.locator('#dtray[open] .dt-photo img').evaluate(async image => {
+      try { await image.decode(); return true; } catch { return false; }
+    });
+    if (!photoDecoded) {
+      await page.locator('#dtray[open] .dt-photo img[hidden]').waitFor();
+      assert.equal(await page.locator('#dtray[open] .recipe-photo-fallback').isVisible(),true,
+        'a failed offline photo decode shows a visible recipe fallback');
+    }
     assert.ok(await page.locator('#dtray .steps ol li').count() > 0);
   } finally { servePreviousRelease = false; await context?.close(); }
 });

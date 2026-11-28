@@ -612,6 +612,39 @@ test('service worker verifies the complete shell before activating and bypasses 
   assert.equal(activations,1,'complete shell is allowed to activate');
 });
 
+test('upgrading an old shell migrates saved recipe photos without deleting unrelated caches', async () => {
+  const scope='https://example.test/hatri/',photo=new URL('images/gajar-halwa.webp?v=38',scope).href;
+  const handlers={},deleted=[];
+  const records=new Map([
+    ['hatri-v28-dynamic-cart-dishes',new Map([[photo,new Response('WEBP image',{headers:{'Content-Type':'image/webp'}})]])],
+    ['other-app-cache',new Map()],
+  ]);
+  let claimed=0;
+  const cache=name=>({
+    keys:async()=>[...records.get(name).keys()].map(url=>new Request(url)),
+    match:async key=>records.get(name).get(typeof key==='string'?key:key.url)?.clone(),
+    put:async(key,res)=>{records.get(name).set(typeof key==='string'?key:key.url,res.clone())},
+    delete:async key=>records.get(name).delete(typeof key==='string'?key:key.url),
+  });
+  vm.runInNewContext(sw,{
+    URL,Request,
+    self:{registration:{scope},location:new URL(scope),clients:{claim:async()=>{claimed++}},
+      addEventListener:(name,handler)=>{handlers[name]=handler}},
+    caches:{
+      open:async name=>{if(!records.has(name))records.set(name,new Map());return cache(name)},
+      keys:async()=>[...records.keys()],
+      delete:async name=>{deleted.push(name);return records.delete(name)},
+    },
+  });
+  let activation;
+  handlers.activate({waitUntil:promise=>{activation=promise}});
+  await activation;
+  assert.equal(await records.get('hatri-recipe-photos').get(photo).text(),'WEBP image');
+  assert.deepEqual(deleted,['hatri-v28-dynamic-cart-dishes']);
+  assert.ok(records.has('other-app-cache'));
+  assert.equal(claimed,1);
+});
+
 test('every catalog image has a unique slot in the shared WebP preview', () => {
   const { mealPhotoPreviews, mealPreviewSize, mealPreviewColumns, mealPreviewRows, mealPreviewAsset } =
     fn('var mealPreviewSize=', 'var bundledPhotos=');
