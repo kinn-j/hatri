@@ -1082,7 +1082,10 @@ test('each Reel links to a complete recipe tray and remains navigable after clos
       export const onAuthStateChanged=(_,callback)=>{queueMicrotask(()=>callback(auth.currentUser));return ()=>{};};
     `,
     'firebase-firestore.js':`
-      export const getFirestore=()=>({}),doc=()=>({}),getDoc=async()=>({exists:()=>false});
+      export const getFirestore=()=>({}),doc=(_,collection,id)=>({collection,id});
+      export const getDoc=async ref=>ref.collection==='publicRecipeVideos'
+        ? {exists:()=>true,data:()=>({title:'My lunch today',recipeName:'Aloo Paratha',caption:''})}
+        : {exists:()=>false};
       export const setDoc=async()=>{},serverTimestamp=()=>0,connectFirestoreEmulator=()=>{};
       export const runTransaction=async (_,action)=>action({get:getDoc,set:()=>{}});
       export const collection=()=>({}),limit=()=>({}),orderBy=()=>({}),query=()=>({}),where=()=>({});
@@ -1141,6 +1144,13 @@ test('each Reel links to a complete recipe tray and remains navigable after clos
     assert.equal(await page.locator('body').getAttribute('data-v'),'table');
     await page.locator('.tabbar [data-view="kitchen"]').click();
     assert.equal(await page.locator('body').getAttribute('data-v'),'kitchen');
+    await page.goto(url+'?reel=sample-reel-1234567',{waitUntil:'domcontentloaded'});
+    await page.locator('.reel-recipe-tile').waitFor();
+    assert.equal(await page.locator('.reel-card').count(),1,'direct links start on their shared video');
+    await page.locator('#reels-explore').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.reel-card').length===3);
+    assert.equal(new URL(page.url()).searchParams.has('reel'),false);
+    assert.equal(new URL(page.url()).searchParams.has('reels'),true);
   } finally { await context.close(); }
 });
 
